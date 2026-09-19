@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>À propos | SAMA ACADÉMIE</title>
+    <title>Ã€ propos | SAMA ACADÃ‰MIE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -36,20 +36,20 @@
     </style>
 </head>
 <body class="flex flex-col min-h-screen text-gray-800">
-    <header class="bg-white sticky top-0 z-50 border-b border-gray-200 shadow-sm">
+        <header class="bg-white sticky top-0 z-50 border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
                 <div class="flex items-center gap-6">
                     <a href="index.html" class="flex items-center gap-2">
-                        <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-14 object-contain">
+                        <img src="assets/logo.png" alt="SAMA ACADÃ‰MIE" class="h-14 object-contain">
                     </a>
                     
                     <nav class="hidden md:flex space-x-1">
                         <a href="index.html" class="nav-link ">Accueil</a>
                         <a href="enseignants.html" class="nav-link ">Enseignants</a>
-                        <a href="matieres.html" class="nav-link ">Matières & Niveaux</a>
+                        <a href="matieres.html" class="nav-link ">MatiÃ¨res & Niveaux</a>
                         <a href="examens.html" class="nav-link ">Exercices & Examens</a>
-                        <a href="apropos.html" class="nav-link active">À propos</a>
+                        <a href="apropos.html" class="nav-link active">Ã€ propos</a>
                         <a href="tarifs.html" class="nav-link ">Tarifs</a>
                     </nav>
                 </div>
@@ -57,25 +57,48 @@
                     <a href="#login" class="text-gray-600 hover:text-gray-900 font-semibold text-sm">Connexion</a>
                     <a href="#register" class="btn-primary text-sm">Inscription</a>
                 </div>
+                
+                <!-- Menu Hamburger (Mobile) -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-gray-600 hover:text-sama-primary focus:outline-none p-2">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Mobile DÃ©roulant -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 shadow-lg absolute w-full">
+            <div class="px-4 pt-2 pb-6 space-y-2 flex flex-col">
+                <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">Accueil</a>
+                <a href="enseignants.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">Enseignants</a>
+                <a href="matieres.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">MatiÃ¨res & Niveaux</a>
+                <a href="examens.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">Exercices & Examens</a>
+                <a href="apropos.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 active">Ã€ propos</a>
+                <a href="tarifs.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">Tarifs</a>
+                <div class="border-t border-gray-200 mt-4 pt-4 flex flex-col gap-3">
+                    <a href="#login" class="block px-3 py-2 text-center text-base font-medium text-gray-600 border border-gray-300 rounded-lg">Connexion</a>
+                    <a href="#register" class="block px-3 py-2 text-center text-base font-medium text-white bg-sama-primary rounded-lg">Inscription</a>
+                </div>
             </div>
         </div>
     </header>
 
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
 <div class="max-w-4xl mx-auto">
-    <h1 class="text-4xl font-extrabold text-gray-900 mb-6 text-center">Faire de SAMA ACADÉMIE la référence de l'éducation au Sénégal</h1>
+    <h1 class="text-4xl font-extrabold text-gray-900 mb-6 text-center">Faire de SAMA ACADÃ‰MIE la rÃ©fÃ©rence de l'Ã©ducation au SÃ©nÃ©gal</h1>
     
     <div class="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100 mb-12">
         <h2 class="text-2xl font-bold text-gray-900 mb-4">Notre Mission</h2>
         <p class="text-gray-600 leading-relaxed mb-6">
-            L'éducation occupe une place essentielle dans le développement du Sénégal. Pourtant, de nombreux élèves rencontrent des difficultés pour trouver rapidement des enseignants compétents ou accéder à des documents de qualité. Les cours de renforcement sont souvent difficiles à organiser, les épreuves des concours sont dispersées.
+            L'Ã©ducation occupe une place essentielle dans le dÃ©veloppement du SÃ©nÃ©gal. Pourtant, de nombreux Ã©lÃ¨ves rencontrent des difficultÃ©s pour trouver rapidement des enseignants compÃ©tents ou accÃ©der Ã  des documents de qualitÃ©. Les cours de renforcement sont souvent difficiles Ã  organiser, les Ã©preuves des concours sont dispersÃ©es.
         </p>
         <p class="text-gray-600 leading-relaxed">
-            SAMA ACADÉMIE est une plateforme éducative innovante qui ambitionne de devenir le partenaire privilégié des élèves, étudiants, enseignants et parents, en centralisant tous les outils d'apprentissage.
+            SAMA ACADÃ‰MIE est une plateforme Ã©ducative innovante qui ambitionne de devenir le partenaire privilÃ©giÃ© des Ã©lÃ¨ves, Ã©tudiants, enseignants et parents, en centralisant tous les outils d'apprentissage.
         </p>
     </div>
 
-    <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">L'Équipe Fondatrice</h2>
+    <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">L'Ã‰quipe Fondatrice</h2>
     
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
         <!-- Founder 1 -->
@@ -85,8 +108,8 @@
             </div>
             <div class="p-5 border-t-4 border-sama-primary">
                 <h4 class="font-bold text-gray-900 uppercase">ELHADJI ABDOU NDOUR</h4>
-                <p class="text-sm font-bold text-sama-primary mt-1">Directeur Pédagogique</p>
-                <p class="text-xs text-gray-500 italic mt-3">« L'excellence dans l'éducation est notre priorité. »</p>
+                <p class="text-sm font-bold text-sama-primary mt-1">Directeur PÃ©dagogique</p>
+                <p class="text-xs text-gray-500 italic mt-3">Â« L'excellence dans l'Ã©ducation est notre prioritÃ©. Â»</p>
             </div>
         </div>
         <!-- Founder 2 -->
@@ -96,8 +119,8 @@
             </div>
             <div class="p-5 border-t-4 border-sama-primary">
                 <h4 class="font-bold text-gray-900 uppercase">OUSMANE KA</h4>
-                <p class="text-sm font-bold text-sama-primary mt-1">Directeur Exécutif & Président</p>
-                <p class="text-xs text-gray-500 italic mt-3">« Ensemble, construisons le futur de l'éducation. »</p>
+                <p class="text-sm font-bold text-sama-primary mt-1">Directeur ExÃ©cutif & PrÃ©sident</p>
+                <p class="text-xs text-gray-500 italic mt-3">Â« Ensemble, construisons le futur de l'Ã©ducation. Â»</p>
             </div>
         </div>
         <!-- Founder 3 -->
@@ -108,12 +131,12 @@
             <div class="p-5 border-t-4 border-sama-primary">
                 <h4 class="font-bold text-gray-900 uppercase">MOUHAMADOU M. NDOUR</h4>
                 <p class="text-sm font-bold text-sama-primary mt-1">Directeur Technique & Digital</p>
-                <p class="text-xs text-gray-500 italic mt-3">« Le numérique au service de votre réussite. »</p>
+                <p class="text-xs text-gray-500 italic mt-3">Â« Le numÃ©rique au service de votre rÃ©ussite. Â»</p>
             </div>
         </div>
     </div>
     
-    <!-- Deuxième ligne centrée pour les 2 derniers fondateurs -->
+    <!-- DeuxiÃ¨me ligne centrÃ©e pour les 2 derniers fondateurs -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
         <!-- Founder 4 -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden text-center hover:shadow-md transition">
@@ -123,7 +146,7 @@
             <div class="p-5 border-t-4 border-sama-primary">
                 <h4 class="font-bold text-gray-900 uppercase">SAPHIETOU CISS</h4>
                 <p class="text-sm font-bold text-sama-primary mt-1">Directrice Marketing & Com.</p>
-                <p class="text-xs text-gray-500 italic mt-3">« Une bonne communication pour un meilleur impact. »</p>
+                <p class="text-xs text-gray-500 italic mt-3">Â« Une bonne communication pour un meilleur impact. Â»</p>
             </div>
         </div>
         <!-- Founder 5 -->
@@ -133,8 +156,8 @@
             </div>
             <div class="p-5 border-t-4 border-sama-primary">
                 <h4 class="font-bold text-gray-900 uppercase">ABABACAR FAYE</h4>
-                <p class="text-sm font-bold text-sama-primary mt-1">Directeur Général</p>
-                <p class="text-xs text-gray-500 italic mt-3">« Stratégie, vision et action pour un avenir meilleur. »</p>
+                <p class="text-sm font-bold text-sama-primary mt-1">Directeur GÃ©nÃ©ral</p>
+                <p class="text-xs text-gray-500 italic mt-3">Â« StratÃ©gie, vision et action pour un avenir meilleur. Â»</p>
             </div>
         </div>
     </div>
@@ -144,37 +167,48 @@
     <footer class="bg-white border-t border-gray-200 mt-12 py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
             <div class="space-y-4">
-                <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-16 object-contain">
-                <p class="text-sm text-gray-500 font-medium mt-4">Réviser aujourd'hui, réussir demain, construire son avenir.</p>
+                <img src="assets/logo.png" alt="SAMA ACADÃ‰MIE" class="h-16 object-contain">
+                <p class="text-sm text-gray-500 font-medium mt-4">RÃ©viser aujourd'hui, rÃ©ussir demain, construire son avenir.</p>
             </div>
             <div>
                 <h4 class="font-bold text-gray-900 mb-4">Plateforme</h4>
                 <ul class="space-y-2 text-sm text-gray-500">
                     <li><a href="enseignants.html" class="hover:text-sama-primary">Trouver un enseignant</a></li>
                     <li><a href="examens.html" class="hover:text-sama-primary">Annales gratuites</a></li>
-                    <li><a href="matieres.html" class="hover:text-sama-primary">Matières</a></li>
+                    <li><a href="matieres.html" class="hover:text-sama-primary">MatiÃ¨res</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="font-bold text-gray-900 mb-4">SAMA ACADÉMIE</h4>
+                <h4 class="font-bold text-gray-900 mb-4">SAMA ACADÃ‰MIE</h4>
                 <ul class="space-y-2 text-sm text-gray-500">
-                    <li><a href="apropos.html" class="hover:text-sama-primary">À propos de nous</a></li>
+                    <li><a href="apropos.html" class="hover:text-sama-primary">Ã€ propos de nous</a></li>
                     <li><a href="tarifs.html" class="hover:text-sama-primary">Tarifs</a></li>
                     <li><a href="contact.html" class="hover:text-sama-primary">Contact</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="font-bold text-gray-900 mb-4">Légal</h4>
+                <h4 class="font-bold text-gray-900 mb-4">LÃ©gal</h4>
                 <ul class="space-y-2 text-sm text-gray-500">
-                    <li><a href="#" class="hover:text-sama-primary">Mentions légales</a></li>
-                    <li><a href="#" class="hover:text-sama-primary">Confidentialité</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">Mentions lÃ©gales</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">ConfidentialitÃ©</a></li>
                     <li><a href="#" class="hover:text-sama-primary">CGU</a></li>
                 </ul>
             </div>
         </div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-100 text-center text-sm text-gray-400">
-            &copy; 2026 SAMA ACADÉMIE. Tous droits réservés.
+            &copy; 2026 SAMA ACADÃ‰MIE. Tous droits rÃ©servÃ©s.
         </div>
     </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            if(btn && menu) {
+                btn.addEventListener('click', () => {
+                    menu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
 </body>
 </html>
