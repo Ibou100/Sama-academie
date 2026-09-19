@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enseignants | SAMA ACADÃ‰MIE</title>
+    <title>Enseignants | SAMA ACADÉMIE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -36,20 +36,20 @@
     </style>
 </head>
 <body class="flex flex-col min-h-screen text-gray-800">
-        <header class="bg-white sticky top-0 z-50 border-b border-gray-200 shadow-sm">
+    <header class="bg-white sticky top-0 z-50 border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
                 <div class="flex items-center gap-6">
                     <a href="index.html" class="flex items-center gap-2">
-                        <img src="assets/logo.png" alt="SAMA ACADÃ‰MIE" class="h-14 object-contain">
+                        <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-14 object-contain">
                     </a>
                     
                     <nav class="hidden md:flex space-x-1">
                         <a href="index.html" class="nav-link ">Accueil</a>
                         <a href="enseignants.html" class="nav-link active">Enseignants</a>
-                        <a href="matieres.html" class="nav-link ">MatiÃ¨res & Niveaux</a>
+                        <a href="matieres.html" class="nav-link ">Matières & Niveaux</a>
                         <a href="examens.html" class="nav-link ">Exercices & Examens</a>
-                        <a href="apropos.html" class="nav-link ">Ã€ propos</a>
+                        <a href="apropos.html" class="nav-link ">À propos</a>
                         <a href="tarifs.html" class="nav-link ">Tarifs</a>
                     </nav>
                 </div>
@@ -67,14 +67,14 @@
             </div>
         </div>
 
-        <!-- Menu Mobile DÃ©roulant -->
-        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 shadow-lg absolute w-full">
+        <!-- Menu Mobile Déroulant -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 shadow-lg absolute w-full z-50">
             <div class="px-4 pt-2 pb-6 space-y-2 flex flex-col">
                 <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">Accueil</a>
                 <a href="enseignants.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 active">Enseignants</a>
-                <a href="matieres.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">MatiÃ¨res & Niveaux</a>
+                <a href="matieres.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">Matières & Niveaux</a>
                 <a href="examens.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">Exercices & Examens</a>
-                <a href="apropos.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">Ã€ propos</a>
+                <a href="apropos.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">À propos</a>
                 <a href="tarifs.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-sama-primary hover:bg-gray-50 ">Tarifs</a>
                 <div class="border-t border-gray-200 mt-4 pt-4 flex flex-col gap-3">
                     <a href="#login" class="block px-3 py-2 text-center text-base font-medium text-gray-600 border border-gray-300 rounded-lg">Connexion</a>
@@ -91,16 +91,16 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-28">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="font-bold text-gray-900">Filtres</h3>
-                <button class="text-xs text-gray-500 hover:text-sama-primary font-medium">RÃ©initialiser</button>
+                <button class="text-xs text-gray-500 hover:text-sama-primary font-medium">Réinitialiser</button>
             </div>
             
             <div class="space-y-6">
                 <div>
-                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">MatiÃ¨re</h4>
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Matière</h4>
                     <div class="flex flex-wrap gap-2">
                         <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">Toutes</span>
-                        <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">MathÃ©matiques</span>
-                        <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">FranÃ§ais</span>
+                        <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">Mathématiques</span>
+                        <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">Français</span>
                         <span class="px-3 py-1.5 bg-sama-primary text-white rounded-full text-xs font-semibold cursor-pointer shadow-sm">SVT</span>
                         <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">Anglais</span>
                     </div>
@@ -110,8 +110,8 @@
                     <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Niveau</h4>
                     <div class="px-3 py-2 bg-blue-50 text-sama-primary rounded-lg text-sm font-semibold mb-2">Tous les niveaux</div>
                     <div class="px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm cursor-pointer">Primaire</div>
-                    <div class="px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm cursor-pointer">CollÃ¨ge</div>
-                    <div class="px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm cursor-pointer">LycÃ©e</div>
+                    <div class="px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm cursor-pointer">Collège</div>
+                    <div class="px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm cursor-pointer">Lycée</div>
                 </div>
                 
                 <div>
@@ -119,7 +119,7 @@
                     <div class="flex flex-wrap gap-2">
                         <span class="px-3 py-1.5 bg-sama-primary text-white rounded-full text-xs font-semibold cursor-pointer shadow-sm">Toutes</span>
                         <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">Dakar</span>
-                        <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">ThiÃ¨s</span>
+                        <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">Thiès</span>
                     </div>
                 </div>
 
@@ -127,7 +127,7 @@
                     <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Type de cours</h4>
                     <div class="flex flex-wrap gap-2">
                         <span class="px-3 py-1.5 bg-sama-primary text-white rounded-full text-xs font-semibold cursor-pointer shadow-sm">Tous</span>
-                        <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">Ã€ domicile</span>
+                        <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">À domicile</span>
                         <span class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold cursor-pointer">En ligne</span>
                     </div>
                 </div>
@@ -142,7 +142,7 @@
             <div class="flex items-center gap-2">
                 <span class="text-sm text-gray-500">Trier:</span>
                 <select class="border border-gray-200 rounded-lg text-sm p-1.5 font-medium outline-none">
-                    <option>Mieux notÃ©s</option>
+                    <option>Mieux notés</option>
                     <option>Prix croissant</option>
                     <option>Plus d'avis</option>
                 </select>
@@ -159,10 +159,10 @@
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
                         <div>
                             <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                NdÃ¨ye Fall <span class="bg-green-100 text-green-700 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Profil vÃ©rifiÃ©</span>
+                                Ndèye Fall <span class="bg-green-100 text-green-700 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Profil vérifié</span>
                             </h3>
-                            <p class="text-gray-500 text-sm mt-1">SVT â€¢ CollÃ¨ge â€¢ FASTEF â€¢ 7 ans d'expÃ©rience</p>
-                            <p class="text-gray-500 text-sm mt-0.5">Dakar â€” Grand Dakar, LibertÃ© 6</p>
+                            <p class="text-gray-500 text-sm mt-1">SVT • Collège • FASTEF • 7 ans d'expérience</p>
+                            <p class="text-gray-500 text-sm mt-0.5">Dakar — Grand Dakar, Liberté 6</p>
                         </div>
                         <div class="text-left sm:text-right">
                             <p class="text-2xl font-bold text-gray-900">4 500 F</p>
@@ -172,8 +172,8 @@
                     
                     <div class="flex items-center gap-3 text-sm text-gray-500 mt-3 mb-4 font-medium">
                         <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-400"></i> 4,7 (34 avis)</span>
-                        <span>â€¢</span>
-                        <span>96 cours donnÃ©s</span>
+                        <span>•</span>
+                        <span>96 cours donnés</span>
                     </div>
 
                     <div class="flex sm:justify-end">
@@ -191,10 +191,10 @@
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
                         <div>
                             <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                Cheikh Mbaye <span class="bg-green-100 text-green-700 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Profil vÃ©rifiÃ©</span>
+                                Cheikh Mbaye <span class="bg-green-100 text-green-700 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Profil vérifié</span>
                             </h3>
-                            <p class="text-gray-500 text-sm mt-1">MathÃ©matiques â€¢ LycÃ©e â€¢ 10 ans d'expÃ©rience</p>
-                            <p class="text-gray-500 text-sm mt-0.5">Dakar â€” Point E, MÃ©dina</p>
+                            <p class="text-gray-500 text-sm mt-1">Mathématiques • Lycée • 10 ans d'expérience</p>
+                            <p class="text-gray-500 text-sm mt-0.5">Dakar — Point E, Médina</p>
                         </div>
                         <div class="text-left sm:text-right">
                             <p class="text-2xl font-bold text-gray-900">5 000 F</p>
@@ -204,8 +204,8 @@
                     
                     <div class="flex items-center gap-3 text-sm text-gray-500 mt-3 mb-4 font-medium">
                         <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-400"></i> 4,9 (87 avis)</span>
-                        <span>â€¢</span>
-                        <span>215 cours donnÃ©s</span>
+                        <span>•</span>
+                        <span>215 cours donnés</span>
                     </div>
 
                     <div class="flex sm:justify-end">
@@ -221,38 +221,39 @@
     <footer class="bg-white border-t border-gray-200 mt-12 py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
             <div class="space-y-4">
-                <img src="assets/logo.png" alt="SAMA ACADÃ‰MIE" class="h-16 object-contain">
-                <p class="text-sm text-gray-500 font-medium mt-4">RÃ©viser aujourd'hui, rÃ©ussir demain, construire son avenir.</p>
+                <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-16 object-contain">
+                <p class="text-sm text-gray-500 font-medium mt-4">Réviser aujourd'hui, réussir demain, construire son avenir.</p>
             </div>
             <div>
                 <h4 class="font-bold text-gray-900 mb-4">Plateforme</h4>
                 <ul class="space-y-2 text-sm text-gray-500">
                     <li><a href="enseignants.html" class="hover:text-sama-primary">Trouver un enseignant</a></li>
                     <li><a href="examens.html" class="hover:text-sama-primary">Annales gratuites</a></li>
-                    <li><a href="matieres.html" class="hover:text-sama-primary">MatiÃ¨res</a></li>
+                    <li><a href="matieres.html" class="hover:text-sama-primary">Matières</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="font-bold text-gray-900 mb-4">SAMA ACADÃ‰MIE</h4>
+                <h4 class="font-bold text-gray-900 mb-4">SAMA ACADÉMIE</h4>
                 <ul class="space-y-2 text-sm text-gray-500">
-                    <li><a href="apropos.html" class="hover:text-sama-primary">Ã€ propos de nous</a></li>
+                    <li><a href="apropos.html" class="hover:text-sama-primary">À propos de nous</a></li>
                     <li><a href="tarifs.html" class="hover:text-sama-primary">Tarifs</a></li>
                     <li><a href="contact.html" class="hover:text-sama-primary">Contact</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="font-bold text-gray-900 mb-4">LÃ©gal</h4>
+                <h4 class="font-bold text-gray-900 mb-4">Légal</h4>
                 <ul class="space-y-2 text-sm text-gray-500">
-                    <li><a href="#" class="hover:text-sama-primary">Mentions lÃ©gales</a></li>
-                    <li><a href="#" class="hover:text-sama-primary">ConfidentialitÃ©</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">Mentions légales</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">Confidentialité</a></li>
                     <li><a href="#" class="hover:text-sama-primary">CGU</a></li>
                 </ul>
             </div>
         </div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-100 text-center text-sm text-gray-400">
-            &copy; 2026 SAMA ACADÃ‰MIE. Tous droits rÃ©servÃ©s.
+            &copy; 2026 SAMA ACADÉMIE. Tous droits réservés.
         </div>
     </footer>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const btn = document.getElementById('mobile-menu-btn');
