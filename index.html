@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil | SAMA ACADÉMIE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sama-blue': '#002868',
+                        'sama-blue-light': '#1A428A',
+                        'sama-orange': '#F5A623',
+                        'sama-gray': '#F3F4F6',
+                        'sama-primary': '#1E40AF',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        .nav-link { color: #4B5563; font-weight: 600; font-size: 0.875rem; padding: 0.5rem 1rem; border-radius: 0.5rem; }
+        .nav-link:hover, .nav-link.active { background-color: #E0E7FF; color: #1E40AF; }
+        .btn-primary { background-color: #1D4ED8; color: white; padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; }
+        .btn-primary:hover { background-color: #1E40AF; }
+        .btn-outline { border: 1px solid #D1D5DB; background-color: white; color: #374151; padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-weight: 600; }
+        .btn-outline:hover { background-color: #F3F4F6; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-gray-800">
+    <!-- Main Top Navigation -->
+    <header class="bg-white sticky top-0 z-50 border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo & Main Nav -->
+                <div class="flex items-center gap-6">
+                    <a href="index.html" class="flex items-center gap-2">
+                        <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-14 object-contain">
+                    </a>
+                    
+                    <nav class="hidden md:flex space-x-1">
+                        <a href="index.html" class="nav-link active">Accueil</a>
+                        <a href="enseignants.html" class="nav-link ">Enseignants</a>
+                        <a href="matieres.html" class="nav-link ">Matières & Niveaux</a>
+                        <a href="examens.html" class="nav-link ">Exercices & Examens</a>
+                        <a href="apropos.html" class="nav-link ">À propos</a>
+                        <a href="tarifs.html" class="nav-link ">Tarifs</a>
+                    </nav>
+                </div>
+
+                <!-- Right Actions -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="#login" class="text-gray-600 hover:text-gray-900 font-semibold text-sm">Connexion</a>
+                    <a href="#register" class="btn-primary text-sm">Inscription</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+<!-- HERO SECTION -->
+<div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 md:p-12 mb-8 relative overflow-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div class="z-10">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="text-xl">🇸🇳</span>
+                <span class="text-sm font-bold tracking-wide text-gray-500 uppercase">La plateforme éducative n°1 au Sénégal</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-sama-blue leading-[1.1] mb-6">
+                Réviser aujourd'hui,<br>
+                réussir demain,<br>
+                construire son avenir.
+            </h1>
+            <p class="text-lg text-gray-500 mb-8 max-w-md">
+                Trouvez un enseignant vérifié près de chez vous, révisez avec des annales corrigées et préparez le BFEM, le BAC et les concours du Sénégal.
+            </p>
+            <div class="flex flex-wrap gap-4">
+                <a href="enseignants.html" class="bg-sama-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-800 transition shadow-sm text-center">Trouver un enseignant</a>
+                <a href="examens.html" class="bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-50 transition shadow-sm text-center">Voir les annales gratuites</a>
+            </div>
+            
+            <div class="mt-8 flex items-center gap-3">
+                <div class="flex text-yellow-400 text-sm">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                </div>
+                <p class="text-sm font-semibold text-gray-600">4,8/5 — <span class="font-normal text-gray-500">+10 000 avis d'élèves et de parents</span></p>
+            </div>
+        </div>
+        
+        <!-- Hero image — deux étudiants sénégalais en train de réviser -->
+        <div class="hidden md:block relative z-10">
+            <img
+                src="assets/hero-students.jpg"
+                alt="Deux étudiants sénégalais qui révisent ensemble avec un ordinateur portable"
+                class="w-full h-80 object-cover rounded-2xl shadow-xl"
+            >
+            <!-- Note décorative manuscrite -->
+            <div class="absolute -bottom-4 -left-8 bg-white px-4 py-2 rounded-lg shadow-lg transform -rotate-6 font-semibold text-sama-primary border-l-4 border-sama-orange text-sm">
+                ✨ Ensemble vers la réussite !
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- STATS BANNERS -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+    <div class="bg-sama-blue text-white p-6 rounded-2xl shadow-sm">
+        <h3 class="text-3xl font-bold mb-1">+10 000</h3>
+        <p class="text-blue-200 text-sm font-medium">élèves inscrits</p>
+    </div>
+    <div class="bg-sama-blue text-white p-6 rounded-2xl shadow-sm">
+        <h3 class="text-3xl font-bold mb-1">+500</h3>
+        <p class="text-blue-200 text-sm font-medium">enseignants vérifiés</p>
+    </div>
+    <div class="bg-sama-blue text-white p-6 rounded-2xl shadow-sm">
+        <h3 class="text-3xl font-bold mb-1">+200</h3>
+        <p class="text-blue-200 text-sm font-medium">matières disponibles</p>
+    </div>
+    <div class="bg-sama-blue text-white p-6 rounded-2xl shadow-sm">
+        <h3 class="text-3xl font-bold mb-1">94%</h3>
+        <p class="text-blue-200 text-sm font-medium">taux de réussite</p>
+    </div>
+</div>
+
+<!-- MATIÈRES QUICK START -->
+<div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-12">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Choisissez une matière pour commencer</h2>
+        <a href="matieres.html" class="text-sama-primary font-semibold text-sm hover:underline">Voir toutes les matières</a>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div class="border border-gray-100 rounded-xl p-4 text-center hover:shadow-md transition bg-gray-50 cursor-pointer">
+            <h4 class="font-bold text-gray-900 mb-1">Mathématiques</h4>
+            <p class="text-xs text-gray-500">Primaire à Université</p>
+        </div>
+        <div class="border border-gray-100 rounded-xl p-4 text-center hover:shadow-md transition bg-gray-50 cursor-pointer">
+            <h4 class="font-bold text-gray-900 mb-1">Physique-Chimie</h4>
+            <p class="text-xs text-gray-500">Collège et Lycée</p>
+        </div>
+        <div class="border border-gray-100 rounded-xl p-4 text-center hover:shadow-md transition bg-gray-50 cursor-pointer">
+            <h4 class="font-bold text-gray-900 mb-1">Français</h4>
+            <p class="text-xs text-gray-500">Primaire à Lycée</p>
+        </div>
+        <div class="border border-gray-100 rounded-xl p-4 text-center hover:shadow-md transition bg-gray-50 cursor-pointer">
+            <h4 class="font-bold text-gray-900 mb-1">SVT</h4>
+            <p class="text-xs text-gray-500">Collège et Lycée</p>
+        </div>
+        <div class="border border-gray-100 rounded-xl p-4 text-center hover:shadow-md transition bg-gray-50 cursor-pointer">
+            <h4 class="font-bold text-gray-900 mb-1">Anglais</h4>
+            <p class="text-xs text-gray-500">Tous niveaux</p>
+        </div>
+        <div class="border border-gray-100 rounded-xl p-4 text-center hover:shadow-md transition bg-gray-50 cursor-pointer">
+            <h4 class="font-bold text-gray-900 mb-1">Économie</h4>
+            <p class="text-xs text-gray-500">Lycée et Supérieur</p>
+        </div>
+    </div>
+</div>
+
+<!-- NOTRE ÉQUIPE — Nos Co-fondateurs -->
+<div class="mb-12">
+    <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">NOTRE ÉQUIPE — Nos Co-fondateurs</h2>
+        <p class="text-gray-500">Une équipe passionnée, un objectif commun : votre réussite.</p>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <!-- Founder 1 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition overflow-hidden">
+            <div class="w-full h-52 overflow-hidden bg-gray-100">
+                <img src="assets/founder-1.jpg" alt="ELHADJI ABDOU NDOUR" class="w-full h-full object-cover object-top">
+            </div>
+            <div class="p-4">
+                <h4 class="font-bold text-gray-900 text-sm uppercase leading-tight">ELHADJI ABDOU NDOUR</h4>
+                <p class="text-xs font-bold text-sama-primary mb-2 mt-1">Directeur Pédagogique</p>
+                <p class="text-xs text-gray-500 italic">« L'excellence dans l'éducation est notre priorité. »</p>
+            </div>
+        </div>
+        <!-- Founder 2 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition overflow-hidden">
+            <div class="w-full h-52 overflow-hidden bg-gray-100">
+                <img src="assets/founder-2.jpg" alt="OUSMANE KA" class="w-full h-full object-cover object-top">
+            </div>
+            <div class="p-4">
+                <h4 class="font-bold text-gray-900 text-sm uppercase leading-tight">OUSMANE KA</h4>
+                <p class="text-xs font-bold text-sama-primary mb-2 mt-1">Directeur Exécutif & Président</p>
+                <p class="text-xs text-gray-500 italic">« Ensemble, construisons le futur de l'éducation. »</p>
+            </div>
+        </div>
+        <!-- Founder 3 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition overflow-hidden">
+            <div class="w-full h-52 overflow-hidden bg-gray-100">
+                <img src="assets/founder-3.jpg" alt="MOUHAMADOU MAKHTAR NDOUR" class="w-full h-full object-cover object-top">
+            </div>
+            <div class="p-4">
+                <h4 class="font-bold text-gray-900 text-sm uppercase leading-tight">MOUHAMADOU M. NDOUR</h4>
+                <p class="text-xs font-bold text-sama-primary mb-2 mt-1">Directeur Technique & Digital</p>
+                <p class="text-xs text-gray-500 italic">« Le numérique au service de votre réussite. »</p>
+            </div>
+        </div>
+        <!-- Founder 4 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition overflow-hidden">
+            <div class="w-full h-52 overflow-hidden bg-gray-100">
+                <img src="assets/founder-4.jpg" alt="SAPHIETOU CISS" class="w-full h-full object-cover object-top">
+            </div>
+            <div class="p-4">
+                <h4 class="font-bold text-gray-900 text-sm uppercase leading-tight">SAPHIETOU CISS</h4>
+                <p class="text-xs font-bold text-sama-primary mb-2 mt-1">Directrice Marketing & Com.</p>
+                <p class="text-xs text-gray-500 italic">« Une bonne communication pour un meilleur impact. »</p>
+            </div>
+        </div>
+        <!-- Founder 5 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition overflow-hidden">
+            <div class="w-full h-52 overflow-hidden bg-gray-100">
+                <img src="assets/founder-5.jpg" alt="ABABACAR FAYE" class="w-full h-full object-cover object-top">
+            </div>
+            <div class="p-4">
+                <h4 class="font-bold text-gray-900 text-sm uppercase leading-tight">ABABACAR FAYE</h4>
+                <p class="text-xs font-bold text-sama-primary mb-2 mt-1">Directeur Général</p>
+                <p class="text-xs text-gray-500 italic">« Stratégie, vision et action pour un avenir meilleur. »</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RÉASSURANCE / AVANTAGES -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-12 h-12 mx-auto bg-blue-50 text-sama-primary rounded-full flex items-center justify-center text-xl mb-4"><i class="fas fa-clock"></i></div>
+        <h4 class="font-bold text-gray-900 mb-2">Accessible 24h/24</h4>
+        <p class="text-sm text-gray-500">Apprenez quand vous voulez, où vous voulez.</p>
+    </div>
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-12 h-12 mx-auto bg-blue-50 text-sama-primary rounded-full flex items-center justify-center text-xl mb-4"><i class="fas fa-shield-alt"></i></div>
+        <h4 class="font-bold text-gray-900 mb-2">Paiement sécurisé</h4>
+        <p class="text-sm text-gray-500">Wave, Orange Money, Free Money, Carte bancaire.</p>
+    </div>
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-12 h-12 mx-auto bg-blue-50 text-sama-primary rounded-full flex items-center justify-center text-xl mb-4"><i class="fas fa-file-alt"></i></div>
+        <h4 class="font-bold text-gray-900 mb-2">Qualité garantie</h4>
+        <p class="text-sm text-gray-500">Des programmes officiels et des profils vérifiés.</p>
+    </div>
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-12 h-12 mx-auto bg-blue-50 text-sama-primary rounded-full flex items-center justify-center text-xl mb-4"><i class="fas fa-headset"></i></div>
+        <h4 class="font-bold text-gray-900 mb-2">Support réactif</h4>
+        <p class="text-sm text-gray-500">Notre équipe vous accompagne au quotidien.</p>
+    </div>
+</div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="space-y-4">
+                <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-16 object-contain">
+                <p class="text-sm text-gray-500 font-medium mt-4">Réviser aujourd'hui, réussir demain, construire son avenir.</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">Plateforme</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="enseignants.html" class="hover:text-sama-primary">Trouver un enseignant</a></li>
+                    <li><a href="examens.html" class="hover:text-sama-primary">Annales gratuites</a></li>
+                    <li><a href="matieres.html" class="hover:text-sama-primary">Matières</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">SAMA ACADÉMIE</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="apropos.html" class="hover:text-sama-primary">À propos de nous</a></li>
+                    <li><a href="tarifs.html" class="hover:text-sama-primary">Tarifs</a></li>
+                    <li><a href="contact.html" class="hover:text-sama-primary">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">Légal</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="#" class="hover:text-sama-primary">Mentions légales</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">Confidentialité</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">CGU</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-100 text-center text-sm text-gray-400">
+            &copy; 2026 SAMA ACADÉMIE. Tous droits réservés.
+        </div>
+    </footer>
+</body>
+</html>

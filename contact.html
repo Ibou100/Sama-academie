@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact | SAMA ACADÉMIE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sama-blue': '#002868',
+                        'sama-blue-light': '#1A428A',
+                        'sama-orange': '#F5A623',
+                        'sama-gray': '#F3F4F6',
+                        'sama-primary': '#1E40AF',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        .nav-link { color: #4B5563; font-weight: 600; font-size: 0.875rem; padding: 0.5rem 1rem; border-radius: 0.5rem; }
+        .nav-link:hover, .nav-link.active { background-color: #E0E7FF; color: #1E40AF; }
+        .btn-primary { background-color: #1D4ED8; color: white; padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; }
+        .btn-primary:hover { background-color: #1E40AF; }
+        .btn-outline { border: 1px solid #D1D5DB; background-color: white; color: #374151; padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-weight: 600; }
+        .btn-outline:hover { background-color: #F3F4F6; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-gray-800">
+    <header class="bg-white sticky top-0 z-50 border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-6">
+                    <a href="index.html" class="flex items-center gap-2">
+                        <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-14 object-contain">
+                    </a>
+                    
+                    <nav class="hidden md:flex space-x-1">
+                        <a href="index.html" class="nav-link ">Accueil</a>
+                        <a href="enseignants.html" class="nav-link ">Enseignants</a>
+                        <a href="matieres.html" class="nav-link ">Matières & Niveaux</a>
+                        <a href="examens.html" class="nav-link ">Exercices & Examens</a>
+                        <a href="apropos.html" class="nav-link ">À propos</a>
+                        <a href="tarifs.html" class="nav-link ">Tarifs</a>
+                    </nav>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="#login" class="text-gray-600 hover:text-gray-900 font-semibold text-sm">Connexion</a>
+                    <a href="#register" class="btn-primary text-sm">Inscription</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+<div class="max-w-2xl mx-auto">
+    <div class="text-center mb-10">
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-4">Contactez SAMA ACADÉMIE</h1>
+        <p class="text-gray-500">Nous sommes là pour répondre à vos questions et vous accompagner.</p>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+        <form onsubmit="event.preventDefault(); alert('Fonctionnalité en cours de développement.');">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Prénom</label>
+                    <input type="text" class="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 outline-none focus:border-sama-primary focus:bg-white transition" placeholder="Votre prénom" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Nom</label>
+                    <input type="text" class="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 outline-none focus:border-sama-primary focus:bg-white transition" placeholder="Votre nom" required>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Email</label>
+                <input type="email" class="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 outline-none focus:border-sama-primary focus:bg-white transition" placeholder="votre.email@exemple.com" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Sujet</label>
+                <select class="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 outline-none focus:border-sama-primary focus:bg-white transition">
+                    <option>Information générale</option>
+                    <option>Support technique</option>
+                    <option>Problème de paiement</option>
+                </select>
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Message</label>
+                <textarea rows="5" class="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 outline-none focus:border-sama-primary focus:bg-white transition" placeholder="Comment pouvons-nous vous aider ?" required></textarea>
+            </div>
+            <button type="submit" class="w-full bg-sama-primary hover:bg-blue-800 text-white font-bold py-3 rounded-xl transition shadow-sm">Envoyer le message</button>
+        </form>
+    </div>
+</div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-12 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="space-y-4">
+                <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-16 object-contain">
+                <p class="text-sm text-gray-500 font-medium mt-4">Réviser aujourd'hui, réussir demain, construire son avenir.</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">Plateforme</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="enseignants.html" class="hover:text-sama-primary">Trouver un enseignant</a></li>
+                    <li><a href="examens.html" class="hover:text-sama-primary">Annales gratuites</a></li>
+                    <li><a href="matieres.html" class="hover:text-sama-primary">Matières</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">SAMA ACADÉMIE</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="apropos.html" class="hover:text-sama-primary">À propos de nous</a></li>
+                    <li><a href="tarifs.html" class="hover:text-sama-primary">Tarifs</a></li>
+                    <li><a href="contact.html" class="hover:text-sama-primary">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">Légal</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="#" class="hover:text-sama-primary">Mentions légales</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">Confidentialité</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">CGU</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-100 text-center text-sm text-gray-400">
+            &copy; 2026 SAMA ACADÉMIE. Tous droits réservés.
+        </div>
+    </footer>
+</body>
+</html>

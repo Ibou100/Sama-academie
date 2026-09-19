@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarifs | SAMA ACADÉMIE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sama-blue': '#002868',
+                        'sama-blue-light': '#1A428A',
+                        'sama-orange': '#F5A623',
+                        'sama-gray': '#F3F4F6',
+                        'sama-primary': '#1E40AF',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        .nav-link { color: #4B5563; font-weight: 600; font-size: 0.875rem; padding: 0.5rem 1rem; border-radius: 0.5rem; }
+        .nav-link:hover, .nav-link.active { background-color: #E0E7FF; color: #1E40AF; }
+        .btn-primary { background-color: #1D4ED8; color: white; padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; }
+        .btn-primary:hover { background-color: #1E40AF; }
+        .btn-outline { border: 1px solid #D1D5DB; background-color: white; color: #374151; padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-weight: 600; }
+        .btn-outline:hover { background-color: #F3F4F6; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-gray-800">
+    <header class="bg-white sticky top-0 z-50 border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-6">
+                    <a href="index.html" class="flex items-center gap-2">
+                        <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-14 object-contain">
+                    </a>
+                    
+                    <nav class="hidden md:flex space-x-1">
+                        <a href="index.html" class="nav-link ">Accueil</a>
+                        <a href="enseignants.html" class="nav-link ">Enseignants</a>
+                        <a href="matieres.html" class="nav-link ">Matières & Niveaux</a>
+                        <a href="examens.html" class="nav-link ">Exercices & Examens</a>
+                        <a href="apropos.html" class="nav-link ">À propos</a>
+                        <a href="tarifs.html" class="nav-link active">Tarifs</a>
+                    </nav>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="#login" class="text-gray-600 hover:text-gray-900 font-semibold text-sm">Connexion</a>
+                    <a href="#register" class="btn-primary text-sm">Inscription</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+<div class="text-center mb-12">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Des tarifs adaptés à chaque famille</h1>
+    <p class="text-gray-500 max-w-xl mx-auto">Les annales restent gratuites. L'abonnement débloque les corrigés, les vidéos et le suivi personnalisé.</p>
+    
+    <div class="mt-8 inline-flex bg-gray-100 p-1 rounded-full items-center">
+        <button class="bg-sama-blue text-white px-6 py-2 rounded-full font-bold text-sm shadow-sm">Mensuel</button>
+        <button class="text-gray-500 px-6 py-2 rounded-full font-bold text-sm hover:text-gray-900 transition">Annuel <span class="ml-1 text-[10px] bg-white text-gray-800 px-2 py-0.5 rounded-full shadow-sm">— 2 mois offerts</span></button>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto items-stretch mb-16">
+    <!-- Gratuit -->
+    <div class="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex flex-col">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Gratuit</h3>
+        <div class="mb-6 flex items-baseline gap-1">
+            <span class="text-4xl font-extrabold text-gray-900">0 F</span>
+            <span class="text-gray-400 text-sm font-medium">pour toujours</span>
+        </div>
+        <ul class="space-y-4 mb-8 flex-grow text-sm text-gray-600 font-medium">
+            <li>Annales et sujets d'examens</li>
+            <li>Recherche d'enseignants</li>
+            <li>3 fiches de révision par mois</li>
+            <li>Messagerie après réservation</li>
+        </ul>
+        <button class="w-full btn-outline py-3 border-gray-300">Créer un compte</button>
+    </div>
+
+    <!-- Premium Élève -->
+    <div class="bg-white rounded-3xl p-8 border-2 border-sama-primary shadow-lg flex flex-col relative transform md:-translate-y-4">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Premium Élève</h3>
+        <div class="mb-6 flex items-baseline gap-1">
+            <span class="text-4xl font-extrabold text-gray-900">3 500 F</span>
+            <span class="text-gray-400 text-sm font-medium">par mois</span>
+        </div>
+        <ul class="space-y-4 mb-8 flex-grow text-sm text-gray-600 font-medium">
+            <li class="text-gray-900">Tous les corrigés détaillés</li>
+            <li>Vidéos de correction</li>
+            <li>Bibliothèque complète</li>
+            <li>Tests et suivi de progression</li>
+            <li>Classes virtuelles</li>
+        </ul>
+        <button class="w-full bg-sama-primary text-white font-bold py-3 rounded-xl hover:bg-blue-800 transition">Essayer 7 jours</button>
+    </div>
+
+    <!-- Premium Famille -->
+    <div class="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex flex-col">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Premium Famille</h3>
+        <div class="mb-6 flex items-baseline gap-1">
+            <span class="text-4xl font-extrabold text-gray-900">6 000 F</span>
+            <span class="text-gray-400 text-sm font-medium">jusqu'à 3 enfants</span>
+        </div>
+        <ul class="space-y-4 mb-8 flex-grow text-sm text-gray-600 font-medium">
+            <li class="text-gray-900">Tout le Premium Élève</li>
+            <li class="text-gray-900">Tableau de bord parent</li>
+            <li>Suivi des cours et paiements</li>
+            <li>Enseignants vérifiés en priorité</li>
+        </ul>
+        <button class="w-full btn-outline py-3 border-gray-300">Choisir cette offre</button>
+    </div>
+
+    <!-- Pack Concours -->
+    <div class="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex flex-col">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Pack Concours</h3>
+        <div class="mb-6 flex items-baseline gap-1">
+            <span class="text-4xl font-extrabold text-gray-900">9 000 F</span>
+        </div>
+        <p class="text-gray-400 text-sm font-medium -mt-4 mb-6">paiement unique, par concours</p>
+        <ul class="space-y-4 mb-8 flex-grow text-sm text-gray-600 font-medium">
+            <li class="text-gray-900">Toutes les sessions disponibles</li>
+            <li>Corrigés et méthodologie</li>
+            <li>Tests psychotechniques</li>
+            <li>Accès valable 12 mois</li>
+        </ul>
+        <button class="w-full btn-outline py-3 border-gray-300">Voir les 18 concours</button>
+    </div>
+</div>
+
+<!-- Info Banner -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+        <h4 class="font-bold text-gray-900 mb-2">Cours particuliers</h4>
+        <p class="text-sm text-gray-500">Aucun abonnement nécessaire : chaque cours est payé à la réservation, au tarif de l'enseignant. La plateforme prélève une commission de 15 %.</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+        <h4 class="font-bold text-gray-900 mb-2">Écoles et établissements</h4>
+        <p class="text-sm text-gray-500">Accès groupé pour une classe ou un établissement, tableau de bord du chef d'établissement et facturation annuelle. Nous contacter.</p>
+    </div>
+</div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-12 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="space-y-4">
+                <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-16 object-contain">
+                <p class="text-sm text-gray-500 font-medium mt-4">Réviser aujourd'hui, réussir demain, construire son avenir.</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">Plateforme</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="enseignants.html" class="hover:text-sama-primary">Trouver un enseignant</a></li>
+                    <li><a href="examens.html" class="hover:text-sama-primary">Annales gratuites</a></li>
+                    <li><a href="matieres.html" class="hover:text-sama-primary">Matières</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">SAMA ACADÉMIE</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="apropos.html" class="hover:text-sama-primary">À propos de nous</a></li>
+                    <li><a href="tarifs.html" class="hover:text-sama-primary">Tarifs</a></li>
+                    <li><a href="contact.html" class="hover:text-sama-primary">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">Légal</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="#" class="hover:text-sama-primary">Mentions légales</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">Confidentialité</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">CGU</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-100 text-center text-sm text-gray-400">
+            &copy; 2026 SAMA ACADÉMIE. Tous droits réservés.
+        </div>
+    </footer>
+</body>
+</html>

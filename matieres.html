@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matières & Niveaux | SAMA ACADÉMIE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sama-blue': '#002868',
+                        'sama-blue-light': '#1A428A',
+                        'sama-orange': '#F5A623',
+                        'sama-gray': '#F3F4F6',
+                        'sama-primary': '#1E40AF',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        .nav-link { color: #4B5563; font-weight: 600; font-size: 0.875rem; padding: 0.5rem 1rem; border-radius: 0.5rem; }
+        .nav-link:hover, .nav-link.active { background-color: #E0E7FF; color: #1E40AF; }
+        .btn-primary { background-color: #1D4ED8; color: white; padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; }
+        .btn-primary:hover { background-color: #1E40AF; }
+        .btn-outline { border: 1px solid #D1D5DB; background-color: white; color: #374151; padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-weight: 600; }
+        .btn-outline:hover { background-color: #F3F4F6; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-gray-800">
+    <header class="bg-white sticky top-0 z-50 border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-6">
+                    <a href="index.html" class="flex items-center gap-2">
+                        <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-14 object-contain">
+                    </a>
+                    
+                    <nav class="hidden md:flex space-x-1">
+                        <a href="index.html" class="nav-link ">Accueil</a>
+                        <a href="enseignants.html" class="nav-link ">Enseignants</a>
+                        <a href="matieres.html" class="nav-link active">Matières & Niveaux</a>
+                        <a href="examens.html" class="nav-link ">Exercices & Examens</a>
+                        <a href="apropos.html" class="nav-link ">À propos</a>
+                        <a href="tarifs.html" class="nav-link ">Tarifs</a>
+                    </nav>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="#login" class="text-gray-600 hover:text-gray-900 font-semibold text-sm">Connexion</a>
+                    <a href="#register" class="btn-primary text-sm">Inscription</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+<div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Matières & Niveaux</h1>
+    <p class="text-gray-500">Parcourez les matières enseignées par nos professeurs pour tous les niveaux scolaires.</p>
+</div>
+
+<div class="space-y-12">
+    <!-- Section Primaire -->
+    <div>
+        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2 border-b border-gray-200 pb-2">
+            <span class="bg-blue-50 text-sama-primary p-2 rounded-lg"><i class="fas fa-child"></i></span>
+            Primaire <span class="text-sm font-normal text-gray-400 ml-2">CI au CM2</span>
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition text-center shadow-sm">
+                <h4 class="font-bold text-gray-800">Mathématiques</h4>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition text-center shadow-sm">
+                <h4 class="font-bold text-gray-800">Français</h4>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition text-center shadow-sm">
+                <h4 class="font-bold text-gray-800">Éveil / Découverte</h4>
+            </div>
+            <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 hover:shadow-md transition text-center shadow-sm">
+                <h4 class="font-bold text-sama-primary">Préparation CFEE</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Collège -->
+    <div>
+        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2 border-b border-gray-200 pb-2">
+            <span class="bg-blue-50 text-sama-primary p-2 rounded-lg"><i class="fas fa-school"></i></span>
+            Collège <span class="text-sm font-normal text-gray-400 ml-2">6e à 3e</span>
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition text-center shadow-sm">
+                <h4 class="font-bold text-gray-800">Mathématiques</h4>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition text-center shadow-sm">
+                <h4 class="font-bold text-gray-800">Physique-Chimie</h4>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition text-center shadow-sm">
+                <h4 class="font-bold text-gray-800">SVT</h4>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition text-center shadow-sm">
+                <h4 class="font-bold text-gray-800">Français</h4>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition text-center shadow-sm">
+                <h4 class="font-bold text-gray-800">Anglais</h4>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition text-center shadow-sm">
+                <h4 class="font-bold text-gray-800">Histoire-Géo</h4>
+            </div>
+            <div class="col-span-1 sm:col-span-2 bg-blue-50 border border-blue-100 rounded-2xl p-5 hover:shadow-md transition flex items-center justify-center gap-2 shadow-sm">
+                <i class="fas fa-award text-sama-orange"></i>
+                <h4 class="font-bold text-sama-primary">Préparation BFEM</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Lycée -->
+    <div>
+        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2 border-b border-gray-200 pb-2">
+            <span class="bg-blue-50 text-sama-primary p-2 rounded-lg"><i class="fas fa-university"></i></span>
+            Lycée <span class="text-sm font-normal text-gray-400 ml-2">Seconde à Terminale</span>
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div class="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-md transition shadow-sm">
+                <h4 class="font-bold text-gray-900 mb-3 text-lg">Séries Scientifiques (S)</h4>
+                <ul class="text-sm text-gray-500 space-y-2 font-medium">
+                    <li>• Mathématiques Avancées</li>
+                    <li>• Physique-Chimie</li>
+                    <li>• Sciences de la Vie et de la Terre</li>
+                </ul>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-md transition shadow-sm">
+                <h4 class="font-bold text-gray-900 mb-3 text-lg">Séries Littéraires (L)</h4>
+                <ul class="text-sm text-gray-500 space-y-2 font-medium">
+                    <li>• Philosophie</li>
+                    <li>• Français</li>
+                    <li>• Langues (Anglais, Espagnol, Arabe...)</li>
+                    <li>• Histoire-Géographie</li>
+                </ul>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-md transition shadow-sm">
+                <h4 class="font-bold text-gray-900 mb-3 text-lg">Séries Éco/Gestion (G)</h4>
+                <ul class="text-sm text-gray-500 space-y-2 font-medium">
+                    <li>• Économie et Gestion</li>
+                    <li>• Comptabilité</li>
+                    <li>• Mathématiques Appliquées</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-12 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="space-y-4">
+                <img src="assets/logo.png" alt="SAMA ACADÉMIE" class="h-16 object-contain">
+                <p class="text-sm text-gray-500 font-medium mt-4">Réviser aujourd'hui, réussir demain, construire son avenir.</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">Plateforme</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="enseignants.html" class="hover:text-sama-primary">Trouver un enseignant</a></li>
+                    <li><a href="examens.html" class="hover:text-sama-primary">Annales gratuites</a></li>
+                    <li><a href="matieres.html" class="hover:text-sama-primary">Matières</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">SAMA ACADÉMIE</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="apropos.html" class="hover:text-sama-primary">À propos de nous</a></li>
+                    <li><a href="tarifs.html" class="hover:text-sama-primary">Tarifs</a></li>
+                    <li><a href="contact.html" class="hover:text-sama-primary">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-900 mb-4">Légal</h4>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li><a href="#" class="hover:text-sama-primary">Mentions légales</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">Confidentialité</a></li>
+                    <li><a href="#" class="hover:text-sama-primary">CGU</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-100 text-center text-sm text-gray-400">
+            &copy; 2026 SAMA ACADÉMIE. Tous droits réservés.
+        </div>
+    </footer>
+</body>
+</html>
