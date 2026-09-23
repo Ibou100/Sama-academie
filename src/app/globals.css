@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sama-blue: #002868;
+  --color-sama-blue-light: #1A428A;
+  --color-sama-orange: #F5A623;
+  --color-sama-gray: #F3F4F6;
+  --color-sama-primary: #1E40AF;
+  
+  --font-sans: var(--font-inter), sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: #F8FAFC;
+    color: #1f2937;
+  }
+}
+
+@layer components {
+  .nav-link { 
+    color: #4B5563; 
+    font-weight: 600; 
+    font-size: 0.875rem; 
+    padding: 0.5rem 1rem; 
+    border-radius: 0.5rem; 
+  }
+  .nav-link:hover, .nav-link.active { 
+    background-color: #E0E7FF; 
+    color: #1E40AF; 
+  }
+  .btn-primary { 
+    background-color: #1D4ED8; 
+    color: white; 
+    padding: 0.5rem 1.5rem; 
+    border-radius: 0.5rem; 
+    font-weight: 600; 
+    transition: background-color 0.2s; 
+  }
+  .btn-primary:hover { 
+    background-color: #1E40AF; 
+  }
+  .btn-outline { 
+    border: 1px solid #D1D5DB; 
+    background-color: white; 
+    color: #374151; 
+    padding: 0.5rem 1.5rem; 
+    border-radius: 0.5rem; 
+    font-weight: 600; 
+  }
+  .btn-outline:hover { 
+    background-color: #F3F4F6; 
+  }
+}
