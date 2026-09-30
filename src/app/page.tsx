@@ -52,13 +52,13 @@ export default function Home() {
           </div>
 
           {/* Hero image */}
-          <div className="hidden md:block relative z-10">
+          <div className="block relative z-10 mt-8 md:mt-0">
             <img
               src="/assets/hero-students-v2.jpg"
               alt="Deux étudiants sénégalais qui révisent ensemble"
-              className="w-full h-80 object-cover rounded-2xl shadow-xl"
+              className="w-full h-64 md:h-80 object-cover rounded-2xl shadow-xl"
             />
-            <div className="absolute -bottom-4 -left-8 bg-white px-4 py-2 rounded-lg shadow-lg transform -rotate-6 font-semibold text-sama-primary border-l-4 border-sama-orange text-sm">
+            <div className="absolute -bottom-4 left-4 md:-left-8 bg-white px-4 py-2 rounded-lg shadow-lg transform -rotate-6 font-semibold text-sama-primary border-l-4 border-sama-orange text-sm z-20">
               ✨ Ensemble vers la réussite !
             </div>
           </div>
