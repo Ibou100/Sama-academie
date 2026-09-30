@@ -54,7 +54,7 @@ export default function Home() {
           {/* Hero image */}
           <div className="hidden md:block relative z-10">
             <img
-              src="/assets/hero-students.jpg"
+              src="/assets/hero-students-v2.jpg"
               alt="Deux étudiants sénégalais qui révisent ensemble"
               className="w-full h-80 object-cover rounded-2xl shadow-xl"
             />
