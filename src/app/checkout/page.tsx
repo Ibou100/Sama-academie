@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -13,7 +13,15 @@ const PLANS: Record<string, { name: string; price: string; period: string }> = {
   concours: { name: "Pack Concours", price: "9 000 F", period: "paiement unique" },
 };
 
-export default function Checkout() {
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement...</div>}>
+      <Checkout />
+    </Suspense>
+  );
+}
+
+function Checkout() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planKey = searchParams.get("plan") || "eleve";

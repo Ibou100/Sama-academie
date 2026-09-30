@@ -36,7 +36,6 @@ export default function Header() {
     { href: "/videos", label: "Vidéos ⭐" },
     { href: "/classes", label: "Classes 🎥" },
     { href: "/apropos", label: "À propos" },
-    { href: "/tarifs", label: "Tarifs" },
   ];
 
   useEffect(() => {
@@ -113,9 +112,6 @@ export default function Header() {
                   )}
                   <div className="text-left">
                     <p className="text-sm font-bold text-gray-900 leading-tight">{userProfile.first_name}</p>
-                    {userProfile.is_premium && (
-                      <p className="text-xs text-yellow-600 font-bold leading-tight">⭐ Premium</p>
-                    )}
                   </div>
                   <i className={`fas fa-chevron-down text-xs text-gray-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}></i>
                 </button>
@@ -130,15 +126,6 @@ export default function Header() {
                     >
                       <i className="fas fa-user-circle text-sama-primary w-4"></i> Mon profil
                     </Link>
-                    {!userProfile.is_premium && (
-                      <Link
-                        href="/tarifs"
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-3 text-sm text-yellow-600 hover:bg-yellow-50 font-bold"
-                      >
-                        <i className="fas fa-crown w-4"></i> Passer en Premium
-                      </Link>
-                    )}
                     <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={handleLogout}
