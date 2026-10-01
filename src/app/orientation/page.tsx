@@ -3,20 +3,26 @@
 import { useState } from "react";
 import Link from "next/link";
 
+type StatutAcces = "concours" | "mixte" | "payant";
+
+interface Etablissement {
+  nom: string;
+  sigle: string;
+  ville: string;
+  statutAcces: StatutAcces;
+  fraisOuBourse: string;
+  acces: string;
+  specialites: string[];
+  description: string;
+}
+
 interface FiliereDetail {
   id: string;
   title: string;
   badge: string;
   icon: string;
   shortDesc: string;
-  etablissements: {
-    nom: string;
-    sigle: string;
-    ville: string;
-    acces: string;
-    specialites: string[];
-    description: string;
-  }[];
+  etablissements: Etablissement[];
   debouches: string[];
   conseilOrientation: string;
 }
@@ -34,175 +40,393 @@ interface ConseilDetail {
 const FILIERES: FiliereDetail[] = [
   {
     id: "ingenieurs",
-    title: "Grandes Écoles d'Ingénieurs & Instituts Technologiques",
+    title: "Grandes Écoles d'Ingénieurs & Classes Préparatoires",
     badge: "Scientifique & Technique",
     icon: "💻",
-    shortDesc: "ESP Dakar, EPT Thiès, EPD Diamniadio, IPSL Saint-Louis, IUT Thiès, ESMT...",
+    shortDesc: "CPGE Thiès, ESP Dakar, EPT Thiès, DAUST Mbour, Diamniadio, IPSL, IUT Thiès, ESMT...",
     etablissements: [
       {
-        nom: "École Supérieure Polytechnique de Dakar",
-        sigle: "ESP Dakar (UCAD)",
-        ville: "Dakar (Fann)",
-        acces: "Concours national après Bac S1, S2, S3, STI ou sélection dossier DUT/DIC",
-        specialites: ["Génie Informatique & IA", "Génie Civil", "Génie Électrique", "Génie Mécanique", "Génie Chimique & Biologie appliquée"],
-        description: "L'une des écoles d'ingénieurs les plus prestigieuses d'Afrique de l'Ouest, rattachée à l'UCAD. Elle délivre le Diplôme d'Ingénieur de Conception (DIC) et le DUT."
+        nom: "Classes Préparatoires aux Grandes Écoles du Sénégal",
+        sigle: "CPGE de Thiès",
+        ville: "Thiès (Campus EPT)",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État Gratuit — Bourse d'excellence et hébergement assurés par l'État du Sénégal",
+        acces: "Sélection nationale d'excellence sur dossier après Bac S1, S2 ou S3 (Mention Bien ou Très Bien exigée)",
+        specialites: [
+          "MPSI (Maths, Physique, Sciences de l'Ingénieur)",
+          "PCSI (Physique, Chimie, Sciences de l'Ingénieur)",
+          "Voies de 2e année : MP, PC et PSI"
+        ],
+        description: "Filière d'élite créée par l'État du Sénégal pour préparer en 2 ans les bacheliers les plus brillants aux concours des plus grandes écoles d'ingénieurs sénégalaises (EPT, ESP) et internationales (Polytechnique Paris, Mines-Ponts, CentraleSupélec)."
       },
       {
         nom: "École Polytechnique de Thiès",
         sigle: "EPT Thiès",
         ville: "Thiès",
-        acces: "Concours d'entrée très sélectif (Bac S1, S2, S3) niveau Terminale",
-        specialites: ["Génie Civil (BTP & Ouvrages d'art)", "Génie Électromécanique", "Génie Informatique & Télécommunications", "Génie Aéronautique"],
-        description: "Créée sur modèle polytechnique militaire, l'EPT forme des ingénieurs d'État sénégalais hautement qualifiés et réputés pour leur rigueur et leadership."
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours National Gratuit — Prise en charge d'État et bourses complètes",
+        acces: "Concours direct national très sélectif (Bac S1, S2, S3) niveau Terminale",
+        specialites: [
+          "Génie Civil (Ouvrages d'art, Ponts & BTP)",
+          "Génie Électromécanique",
+          "Génie Informatique & Télécommunications",
+          "Génie Aéronautique & Systèmes"
+        ],
+        description: "L'institution historique polytechnique du Sénégal. Cursus d'ingénieur de conception d'État en 5 ans, réputé pour sa rigueur scientifique et son encadrement militaire."
+      },
+      {
+        nom: "École Supérieure Polytechnique de Dakar",
+        sigle: "ESP Dakar (UCAD)",
+        ville: "Dakar (Fann)",
+        statutAcces: "mixte",
+        fraisOuBourse: "Mixte : Concours Public boursier (frais universitaires d'État réduits) OU Section Privée / Formation continue payante",
+        acces: "Voie publique : Concours national après Bac S1, S2, S3, STI | Voie payante : Admission sur dossier et entretien",
+        specialites: [
+          "Génie Informatique & Intelligence Artificielle",
+          "Génie Civil & BTP",
+          "Génie Électrique & Énergies Renouvelables",
+          "Génie Mécanique",
+          "Génie Chimique & Biologie Appliquée",
+          "Gestion & Management Tertiaire"
+        ],
+        description: "Fleuron technologique de l'UCAD. Propose à la fois des places au concours public d'ingénieurs (DIC) et DUT, ainsi qu'une filière payante de très haut niveau pour les professionnels et étudiants autorisés."
+      },
+      {
+        nom: "Dakar American University of Science and Technology",
+        sigle: "DAUST (Somone / Mbour)",
+        ville: "La Somone / Mbour (Région de Thiès)",
+        statutAcces: "payant",
+        fraisOuBourse: "Établissement Privé Payant — Modèle américain d'ingénierie (Bourses d'excellence partielles disponibles sur mérite)",
+        acces: "Sélection sur dossier académique, test d'anglais/maths et entretien de motivation (Bacs S1, S2, S3, L'option maths)",
+        specialites: [
+          "Génie Mécanique & Robotique",
+          "Génie Aérospatial",
+          "Génie Informatique & Software Engineering",
+          "Génie Électrique & Systèmes Énergétiques",
+          "Programme Dual Degree 2+2 avec University of Nebraska (USA)"
+        ],
+        description: "Université technologique privée anglophone d'avant-garde fondée par le Pr Sidy Ndao à La Somone (Mbour). Pédagogie pratique 'Learning by Doing', campus à l'américaine et débouchés directs aux USA et à l'international."
       },
       {
         nom: "École Polytechnique de Diamniadio",
         sigle: "EPD / Cité du Savoir",
         ville: "Diamniadio",
-        acces: "Sélection d'excellence (Bacs scientifiques S1/S2 et prépas)",
-        specialites: ["Intelligence Artificielle & Robotique", "Transition Énergétique", "Systèmes Numériques Embarqués", "Nanotechnologies"],
-        description: "Pôle d'innovation technologique situé au cœur de la Cité du Savoir à Diamniadio, dédié aux métiers d'avenir et à la recherche avancée."
+        statutAcces: "concours",
+        fraisOuBourse: "Concours & Sélection d'Excellence Publique de l'État (Gratuit / Boursiers)",
+        acces: "Sélection d'excellence nationale (Bacs scientifiques S1/S2 et prépas)",
+        specialites: [
+          "Intelligence Artificielle & Big Data",
+          "Robotique & Mécatronique Industrielle",
+          "Transition Énergétique & Nanotechnologies",
+          "Systèmes Numériques Embarqués"
+        ],
+        description: "Pôle d'innovation technologique de dernière génération de l'État du Sénégal, implanté dans la Cité du Savoir à Diamniadio pour former les ingénieurs des technologies de pointe."
       },
       {
         nom: "Institut Polytechnique de Saint-Louis",
         sigle: "IPSL (UGB)",
-        ville: "Saint-Louis",
-        acces: "Concours national (Bacheliers scientifiques) avec classes préparatoires intégrées",
-        specialites: ["Génie Civil", "Génie Mécanique", "Informatique & Réseaux Industriels"],
-        description: "Institut d'ingénierie de l'Université Gaston Berger de Saint-Louis, réputé pour son cycle préparatoire d'excellence et son ancrage pratique."
+        ville: "Saint-Louis (Sanar)",
+        statutAcces: "mixte",
+        fraisOuBourse: "Mixte : Concours Public d'État boursier OU Admission spéciale sur titre payante selon quotas",
+        acces: "Concours national pour bacheliers S1, S2, S3 avec cycle préparatoire intégré de 2 ans",
+        specialites: [
+          "Génie Civil & Ouvrages hydrauliques",
+          "Génie Mécanique & Productique",
+          "Informatique Industrielle & Réseaux"
+        ],
+        description: "L'école d'ingénieurs de l'Université Gaston Berger de Saint-Louis. Deux années de prépa intégrée suivies de trois années de spécialisation ingénieur de conception."
       },
       {
         nom: "Institut Universitaire de Technologie de Thiès",
         sigle: "IUT de Thiès (UIDT)",
         ville: "Thiès",
-        acces: "Sélection sur concours et dossier (Bac S, STI, G)",
-        specialites: ["Génie Civil", "Génie Électrique & Informatique Industrielle", "Logistique & Transport", "Télécoms"],
-        description: "Rattaché à l'Université Iba Der Thiam de Thiès, l'IUT est un pôle majeur de formation technologique supérieure courte (DUT) et longue (Licences et Masters pros)."
+        statutAcces: "mixte",
+        fraisOuBourse: "Mixte : Concours Public / Campusen OU Formations professionnelles payantes du soir",
+        acces: "Sélection sur concours et étude de dossier (Bacs scientifiques et techniques)",
+        specialites: [
+          "Génie Civil",
+          "Génie Électrique & Informatique Industrielle",
+          "Logistique & Transport ferroviaire / routier",
+          "Télécommunications & Réseaux"
+        ],
+        description: "Institut technologique supérieur de l'Université Iba Der Thiam de Thiès. Propose des DUT et Licences Professionnelles très prisés par les entreprises industrielles."
       },
       {
         nom: "École Supérieure Multinationale des Télécommunications",
         sigle: "ESMT Dakar",
-        ville: "Dakar",
-        acces: "Concours et tests d'admission (Bac S, L2, Licence scientifique)",
-        specialites: ["Cybersécurité", "Télécommunications & 5G", "Cloud Computing", "Génie Logiciel"],
-        description: "Institution inter-étatique panafricaine basée à Dakar, référence sous-régionale dans le domaine des télécommunications et de l'économie numérique."
+        ville: "Dakar (Colobane)",
+        statutAcces: "mixte",
+        fraisOuBourse: "Mixte : Bourses d'État sur concours national OU Admissions directes privées payantes",
+        acces: "Bacheliers S et L2/Licences scientifiques (sur tests et examen de dossier)",
+        specialites: [
+          "Cybersécurité & Défense Numérique",
+          "Télécommunications & Réseaux 5G/Fibre",
+          "Génie Logiciel & Cloud Computing",
+          "Systèmes Intelligents & IoT"
+        ],
+        description: "Organisation intergouvernementale africaine basée à Dakar, formant les cadres supérieurs des télécommunications et de l'informatique pour toute l'Afrique de l'Ouest."
       }
     ],
     debouches: [
-      "Ingénieur Logiciel & Architecte Cloud",
-      "Ingénieur Chef de Projet BTP / Génie Civil",
-      "Expert en Énergies Renouvelables",
-      "Consultant en Cybersécurité & Données",
-      "Responsable Maintenance Industrielle",
-      "Directeur Technique / CTO"
+      "Ingénieur Logiciel, IA & Architecte Cloud",
+      "Ingénieur Chef de Projet BTP / Ouvrages d'art",
+      "Ingénieur Robotique & Systèmes Aéronautiques",
+      "Consultant en Cybersécurité et Réseaux Télécoms",
+      "Ingénieur Énergies Renouvelables et Transition Énergétique",
+      "Directeur Technique / Entrepreneur Tech"
     ],
-    conseilOrientation: "Ayez une moyenne solide en Mathématiques et Sciences Physiques (minimum 13/20 pour viser les concours). Préparez les annales de concours dès le premier trimestre de Terminale !"
-  },
-  {
-    id: "universites",
-    title: "Universités Publiques du Sénégal",
-    badge: "Enseignement Supérieur",
-    icon: "🎓",
-    shortDesc: "UCAD (Dakar), UGB (Saint-Louis), UIDT (Thiès), UADB (Bambey), USSEIN (Kaolack), UNCHK...",
-    etablissements: [
-      {
-        nom: "Université Cheikh Anta Diop",
-        sigle: "UCAD",
-        ville: "Dakar",
-        acces: "Plateforme Campusen (Bacheliers sénégalais)",
-        specialites: ["FST (Sciences & Technologies)", "FASEG (Économie & Gestion)", "FLSH (Lettres & Sciences Humaines)", "FSJP (Droit & Sciences Politiques)", "FMPO (Médecine)"],
-        description: "La plus grande université d'Afrique francophone avec plus de 80 000 étudiants et des facultés historiques mondialement reconnues."
-      },
-      {
-        nom: "Université Gaston Berger",
-        sigle: "UGB",
-        ville: "Saint-Louis (Sanar)",
-        acces: "Campusen (sélection rigoureuse sur notes du Bac)",
-        specialites: ["SAT (Sciences Appliquées & Technologies)", "SEG (Sciences Économiques et Gestion)", "SJP (Sciences Juridiques et Politiques)", "IPSL", "UFR Santé"],
-        description: "Pôle d'excellence universitaire situé à Saint-Louis, réputé pour son cadre de travail propice et son fort taux de réussite."
-      },
-      {
-        nom: "Université Iba Der Thiam",
-        sigle: "UIDT",
-        ville: "Thiès",
-        acces: "Campusen",
-        specialites: ["Sciences & Technologies", "Économie & Management", "Santé", "IUT de Thiès"],
-        description: "Université moderne multipolaire au cœur du pôle économique et ferroviaire de Thiès."
-      },
-      {
-        nom: "Université Alioune Diop de Bambey",
-        sigle: "UADB",
-        ville: "Bambey",
-        acces: "Campusen",
-        specialites: ["Santé communautaire", "TIC & Informatique", "Économie & Management", "Génie Électrique"],
-        description: "Université spécialisée dans les formations professionnalisantes et le développement communautaire."
-      },
-      {
-        nom: "Univ. du Sine Saloum El-Hâdj Ibrahima NIASS",
-        sigle: "USSEIN",
-        ville: "Kaolack / Fatick / Kaffrine",
-        acces: "Campusen",
-        specialites: ["Agronomie & Agriculture durable", "Élevage & Santé animale", "Nutrition & Agroalimentaire", "Écotourisme"],
-        description: "Grande université à vocation agricole et de souveraineté alimentaire au Sénégal."
-      },
-      {
-        nom: "Université Numérique Cheikh Hamidou Kane",
-        sigle: "UNCHK (ex-UVS)",
-        ville: "Espaces Numériques Ouverts (ENO) dans tout le Sénégal",
-        acces: "Campusen",
-        specialites: ["Informatique & Développement", "Droit & Administration", "Communication digitale", "Sciences économiques"],
-        description: "Université publique d'enseignement à distance avec plus de 15 Espaces Numériques Ouverts (ENO) répartis dans tout le territoire."
-      }
-    ],
-    debouches: [
-      "Chercheurs, Enseignants-chercheurs et Professeurs de lycée/collège",
-      "Juristes d'entreprise, Magistrats, Avocats",
-      "Économistes, Analystes financiers, Auditeurs",
-      "Spécialistes en Relations Internationales et Diplomatie",
-      "Agronomes et Développeurs ruraux"
-    ],
-    conseilOrientation: "Le système LMD (Licence - Master - Doctorat) demande une grande autonomie. Ne ratez aucun TD dès le début du semestre 1."
+    conseilOrientation: "Pour les concours d'ingénieurs (CPGE, EPT, ESP), préparez les épreuves de Maths et Physique dès la 1ère et la Terminale. Pour DAUST, travaillez intensivement l'anglais oral et écrit."
   },
   {
     id: "sante",
-    title: "Sciences Médicales, Pharmacie & Soins",
-    badge: "Santé Publique",
+    title: "Sciences Médicales, Santé Militaire & Soins",
+    badge: "Santé & Médecine",
     icon: "⚕️",
-    shortDesc: "FMPO UCAD & UGB, ENDSS / INFAS, Écoles de sages-femmes et d'infirmiers...",
+    shortDesc: "EMS Dakar (Armée), FMPO UCAD/UGB, ENDSS / INFAS, Écoles de Sages-Femmes...",
     etablissements: [
+      {
+        nom: "École Militaire de Santé de Dakar",
+        sigle: "EMS Dakar (Camp Dial Diop)",
+        ville: "Dakar (Plateau / Fann)",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours Militaire Gratuit — Élèves logés, nourris, soignés et rémunérés (solde militaire mensuelle pendant toutes les études)",
+        acces: "Concours direct national très sélectif (Bacs S1 et S2, âgés de 18 à 20 ans pour médecine, jusqu'à 22 ans pour pharmacie). Visite médicale militaire stricte (profil SIGYCOP).",
+        specialites: [
+          "Médecine Militaire & Chirurgie d'Urgence",
+          "Pharmacie Militaire & Toxicologie",
+          "Chirurgie Dentaire (Odontologie)",
+          "Médecine Vétérinaire (via EISMV)"
+        ],
+        description: "L'institution d'élite formant les officiers médecins, pharmaciens et vétérinaires des Forces Armées sénégalaises. Les élèves suivent les cours médicaux à l'UCAD tout en recevant une instruction militaire d'excellence."
+      },
       {
         nom: "Faculté de Médecine, Pharmacie et Odontologie",
         sigle: "FMPO (UCAD)",
-        ville: "Dakar",
-        acces: "Campusen (Mention Très Bien / Bien obligatoire Bac S1 ou S2)",
-        specialites: ["Médecine Générale & Spécialités", "Pharmacie", "Chirurgie Dentaire (Odontologie)"],
-        description: "Le temple de la formation médicale au Sénégal, formant les médecins chefs et spécialistes de toute la sous-région."
+        ville: "Dakar (Fann)",
+        statutAcces: "concours",
+        fraisOuBourse: "Sélection d'État Campusen (Frais universitaires publics réduits / Bourses d'État)",
+        acces: "Sélection rigoureuse sur plateforme Campusen (Mentions Très Bien et Bien obligatoires, Bacs S1 et S2)",
+        specialites: [
+          "Médecine Générale & Spécialités Cliniques (8 ans)",
+          "Pharmacie (6 ans)",
+          "Chirurgie Dentaire / Odonto-Stomatologie (6 ans)"
+        ],
+        description: "La plus prestigieuse et historique faculté de médecine d'Afrique noire francophone, formant l'essentiel des médecins spécialistes du pays."
       },
       {
         nom: "UFR Sciences de la Santé de Saint-Louis",
-        sigle: "2S UGB",
+        sigle: "2S (UGB)",
         ville: "Saint-Louis",
-        acces: "Campusen (Très forte sélection Bac S1/S2)",
-        specialites: ["Médecine", "Sciences Infirmières et Obstétricales"],
-        description: "Excellence académique et humaine pour les futurs médecins du Sénégal septentrional."
+        statutAcces: "concours",
+        fraisOuBourse: "Sélection d'État Campusen (Frais universitaires d'État)",
+        acces: "Sélection drastique sur notes du Bac S1/S2 via Campusen",
+        specialites: [
+          "Médecine Générale",
+          "Sciences Infirmières et Obstétricales"
+        ],
+        description: "Pôle médical moderne et très réputé pour la qualité de son encadrement et son partenariat avec l'Hôpital régional de Saint-Louis."
       },
       {
         nom: "École Nationale de Développement Sanitaire et Social",
         sigle: "ENDSS / INFAS",
         ville: "Dakar",
-        acces: "Concours national direct après Bac ou BFEM selon la section",
-        specialites: ["Infirmiers d'État", "Sages-Femmes d'État", "Techniciens de Laboratoire", "Travailleurs Sociaux"],
-        description: "L'institution publique phare de formation des personnels paramédicaux au Sénégal."
+        statutAcces: "mixte",
+        fraisOuBourse: "Mixte : Concours Public d'État (gratuit/boursier) OU Section Privée payante sur dossier",
+        acces: "Concours direct d'État (Bacheliers ou niveau BFEM selon filière) ou admission payante autorisée",
+        specialites: [
+          "Infirmiers d'État",
+          "Sages-Femmes d'État",
+          "Techniciens Supérieurs de Laboratoire Médical",
+          "Assistants Sociaux & Kinésithérapie"
+        ],
+        description: "Le centre national public historique de formation de l'ensemble du personnel paramédical du Sénégal."
       }
     ],
     debouches: [
-      "Médecin généraliste / Spécialiste hospitalier",
-      "Pharmacien d'officine et industriel",
-      "Chirurgien-dentiste",
-      "Sage-femme d'État & Infirmier d'État en structures hospitalières",
-      "Biologiste médical et Technicien supérieur de laboratoire"
+      "Médecin Militaire d'Unité & Capitaine / Médecin Hospitalier",
+      "Médecin Généraliste et Spécialiste (Cardiologue, Pédiatre, Chirurgien...)",
+      "Pharmacien d'Officine ou Biologiste Médical",
+      "Chirurgien-Dentiste en cabinet ou hôpital",
+      "Sage-Femme d'État et Infirmier Major d'État"
     ],
-    conseilOrientation: "Les études médicales durent entre 7 et 8 ans. La régularité du travail et la résistance psychologique sont capitales."
+    conseilOrientation: "Pour le concours de l'EMS : commencez la préparation physique très tôt et assurez-vous d'avoir au moins 13/20 en SVT, Physique-Chimie et Maths."
+  },
+  {
+    id: "armee",
+    title: "Grandes Écoles Militaires, CUGEM & Défense",
+    badge: "Sécurité & Défense",
+    icon: "🛡️",
+    shortDesc: "Concours CUGEM (Écoles étrangères), ENOA Thiès, École de l'Air, Police, Douanes, Gendarmerie...",
+    etablissements: [
+      {
+        nom: "Concours Unique d'entrée dans les Grandes Écoles Militaires étrangères",
+        sigle: "Concours CUGEM",
+        ville: "Concours à Dakar (Formations en France, Maroc, Brésil, Allemagne...)",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État d'Élite — Bourse d'État intégrale, prise en charge des études, billets et rémunération militaire à l'étranger",
+        acces: "Concours national officiel organisé par l'État-Major des Armées (Niveau Bac S/L âgé de 18 à 21 ans, ou niveau Licence 3 âgé de 19 à 25 ans). Épreuves sportives éliminatoires puis épreuves écrites poussées.",
+        specialites: [
+          "École Spéciale Militaire de Saint-Cyr (France)",
+          "École Navale & Officiers de Marine (Brest, France)",
+          "École de l'Air (Salon-de-Provence, France)",
+          "Académie Royale Militaire de Meknès (Maroc)",
+          "Écoles d'officiers au Brésil, Allemagne et pays partenaires"
+        ],
+        description: "La voie royale pour les jeunes Sénégalais visant le commandement supérieur des Armées. Les lauréats sont envoyés dans les meilleures académies militaires du monde et deviennent officiers d'active dès leur retour."
+      },
+      {
+        nom: "École Nationale des Officiers d'Active",
+        sigle: "ENOA de Thiès",
+        ville: "Thiès",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État Gratuit — Statut d'élève officier soldé",
+        acces: "Concours direct (bacheliers avec diplôme universitaire Bac+2/Bac+3) ou semi-direct pour sous-officiers",
+        specialites: [
+          "Commandement d'Infanterie et d'Armes combinées",
+          "Tactique Militaire & Stratégie Opérationnelle",
+          "Leadership et Éthique du Commandement"
+        ],
+        description: "L'école mère de formation des officiers de l'Armée de Terre sénégalaise et d'une quinzaine de pays africains partenaires."
+      },
+      {
+        nom: "École Nationale de Police et de la Formation Permanente",
+        sigle: "ENP Dakar",
+        ville: "Dakar",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours de la Fonction Publique Gratuit",
+        acces: "Concours direct selon le grade : Commissaires (Master 2 Droit), Officiers (Licence), Sous-Officiers (Bac), Agents de Police (BFEM)",
+        specialites: [
+          "Police Judiciaire & Enquêtes Criminelles",
+          "Sécurité Publique & Maintien de l'Ordre",
+          "Police Scientifique & Cybersécurité"
+        ],
+        description: "L'école assurant la formation de tous les corps de la Police Nationale du Sénégal."
+      },
+      {
+        nom: "École des Douanes du Sénégal",
+        sigle: "École des Douanes",
+        ville: "Dakar",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État Gratuit",
+        acces: "Concours annuel du Ministère des Finances (Inspecteurs niveau Master, Contrôleurs niveau Bac, Préposés niveau BFEM)",
+        specialites: [
+          "Fiscalité Douanière & Droit Commercial",
+          "Surveillance Frontalière, Portuaire et Aéroportuaire",
+          "Lutte contre la Fraude et Blanchiment"
+        ],
+        description: "Corps paramilitaire d'élite chargé de la protection de l'économie et de la perception des recettes douanières de l'État."
+      },
+      {
+        nom: "École des Sapeurs-Pompiers (BNSP)",
+        sigle: "Brigade Nationale des Sapeurs-Pompiers",
+        ville: "Dakar / Régions",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours Militaire Gratuit",
+        acces: "Concours de recrutement direct de l'Armée",
+        specialites: [
+          "Secours d'Urgence aux Personnes",
+          "Extinction des Incendies & Feux Industriels",
+          "Gestion des Risques et Catastrophes Naturelles"
+        ],
+        description: "Militaires du feu dévoués à la protection des populations sur tout le territoire national."
+      }
+    ],
+    debouches: [
+      "Officier Supérieur d'Armée (Sous-Lieutenant, Capitaine...)",
+      "Commissaire ou Inspecteur de Police",
+      "Inspecteur ou Contrôleur des Douanes",
+      "Officier de Sapeurs-Pompiers",
+      "Spécialiste de la Sécurité Nationale & du Renseignement"
+    ],
+    conseilOrientation: "Pour le CUGEM et l'ENOA, une condition physique irréprochable est requise. Les notes éliminatoires en sport recalent plus de 60% des candidats. Entraînez-vous dès la classe de Première !"
+  },
+  {
+    id: "universites",
+    title: "Universités Publiques du Sénégal",
+    badge: "Enseignement Supérieur Public",
+    icon: "🎓",
+    shortDesc: "UCAD (Dakar), UGB (Saint-Louis), UIDT (Thiès), UADB (Bambey), USSEIN (Kaolack), UNCHK...",
+    etablissements: [
+      {
+        nom: "Université Cheikh Anta Diop",
+        sigle: "UCAD Dakar",
+        ville: "Dakar",
+        statutAcces: "concours",
+        fraisOuBourse: "Université Publique d'État (Frais d'inscription annuels modiques de 25 000 à 50 000 FCFA)",
+        acces: "Attribution automatique via la plateforme nationale Campusen selon notes du Bac",
+        specialites: [
+          "FST (Sciences et Technologies)",
+          "FASEG (Sciences Économiques et Gestion)",
+          "FSJP (Sciences Juridiques et Politiques)",
+          "FLSH (Lettres et Sciences Humaines)",
+          "FASTEF (Formation des Enseignants)"
+        ],
+        description: "La plus grande université publique d'Afrique de l'Ouest, avec plus de 80 000 étudiants et des facultés historiques formant les cadres de la nation."
+      },
+      {
+        nom: "Université Gaston Berger",
+        sigle: "UGB Saint-Louis",
+        ville: "Saint-Louis (Sanar)",
+        statutAcces: "concours",
+        fraisOuBourse: "Université Publique d'État (Frais d'inscription d'État)",
+        acces: "Campusen (sélection rigoureuse sur résultats au Baccalauréat)",
+        specialites: [
+          "SAT (Sciences Appliquées et Technologies)",
+          "SJP (Droit & Sciences Politiques)",
+          "SEG (Économie & Gestion)",
+          "CRAC (Civilisations, Religions, Arts et Communication)"
+        ],
+        description: "Pôle d'excellence universitaire dans un cadre arboré à Saint-Louis, réputé pour sa rigueur et son fort taux de réussite au CAMES."
+      },
+      {
+        nom: "Université Iba Der Thiam de Thiès",
+        sigle: "UIDT Thiès",
+        ville: "Thiès",
+        statutAcces: "concours",
+        fraisOuBourse: "Université Publique d'État",
+        acces: "Campusen",
+        specialites: ["Sciences Économiques", "Santé", "Sciences & Techniques", "Génie Ferroviaire"],
+        description: "Université multipolaire en plein essor au cœur du carrefour économique de Thiès."
+      },
+      {
+        nom: "Université Alioune Diop de Bambey",
+        sigle: "UADB Bambey",
+        ville: "Bambey",
+        statutAcces: "concours",
+        fraisOuBourse: "Université Publique d'État",
+        acces: "Campusen",
+        specialites: ["TIC & Informatique", "Santé Communautaire", "Management des Organisations"],
+        description: "Spécialisée dans les filières professionnelles et les technologies de l'information."
+      },
+      {
+        nom: "Université du Sine Saloum El-Hâdj Ibrahima NIASS",
+        sigle: "USSEIN Kaolack",
+        ville: "Kaolack / Fatick / Kaffrine",
+        statutAcces: "concours",
+        fraisOuBourse: "Université Publique d'État",
+        acces: "Campusen",
+        specialites: ["Agronomie & Agroforesterie", "Élevage & Productions Animales", "Pêche & Aquaculture"],
+        description: "Grande université publique à vocation agricole et de souveraineté alimentaire au Sénégal."
+      },
+      {
+        nom: "Université Numérique Cheikh Hamidou Kane",
+        sigle: "UNCHK (ex-UVS)",
+        ville: "Réseau national des Espaces Numériques Ouverts (ENO)",
+        statutAcces: "concours",
+        fraisOuBourse: "Université Publique d'État (Ordinateur subventionné et connexion fournis)",
+        acces: "Campusen",
+        specialites: ["Développement Web & Mobile", "Administration Système & Réseaux", "Droit & Économie Numérique"],
+        description: "Université numérique d'État permettant de suivre des cours en ligne avec des Espaces Numériques Ouverts (ENO) dans chaque département du Sénégal."
+      }
+    ],
+    debouches: [
+      "Chercheurs, Enseignants et Professeurs certifiés",
+      "Juristes d'Entreprise, Avocats, Magistrats",
+      "Économistes, Analystes Financiers, Gestionnaires",
+      "Agronomes & Experts du Développement Rural",
+      "Cadres de la Fonction Publique sénégalaise"
+    ],
+    conseilOrientation: "Le système LMD demande de l'assiduité dès la 1ère semaine. Révisez quotidiennement pour valider vos crédits à la première session."
   },
   {
     id: "commerce",
@@ -213,119 +437,105 @@ const FILIERES: FiliereDetail[] = [
     etablissements: [
       {
         nom: "Centre Africain d'Études Supérieures en Gestion",
-        sigle: "CESAG",
+        sigle: "CESAG Dakar",
         ville: "Dakar",
-        acces: "Concours d'entrée et étude de dossier (Bacs L, S, G)",
-        specialites: ["Banque & Finance", "Expertise Comptable (DECOFI)", "Audit & Contrôle", "Management public"],
-        description: "Institution régionale de la BCEAO et de l'UEMOA, référence absolue en finance et comptabilité."
+        statutAcces: "mixte",
+        fraisOuBourse: "Mixte : Bourses d'excellence UEMOA/BCEAO sur concours OU Admission privée payante",
+        acces: "Concours international et sélection sur dossier académique",
+        specialites: [
+          "Banque & Marchés Financiers",
+          "Expertise Comptable & Audit (DECOFI)",
+          "Gestion des Projets et Passation des Marchés",
+          "Management Public et Privé"
+        ],
+        description: "Établissement public international de la BCEAO et de l'UEMOA, référence suprême de la finance en Afrique de l'Ouest."
       },
       {
         nom: "ESP - Département Gestion & Tertiaire",
         sigle: "ESP Tertiaire",
         ville: "Dakar",
-        acces: "Concours national d'entrée (Bac S, G, L)",
-        specialites: ["Comptabilité & Gestion Financière", "Gestion des Entreprises et Administrations (GEA)", "Commerce International"],
-        description: "Formations publiques d'excellence à frais d'inscription universitaires standards."
+        statutAcces: "mixte",
+        fraisOuBourse: "Mixte : Concours Public gratuit/boursier OU Formation continue payante",
+        acces: "Concours d'État d'entrée (Bacs S, G, L)",
+        specialites: [
+          "Comptabilité & Gestion Financière",
+          "Gestion des Entreprises et des Administrations",
+          "Commerce International & Transit"
+        ],
+        description: "Formations publiques universitaires d'élite en gestion, réputées pour l'insertion rapide de leurs diplômés."
       },
       {
         nom: "BEM Dakar & ISM (Grandes Écoles Privées Agréées)",
         sigle: "BEM / ISM",
         ville: "Dakar",
-        acces: "Concours propres et entretien de motivation",
-        specialites: ["Management International", "Supply Chain & Logistique", "Marketing Digital & Data", "Finance de Marché"],
-        description: "Business Schools sénégalaises partenaires d'universités européennes et américaines."
+        statutAcces: "payant",
+        fraisOuBourse: "Établissements Privés Payants (Possibilités de bourses partielles de partenaires)",
+        acces: "Concours propres à chaque école, tests écrits et entretien de motivation",
+        specialites: [
+          "International Business & Management",
+          "Supply Chain & Logistique Internationale",
+          "Marketing Digital, IA & Communication",
+          "Finance d'Entreprise"
+        ],
+        description: "Grandes Business Schools sénégalaises partenaires d'institutions européennes délivrant des diplômes reconnus par le CAMES."
       }
     ],
     debouches: [
-      "Analyste Financier & Trader",
-      "Expert-Comptable stagiaire / Auditeur financier",
+      "Analyste Financier & Banquier d'Affaires",
+      "Expert-Comptable & Auditeur de Cabinet",
       "Responsable Marketing & Digital Manager",
-      "Gestionnaire de Portefeuille / Banque d'affaires",
-      "Chef de projet Supply Chain & Achats"
+      "Chef de Projet Transit, Logistique & Supply Chain",
+      "Directeur Administratif et Financier (DAF)"
     ],
-    conseilOrientation: "Maîtrisez impérativement l'anglais des affaires et les outils d'analyse de données (Excel avancé, Power BI, Python financier)."
-  },
-  {
-    id: "armee",
-    title: "Forces de Défense, Sécurité & Concours Militaires",
-    badge: "Sécurité & Défense",
-    icon: "🛡️",
-    shortDesc: "ENOA, École de l'Air, Police, Gendarmerie, Douanes, Sapeurs-Pompiers...",
-    etablissements: [
-      {
-        nom: "École Nationale des Officiers d'Active",
-        sigle: "ENOA Thiès",
-        ville: "Thiès",
-        acces: "Concours direct interarmées très sélectif (Niveau Licence/Master)",
-        specialites: ["Commandement des Troupes", "Stratégie Militaire & Tactique", "Génie Militaire"],
-        description: "Moule de l'élite militaire sénégalaise et africaine. Les lauréats sortent avec le grade de Sous-Lieutenant."
-      },
-      {
-        nom: "École Nationale de Police et de la Formation Permanente",
-        sigle: "ENP Dakar",
-        ville: "Dakar",
-        acces: "Concours direct annuel (Commissaires, Officiers, Sous-Officiers, Agents)",
-        specialites: ["Police Judiciaire", "Sécurité Publique", "Renseignement & Police Scientifique"],
-        description: "Formation de l'ensemble des forces de police sénégalaises."
-      },
-      {
-        nom: "École des Douanes",
-        sigle: "École des Douanes",
-        ville: "Dakar",
-        acces: "Concours direct de la Fonction Publique (Inspecteurs, Contrôleurs, Préposés)",
-        specialites: ["Contrôle douanier & Fiscalité", "Surveillance frontalière & Maritime"],
-        description: "Corps d'élite paramilitaire sous la tutelle du Ministère des Finances."
-      },
-      {
-        nom: "Brigade Nationale des Sapeurs-Pompiers",
-        sigle: "BNSP",
-        ville: "Dakar / Régions",
-        acces: "Concours spécifique de recrutement militaire",
-        specialites: ["Secours d'urgence", "Lutte contre les sinistres et feux", "Gestion des catastrophes"],
-        description: "Engagement d'honneur et de bravoure pour sauver des vies."
-      }
-    ],
-    debouches: [
-      "Officier dans l'Armée de Terre, de l'Air ou la Marine nationale",
-      "Commissaire ou Inspecteur de Police",
-      "Inspecteur des Douanes sénégalaises",
-      "Officier de Sapeurs-Pompiers",
-      "Expert en Renseignement & Sécurité intérieure"
-    ],
-    conseilOrientation: "Une excellente condition physique est indispensable en plus des épreuves écrites. Entraînez-vous à la course de fond et aux tractions dès maintenant."
+    conseilOrientation: "Les compétences en analyse de données (Excel avancé, Power BI, SQL) et la maîtrise parfaite du français et de l'anglais sont indispensables."
   },
   {
     id: "formation-pro",
     title: "Instituts Supérieurs d'Enseignement Professionnel (ISEP)",
     badge: "Technique & Métiers",
     icon: "🔧",
-    shortDesc: "ISEP Diamniadio, Thiès, Bignona, Matam, Richard-Toll, BTS d'État...",
+    shortDesc: "ISEP Diamniadio, Thiès, Bignona, Matam, Richard-Toll, CFPT Sénégal-Japon...",
     etablissements: [
       {
-        nom: "Réseau des ISEP du Sénégal",
-        sigle: "ISEP (Diamniadio, Thiès, Matam, Bignona)",
-        ville: "National",
-        acces: "Campusen et concours d'entrée après tout type de Baccalauréat",
-        specialites: ["Maintenance Industrielle", "TIC & Réseaux Télécoms", "Agro-alimentaire", "Automobile & Mécatronique", "Bâtiment"],
-        description: "Formations courtes de 2 ans orientées à 75% vers la pratique et les stages en entreprise, menant au diplôme de Technicien Supérieur Spécialisé."
+        nom: "Réseau des Instituts Supérieurs Professionnels",
+        sigle: "ISEP (Diamniadio, Thiès, Bignona, Matam, Richard-Toll)",
+        ville: "National (plusieurs pôles)",
+        statutAcces: "concours",
+        fraisOuBourse: "Instituts Publics d'État (Frais d'inscription symboliques, formation prise en charge par l'État)",
+        acces: "Campusen et concours direct après tout type de Baccalauréat (L, S, G, T)",
+        specialites: [
+          "Maintenance Industrielle & Électromécanique",
+          "TIC, Réseaux & Systèmes Connectés",
+          "Transformation Agroalimentaire & Packaging",
+          "Électronique Automobile & Mécatronique",
+          "Bâtiment, Travaux Publics & Énergies Solaires"
+        ],
+        description: "Modèle de formation professionnelle courte d'État (2 ans) axé à 75% sur la pratique en atelier et les stages en entreprise, menant au diplôme de Technicien Supérieur Spécialisé."
       },
       {
-        nom: "Centres de Formation Professionnelle & Technique",
+        nom: "Centre de Formation Professionnelle et Technique",
         sigle: "CFPT Sénégal-Japon",
         ville: "Dakar",
-        acces: "Concours d'entrée très réputé",
-        specialites: ["Mécatronique", "Électrotechnique", "Automatisme industriel", "Froid et climatisation"],
-        description: "Fruit de la coopération nippo-sénégalaise, référence absolue en formation technique industrielle."
+        statutAcces: "concours",
+        fraisOuBourse: "Établissement Public d'État (Coopération Sénégalo-Japonaise)",
+        acces: "Concours national très compétitif (Bacs scientifiques et techniques ou BFEM selon section)",
+        specialites: [
+          "Automatisme Industriel & Robotique",
+          "Mécatronique Automobile",
+          "Électrotechnique de Puissance",
+          "Froid et Climatisation Industrielle"
+        ],
+        description: "Référence d'excellence pour l'enseignement technique industriel en Afrique subsaharienne."
       }
     ],
     debouches: [
-      "Technicien Supérieur en Mécatronique",
-      "Superviseur de chantier BTP",
-      "Chef d'atelier en Maintenance Industrielle",
-      "Entrepreneur / Artisan moderne qualifié",
-      "Intégrateur de solutions solaires et énergétiques"
+      "Technicien Supérieur Mécatronique et Automatisme",
+      "Superviseur de Maintenance Industrielle",
+      "Chef de Chantier BTP & Travaux Publics",
+      "Installateur de Parcs Solaires et Énergies Vertes",
+      "Entrepreneur Technique Indépendant"
     ],
-    conseilOrientation: "Les formations professionnelles courtes permettent d'entrer rapidement sur le marché du travail tout en gardant la possibilité de continuer en Licence pro."
+    conseilOrientation: "Ces formations permettent une insertion professionnelle immédiate dès Bac+2, tout en conservant la passerelle vers les Licences et Masters d'ingénierie."
   }
 ];
 
@@ -439,6 +649,11 @@ const CONSEILS: ConseilDetail[] = [
 export default function OrientationPage() {
   const [selectedFiliere, setSelectedFiliere] = useState<FiliereDetail | null>(null);
   const [selectedConseil, setSelectedConseil] = useState<ConseilDetail | null>(null);
+  const [modalFilter, setModalFilter] = useState<"all" | StatutAcces>("all");
+
+  const filteredEtablissements = selectedFiliere
+    ? selectedFiliere.etablissements.filter((e) => modalFilter === "all" || e.statutAcces === modalFilter)
+    : [];
 
   return (
     <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
@@ -453,8 +668,21 @@ export default function OrientationPage() {
             Orientation Scolaire & Conseils Pédagogiques
           </h1>
           <p className="text-blue-100 text-base md:text-lg leading-relaxed">
-            Trouvez la filière d'excellence qui correspond à vos ambitions, découvrez les grandes écoles d'ingénieurs et universités du Sénégal, et maîtrisez les meilleures techniques de travail pour réussir vos examens et concours.
+            Découvrez toutes les grandes écoles du Sénégal, les concours d'excellence (CPGE Thiès, EMS Dakar, CUGEM, EPT, ESP...), les universités publiques et les instituts technologiques avec leurs modes d'accès (Concours gratuits, Mixtes ou Payants).
           </p>
+
+          {/* Légende rapide des modes d'accès */}
+          <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-white/10 text-xs">
+            <span className="bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 px-3 py-1 rounded-full font-bold">
+              🟢 Concours Public d'État Gratuit
+            </span>
+            <span className="bg-amber-500/20 text-amber-200 border border-amber-400/40 px-3 py-1 rounded-full font-bold">
+              🟡 Mixte (Concours Public OU Voie Payante)
+            </span>
+            <span className="bg-sky-500/20 text-sky-200 border border-sky-400/40 px-3 py-1 rounded-full font-bold">
+              🔵 Établissement Privé Payant
+            </span>
+          </div>
         </div>
         <div className="absolute top-0 right-0 h-full w-1/3 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] hidden md:block"></div>
       </div>
@@ -481,7 +709,10 @@ export default function OrientationPage() {
           {FILIERES.map((filiere) => (
             <div
               key={filiere.id}
-              onClick={() => setSelectedFiliere(filiere)}
+              onClick={() => {
+                setSelectedFiliere(filiere);
+                setModalFilter("all");
+              }}
               className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:border-sama-primary/30 transition-all cursor-pointer flex flex-col justify-between group"
             >
               <div>
@@ -575,7 +806,7 @@ export default function OrientationPage() {
           Besoin d'un accompagnement personnalisé avec un professeur ?
         </h3>
         <p className="text-blue-100 mb-8 max-w-2xl mx-auto text-sm md:text-base">
-          Nos enseignants vérifiés dispensent des cours de renforcement, du soutien scolaire à domicile ou en ligne, et vous préparent spécifiquement aux concours des grandes écoles.
+          Nos enseignants vérifiés dispensent des cours de renforcement, du soutien scolaire à domicile ou en ligne, et vous préparent spécifiquement aux concours des grandes écoles (CPGE, EPT, ESP, EMS, CUGEM...).
         </p>
         <Link href="/enseignants" className="inline-block bg-sama-orange hover:bg-orange-600 text-white font-extrabold px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5">
           Trouver un professeur pour mon orientation
@@ -583,7 +814,7 @@ export default function OrientationPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* MODAL INTERACTIF : DÉTAIL D'UNE FILIÈRE / ÉCOLES D'INGÉNIEURS             */}
+      {/* MODAL INTERACTIF : DÉTAIL D'UNE FILIÈRE / ÉCOLES & MODES D'ACCÈS          */}
       {/* ========================================================================= */}
       {selectedFiliere && (
         <div
@@ -591,7 +822,7 @@ export default function OrientationPage() {
           onClick={() => setSelectedFiliere(null)}
         >
           <div
-            className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-10 my-8"
+            className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl p-6 md:p-10 my-6"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Modal */}
@@ -615,10 +846,39 @@ export default function OrientationPage() {
               </button>
             </div>
 
+            {/* Filtre par mode d'accès dans la modale */}
+            <div className="mb-6 bg-gray-50 p-3 rounded-2xl border border-gray-200 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-gray-500 uppercase px-2">Filtrer par statut :</span>
+              <button
+                onClick={() => setModalFilter("all")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${modalFilter === "all" ? "bg-sama-blue text-white shadow-sm" : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"}`}
+              >
+                Tous ({selectedFiliere.etablissements.length})
+              </button>
+              <button
+                onClick={() => setModalFilter("concours")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${modalFilter === "concours" ? "bg-emerald-600 text-white shadow-sm" : "bg-white text-emerald-800 hover:bg-emerald-50 border border-emerald-200"}`}
+              >
+                🟢 100% Concours Gratuit ({selectedFiliere.etablissements.filter(e => e.statutAcces === "concours").length})
+              </button>
+              <button
+                onClick={() => setModalFilter("mixte")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${modalFilter === "mixte" ? "bg-amber-600 text-white shadow-sm" : "bg-white text-amber-800 hover:bg-amber-50 border border-amber-200"}`}
+              >
+                🟡 Mixte Concours & Payant ({selectedFiliere.etablissements.filter(e => e.statutAcces === "mixte").length})
+              </button>
+              <button
+                onClick={() => setModalFilter("payant")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${modalFilter === "payant" ? "bg-sky-600 text-white shadow-sm" : "bg-white text-sky-800 hover:bg-sky-50 border border-sky-200"}`}
+              >
+                🔵 Établissement Privé Payant ({selectedFiliere.etablissements.filter(e => e.statutAcces === "payant").length})
+              </button>
+            </div>
+
             {/* Conseil Clé */}
             <div className="bg-blue-50 border-l-4 border-sama-primary p-4 rounded-r-2xl mb-8">
               <p className="text-xs font-bold uppercase text-sama-primary mb-1">
-                📌 Conseil de l'Équipe Pédagogique
+                📌 Conseil d'Orientation
               </p>
               <p className="text-sm text-gray-700 font-medium">
                 {selectedFiliere.conseilOrientation}
@@ -628,27 +888,52 @@ export default function OrientationPage() {
             {/* Liste détaillée des établissements */}
             <div className="mb-8">
               <h4 className="text-xl font-extrabold text-gray-900 mb-4 flex items-center gap-2">
-                <span>🏛️</span> Établissements de référence au Sénégal
+                <span>🏛️</span> Établissements & Conditions d'admission
               </h4>
 
               <div className="space-y-4">
-                {selectedFiliere.etablissements.map((etab, idx) => (
+                {filteredEtablissements.map((etab, idx) => (
                   <div
                     key={idx}
                     className="p-5 rounded-2xl border border-gray-100 bg-gray-50/70 hover:bg-white hover:border-sama-primary/40 hover:shadow-md transition"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
                       <div>
-                        <h5 className="font-extrabold text-lg text-gray-900">
-                          {etab.nom}
-                        </h5>
-                        <span className="text-xs font-bold text-sama-primary uppercase tracking-wider">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h5 className="font-extrabold text-lg text-gray-900">
+                            {etab.nom}
+                          </h5>
+                          {etab.statutAcces === "concours" && (
+                            <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-300">
+                              🟢 100% Concours d'État Gratuit
+                            </span>
+                          )}
+                          {etab.statutAcces === "mixte" && (
+                            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-300">
+                              🟡 Mixte : Concours Public OU Section Payante
+                            </span>
+                          )}
+                          {etab.statutAcces === "payant" && (
+                            <span className="bg-sky-100 text-sky-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-sky-300">
+                              🔵 Établissement Privé Payant
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-sama-primary uppercase tracking-wider block">
                           {etab.sigle} — 📍 {etab.ville}
                         </span>
                       </div>
-                      <span className="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1 rounded-lg font-medium self-start sm:self-center">
-                        🎯 {etab.acces}
-                      </span>
+                    </div>
+
+                    {/* Encadré Frais et Bourse */}
+                    <div className="mb-3 bg-white p-3 rounded-xl border border-gray-200 text-xs">
+                      <span className="font-bold text-gray-700 block mb-0.5">💰 Modalité Financière & Bourse :</span>
+                      <p className="text-gray-600 font-medium">{etab.fraisOuBourse}</p>
+                    </div>
+
+                    <div className="mb-3 text-xs text-gray-700">
+                      <strong className="text-gray-900">🎯 Conditions d'accès : </strong>
+                      {etab.acces}
                     </div>
 
                     <p className="text-sm text-gray-600 mb-3 leading-relaxed">
