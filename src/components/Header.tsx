@@ -35,6 +35,7 @@ export default function Header() {
     { href: "/examens", label: "Exercices & Examens" },
     { href: "/videos", label: "Vidéos ⭐" },
     { href: "/classes", label: "Classes 🎥" },
+    { href: "/orientation", label: "Orientation 🧭" },
     { href: "/apropos", label: "À propos" },
   ];
 

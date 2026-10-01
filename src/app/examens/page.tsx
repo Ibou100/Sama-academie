@@ -11,13 +11,35 @@ const DEFAULT_DOCUMENTS = [
   { id: "4", level: "PRIMAIRE", title: "CFEE et entrée en 6e", subject: "Maths & Français", color: "bg-sama-blue", downloads: "3 020", pages_info: "24 sujets d'entraînement", file_url: "#" },
 ];
 
-const FILTER_LEVELS = ["Tous les niveaux", "Primaire", "Collège", "Lycée", "BAC", "BFEM", "CFEE", "CONCOURS"];
+const FILTER_LEVELS = [
+  "Tous les niveaux",
+  "Primaire",
+  "Collège",
+  "Lycée",
+  "BAC",
+  "BFEM",
+  "CFEE",
+  "Concours",
+];
+
+// Tous les concours de l'État listés dans le cahier des charges
+const CONCOURS = [
+  { name: "ENA", full: "École Nationale d'Administration", icon: "🏛️", desc: "Préfets, Diplomatiques, Administrateurs civils", couleur: "bg-blue-700" },
+  { name: "Police", full: "Police Nationale", icon: "👮🏾", desc: "Agents de Police, Commissaires, Inspecteurs", couleur: "bg-slate-700" },
+  { name: "Gendarmerie", full: "Gendarmerie Nationale", icon: "🎖️", desc: "Sous-officiers, Gendarmes de Carrière", couleur: "bg-green-700" },
+  { name: "Douanes", full: "Douanes Sénégalaises", icon: "🛃", desc: "Inspecteurs, Contrôleurs des Douanes", couleur: "bg-yellow-700" },
+  { name: "INFAS", full: "Institut National de Formation en Santé", icon: "⚕️", desc: "Infirmiers, Sages-femmes, Techniciens de santé", couleur: "bg-red-700" },
+  { name: "FASTEF", full: "Faculté des Sciences et Technologies de l'Éducation", icon: "📚", desc: "CAPES, Professorat, CAEM", couleur: "bg-indigo-700" },
+  { name: "Eaux & Forêts", full: "Eaux, Forêts, Chasse & Pêche", icon: "🌳", desc: "Agents forestiers, Inspecteurs", couleur: "bg-emerald-700" },
+  { name: "Sapeurs-Pompiers", full: "Brigade des Sapeurs-Pompiers", icon: "🚒", desc: "Soldats, Sous-officiers du feu", couleur: "bg-orange-700" },
+];
 
 export default function Examens() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [selectedFilter, setSelectedFilter] = useState("Tous les niveaux");
+  const [activeTab, setActiveTab] = useState<"annales" | "concours">("annales");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -48,7 +70,6 @@ export default function Examens() {
     }
   };
 
-  // Filtrage dynamique des PDFs
   const filteredDocuments = documents.filter((doc) => {
     if (selectedFilter === "Tous les niveaux") return true;
     return doc.level.toUpperCase().includes(selectedFilter.toUpperCase());
@@ -85,31 +106,50 @@ export default function Examens() {
         </div>
       )}
 
+      {/* ENTÊTE */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Bibliothèque numérique</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Exercices & Examens</h1>
         <p className="text-gray-500 text-sm mb-6">
-          Les sujets d&apos;examens sont accessibles à tous. Créez un compte gratuit pour les télécharger.
+          Annales corrigées, sujets officiels et préparation aux concours de l&apos;État sénégalais.
         </p>
 
-        {/* Boutons Filtres Niveaux */}
-        <div className="flex flex-wrap gap-2">
-          {FILTER_LEVELS.map((lvl) => (
-            <button
-              key={lvl}
-              onClick={() => setSelectedFilter(lvl)}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition shadow-sm ${
-                selectedFilter === lvl
-                  ? "bg-sama-primary text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              {lvl}
-            </button>
-          ))}
+        {/* Onglets Annales / Concours */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab("annales")}
+            className={`px-5 py-2 rounded-full font-bold text-sm transition ${activeTab === "annales" ? "bg-sama-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+          >
+            📄 Annales scolaires
+          </button>
+          <button
+            onClick={() => setActiveTab("concours")}
+            className={`px-5 py-2 rounded-full font-bold text-sm transition ${activeTab === "concours" ? "bg-purple-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+          >
+            🏆 Concours de l'État
+          </button>
         </div>
+
+        {/* Filtres niveaux (seulement pour annales) */}
+        {activeTab === "annales" && (
+          <div className="flex flex-wrap gap-2">
+            {FILTER_LEVELS.map((lvl) => (
+              <button
+                key={lvl}
+                onClick={() => setSelectedFilter(lvl)}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition shadow-sm ${
+                  selectedFilter === lvl
+                    ? "bg-sama-primary text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {lvl}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Bannière pour non-connectés */}
+      {/* Bannière inscription */}
       {!isLoggedIn && (
         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -124,41 +164,78 @@ export default function Examens() {
         </div>
       )}
 
-      {/* Cartes PDFs Filtrées */}
-      {filteredDocuments.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 mb-8">
-          <i className="fas fa-folder-open text-4xl text-gray-300 mb-3 block"></i>
-          <h3 className="font-bold text-gray-700">Aucun document ne correspond à ce filtre</h3>
-          <p className="text-xs text-gray-400 mt-1">Sélectionnez un autre niveau ou réinitialisez les filtres.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {filteredDocuments.map((doc) => (
-            <div key={doc.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition">
-              <div className="bg-sama-blue text-white p-6 pb-8">
-                <span className="text-xs font-bold uppercase tracking-widest opacity-80 mb-2 block">{doc.level}</span>
-                <h3 className="text-lg font-bold leading-tight">{doc.title}</h3>
-              </div>
-              <div className="p-5 flex-grow flex flex-col justify-between bg-white -mt-4 rounded-t-2xl relative">
-                <p className="text-sm text-gray-500 mb-4 font-medium">
-                  {doc.pages_info === "10 sujets avec corrigés" ? "Sujet officiel PDF" : doc.pages_info || "Sujet officiel PDF"}
-                </p>
-                <div className="flex justify-between items-center mt-auto">
-                  <span className="text-xs text-gray-400 font-medium">{doc.subject}</span>
+      {/* ===== ONGLET ANNALES ===== */}
+      {activeTab === "annales" && (
+        <>
+          {filteredDocuments.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 mb-8">
+              <i className="fas fa-folder-open text-4xl text-gray-300 mb-3 block"></i>
+              <h3 className="font-bold text-gray-700">Aucun document ne correspond à ce filtre</h3>
+              <p className="text-xs text-gray-400 mt-1">Sélectionnez un autre niveau ou réinitialisez les filtres.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              {filteredDocuments.map((doc) => (
+                <div key={doc.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition">
+                  <div className="bg-sama-blue text-white p-6 pb-8">
+                    <span className="text-xs font-bold uppercase tracking-widest opacity-80 mb-2 block">{doc.level}</span>
+                    <h3 className="text-lg font-bold leading-tight">{doc.title}</h3>
+                  </div>
+                  <div className="p-5 flex-grow flex flex-col justify-between bg-white -mt-4 rounded-t-2xl relative">
+                    <p className="text-sm text-gray-500 mb-4 font-medium">{doc.pages_info || "Sujet officiel PDF"}</p>
+                    <div className="flex justify-between items-center mt-auto">
+                      <span className="text-xs text-gray-400 font-medium">{doc.subject}</span>
+                      <button
+                        onClick={() => handleDownload(doc.file_url)}
+                        className={`flex items-center gap-1 font-bold text-sm ${isLoggedIn ? "text-sama-primary hover:underline" : "text-gray-400 hover:text-sama-primary"}`}
+                      >
+                        {isLoggedIn ? (
+                          <><i className="fas fa-download text-xs"></i> Télécharger</>
+                        ) : (
+                          <><i className="fas fa-lock text-xs"></i> Télécharger</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ===== ONGLET CONCOURS DE L'ÉTAT ===== */}
+      {activeTab === "concours" && (
+        <div className="mb-12">
+          <div className="mb-8 bg-purple-50 border border-purple-100 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-purple-900 mb-2">🏆 Concours de l'État — Sénégal</h2>
+            <p className="text-purple-700 text-sm">
+              Retrouvez les annales et les ressources de préparation pour tous les grands concours de la Fonction Publique sénégalaise.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {CONCOURS.map((concours, index) => (
+              <div key={index} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition group">
+                <div className={`${concours.couleur} text-white p-6 pb-8`}>
+                  <span className="text-4xl mb-3 block">{concours.icon}</span>
+                  <h3 className="text-xl font-extrabold leading-tight">{concours.name}</h3>
+                </div>
+                <div className="p-5 flex-grow flex flex-col justify-between bg-white -mt-4 rounded-t-2xl relative">
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">{concours.full}</p>
+                    <p className="text-sm text-gray-600 mb-4">{concours.desc}</p>
+                  </div>
                   <button
-                    onClick={() => handleDownload(doc.file_url)}
-                    className={`flex items-center gap-1 font-bold text-sm ${isLoggedIn ? "text-sama-primary hover:underline" : "text-gray-400 hover:text-sama-primary"}`}
+                    onClick={() => handleDownload("#")}
+                    className="flex items-center gap-1 font-bold text-sm text-purple-700 hover:underline"
                   >
-                    {isLoggedIn ? (
-                      <><i className="fas fa-download text-xs"></i> Télécharger</>
-                    ) : (
-                      <><i className="fas fa-lock text-xs"></i> Télécharger</>
-                    )}
+                    <i className="fas fa-file-alt text-xs"></i> Voir les sujets
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </main>
