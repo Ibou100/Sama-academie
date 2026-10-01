@@ -253,11 +253,28 @@ const FILIERES: FiliereDetail[] = [
   },
   {
     id: "armee",
-    title: "Grandes Écoles Militaires, CUGEM & Défense",
-    badge: "Sécurité & Défense",
-    icon: "🛡️",
-    shortDesc: "Concours CUGEM (Écoles étrangères), ENOA Thiès, École de l'Air, Police, Douanes, Gendarmerie...",
+    title: "Haute Administration Publique (ENA), Forces Armées & Sécurité",
+    badge: "Administration & Défense",
+    icon: "🏛️",
+    shortDesc: "ENA Sénégal, Concours CUGEM (Écoles étrangères), ENOA Thiès, Douanes, Police...",
     etablissements: [
+      {
+        nom: "École Nationale d'Administration du Sénégal",
+        sigle: "ENA Sénégal",
+        ville: "Dakar (Colobane / Bd Dial Diop)",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État Gratuit — Élèves fonctionnaires rémunérés par l'État pendant toute la durée de la formation",
+        acces: "Concours direct national annuel : Cycle Supérieur (Master 2 / Maîtrise Bac+4/5), Cycle Moyen Supérieur (Licence Bac+3), Cycle Moyen (Bac+2)",
+        specialites: [
+          "Administration Générale (Préfets, Sous-Préfets, Administrateurs civils)",
+          "Diplomatie (Conseillers des Affaires Étrangères, Diplomates)",
+          "Trésor Public (Inspecteurs et Contrôleurs du Trésor)",
+          "Impôts et Domaines (Inspecteurs des Impôts et du Cadastre)",
+          "Travail et Sécurité Sociale (Inspecteurs du Travail)",
+          "Enquêtes Économiques & Commerce Extérieur"
+        ],
+        description: "La prestigieuse institution de la République formant la haute fonction publique et les grands commis de l'État du Sénégal. L'admission se fait sur concours très sélectif et garantit une intégration directe dans la haute administration sénégalaise."
+      },
       {
         nom: "Concours Unique d'entrée dans les Grandes Écoles Militaires étrangères",
         sigle: "Concours CUGEM",
@@ -332,13 +349,17 @@ const FILIERES: FiliereDetail[] = [
       }
     ],
     debouches: [
+      "Administrateur Civil, Préfet, Sous-Préfet, Gouverneur (ENA)",
+      "Diplomate, Ambassadeur, Conseiller des Affaires Étrangères (ENA)",
+      "Inspecteur des Impôts et Domaines / Inspecteur du Trésor Public (ENA)",
+      "Inspecteur du Travail et de la Sécurité Sociale (ENA)",
       "Officier Supérieur d'Armée (Sous-Lieutenant, Capitaine...)",
       "Commissaire ou Inspecteur de Police",
       "Inspecteur ou Contrôleur des Douanes",
       "Officier de Sapeurs-Pompiers",
       "Spécialiste de la Sécurité Nationale & du Renseignement"
     ],
-    conseilOrientation: "Pour le CUGEM et l'ENOA, une condition physique irréprochable est requise. Les notes éliminatoires en sport recalent plus de 60% des candidats. Entraînez-vous dès la classe de Première !"
+    conseilOrientation: "Pour l'ENA, une excellente maîtrise de la culture générale, du droit public, des finances publiques et de l'économie est requise. Pour le CUGEM et l'ENOA, une condition physique irréprochable est indispensable en plus de l'écrit !"
   },
   {
     id: "universites",
