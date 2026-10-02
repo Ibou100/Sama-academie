@@ -22,21 +22,26 @@ const FILTER_LEVELS = [
   "Concours",
 ];
 
-// Tous les concours de l'État listés dans le cahier des charges et grandes écoles
+// Tous les concours officiels de l'État sénégalais et grandes écoles
 const CONCOURS = [
-  { name: "ENA", full: "École Nationale d'Administration", icon: "🏛️", desc: "Préfets, Diplomates, Administrateurs civils", couleur: "bg-blue-700" },
-  { name: "CUGEM", full: "Concours Unique Grandes Écoles Militaires", icon: "🌍", desc: "Saint-Cyr, Navale, École de l'Air, Meknès (Officiers à l'étranger)", couleur: "bg-red-800" },
-  { name: "EMS Dakar", full: "École Militaire de Santé (Camp Dial Diop)", icon: "⚕️", desc: "Médecins, Pharmaciens et Vétérinaires militaires (Logés, nourris et rémunérés)", couleur: "bg-emerald-800" },
-  { name: "EAA Thiès", full: "École de l'Armée de l'Air (Base Aérienne)", icon: "✈️", desc: "Pilotes de chasse, Transport, Hélicoptères et Mécaniciens (BA 70)", couleur: "bg-sky-800" },
-  { name: "CPGE Thiès", full: "Classes Préparatoires aux Grandes Écoles", icon: "📐", desc: "MPSI, PCSI — Bourse d'État d'excellence pour bacheliers S", couleur: "bg-indigo-800" },
+  { name: "CREM / CRFPE", full: "Recrutement des Élèves-Maîtres (Primaire)", icon: "🎒", desc: "Instituteurs d'école primaire de l'État (CAP)", couleur: "bg-emerald-700" },
+  { name: "FASTEF", full: "Faculté des Sciences de l'Éducation (ex-ENS)", icon: "📚", desc: "CAPES & CAEM : Professeurs de Lycée et Collège", couleur: "bg-indigo-700" },
+  { name: "INSEPS", full: "Éducation Populaire et Sport (UCAD)", icon: "🏃🏾‍♂️", desc: "CAPEPS : Professeurs d'Éducation Physique & Sportive (EPS)", couleur: "bg-amber-700" },
+  { name: "ENSETP", full: "Enseignement Technique & Professionnel", icon: "📐", desc: "CAPET : Professeurs de Lycées Techniques d'État", couleur: "bg-blue-800" },
+  { name: "CFJ", full: "Centre de Formation Judiciaire du Sénégal", icon: "⚖️", desc: "Magistrats (Juges, Procureurs) et Greffiers en Chef", couleur: "bg-slate-800" },
+  { name: "ENA", full: "École Nationale d'Administration", icon: "🏛️", desc: "Préfets, Diplomates, Trésor, Impôts & Domaines", couleur: "bg-blue-700" },
+  { name: "ENSAE", full: "Statistique et Analyse Économique (ANSD)", icon: "📊", desc: "Ingénieurs Statisticiens Économistes (ISE & ITS)", couleur: "bg-teal-800" },
+  { name: "CUGEM", full: "Grandes Écoles Militaires étrangères", icon: "🌍", desc: "Saint-Cyr, Navale, École de l'Air, Meknès (Officiers)", couleur: "bg-red-800" },
+  { name: "EMS Dakar", full: "École Militaire de Santé (Camp Dial Diop)", icon: "⚕️", desc: "Médecins, Pharmaciens, Chirurgiens-Dentistes militaires", couleur: "bg-emerald-800" },
+  { name: "EAA Thiès", full: "École de l'Armée de l'Air (Base BA 70)", icon: "✈️", desc: "Pilotes de chasse, Transport, Hélicoptères & Avionique", couleur: "bg-sky-800" },
+  { name: "CPGE Thiès", full: "Classes Préparatoires aux Grandes Écoles", icon: "🔬", desc: "MPSI, PCSI — Prépas scientifiques d'excellence", couleur: "bg-purple-800" },
+  { name: "EPT / ESP", full: "Concours d'Ingénieurs Polytechnique", icon: "💻", desc: "Diplôme d'Ingénieur de Conception d'État (DIC)", couleur: "bg-cyan-800" },
   { name: "Police", full: "Police Nationale du Sénégal", icon: "👮🏾", desc: "Commissaires, Officiers, Sous-Officiers, Agents", couleur: "bg-slate-700" },
-  { name: "Gendarmerie", full: "Gendarmerie Nationale", icon: "🎖️", desc: "Sous-officiers, Gendarmes de Carrière", couleur: "bg-green-700" },
-  { name: "Douanes", full: "Douanes Sénégalaises", icon: "🛃", desc: "Inspecteurs, Contrôleurs des Douanes", couleur: "bg-yellow-700" },
+  { name: "Gendarmerie", full: "Gendarmerie Nationale", icon: "🎖️", desc: "Sous-officiers et Officiers de Gendarmerie", couleur: "bg-green-700" },
+  { name: "Douanes", full: "Douanes Sénégalaises", icon: "🛃", desc: "Inspecteurs, Contrôleurs et Préposés des Douanes", couleur: "bg-yellow-700" },
   { name: "INFAS / ENDSS", full: "Santé Publique & Soins Infirmiers", icon: "🏥", desc: "Infirmiers d'État, Sages-femmes, Techniciens de santé", couleur: "bg-rose-700" },
-  { name: "FASTEF", full: "Faculté des Sciences et Technologies de l'Éducation", icon: "📚", desc: "CAPES, Professorat de Lycée et Collège, CAEM", couleur: "bg-indigo-700" },
-  { name: "Eaux & Forêts", full: "Eaux, Forêts, Chasse & Pêche", icon: "🌳", desc: "Agents forestiers, Inspecteurs des Eaux et Forêts", couleur: "bg-teal-700" },
-  { name: "Sapeurs-Pompiers", full: "Brigade Nationale des Sapeurs-Pompiers", icon: "🚒", desc: "Soldats et Sous-officiers du feu (BNSP)", couleur: "bg-orange-700" },
-  { name: "EPT / ESP", full: "Concours d'Ingénieurs Polytechnique", icon: "💻", desc: "Concours direct d'entrée ingénieurs de conception (DIC)", couleur: "bg-cyan-800" }
+  { name: "Eaux & Forêts", full: "Eaux, Forêts, Chasse & Parcs", icon: "🌳", desc: "Agents et Inspecteurs forestiers de l'État", couleur: "bg-teal-700" },
+  { name: "Sapeurs-Pompiers", full: "Brigade Nationale des Sapeurs-Pompiers", icon: "🚒", desc: "Militaires et Sous-officiers du feu (BNSP)", couleur: "bg-orange-700" }
 ];
 
 export default function Examens() {

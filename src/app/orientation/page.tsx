@@ -252,11 +252,100 @@ const FILIERES: FiliereDetail[] = [
     conseilOrientation: "Pour le concours de l'EMS : commencez la préparation physique très tôt et assurez-vous d'avoir au moins 13/20 en SVT, Physique-Chimie et Maths."
   },
   {
-    id: "armee",
-    title: "Haute Administration Publique (ENA), Forces Armées & Sécurité",
-    badge: "Administration & Défense",
-    icon: "🏛️",
-    shortDesc: "ENA Sénégal, Concours CUGEM (Écoles étrangères), ENOA Thiès, Douanes, Police...",
+    id: "education",
+    title: "Métiers de l'Éducation, Professorat & Sport",
+    badge: "Enseignement & Pédagogie",
+    icon: "📚",
+    shortDesc: "CREM / CRFPE (Maîtres du Primaire), FASTEF (Lycée & Collège), INSEPS (Professeurs d'EPS), ENSETP (Technique)...",
+    etablissements: [
+      {
+        nom: "Centres Régionaux de Formation des Personnels de l'Éducation",
+        sigle: "CREM / CRFPE",
+        ville: "Centres régionaux (Dakar, Thiès, Kaolack, Saint-Louis, Ziguinchor...)",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État Gratuit — Élèves-maîtres boursiers de l'État sénégalais et intégration directe dans la Fonction Publique",
+        acces: "Concours de Recrutement des Élèves-Maîtres (CREM) ouvert aux titulaires du Baccalauréat (toutes séries L, S, G), âgés de 18 à 33 ans. Épreuves de français, dictée, mathématiques et entretien oral devant jury.",
+        specialites: [
+          "Option Français (Instituteurs de l'Enseignement Élémentaire)",
+          "Option Franco-Arabe (Enseignement Bilingue & Daaras modernes)",
+          "Pédagogie Générale, Psychologie de l'Enfant & Didactique des disciplines"
+        ],
+        description: "La voie officielle unique de l'État du Sénégal pour devenir Instituteur d'école primaire. La formation en centre débouche sur le Certificat d'Aptitude Pédagogique (CAP) et le statut de fonctionnaire instituteur de l'État."
+      },
+      {
+        nom: "Faculté des Sciences et Technologies de l'Éducation et de la Formation",
+        sigle: "FASTEF (UCAD - ex École Normale Supérieure)",
+        ville: "Dakar (Fann)",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État Gratuit — Bourse de formation et reclassement au statut de professeur de l'État",
+        acces: "Concours direct d'État très disputé selon le diplôme d'entrée : Section F1A (Baccalauréat), Section F1B (Licence pour le CAEM), Section F1C (Master 2 pour le CAPES). Épreuves de spécialité et dissertation pédagogique.",
+        specialites: [
+          "CAPES (Professeur Certifié de Lycée - Maths, PC, SVT, Philosophie, Français, Anglais, Histoire-Géo...)",
+          "CAEM / CAES (Professeur de Collège d'Enseignement Moyen)",
+          "Inspecteurs de l'Éducation Nationale (IEN)"
+        ],
+        description: "L'institution suprême de formation des professeurs d'enseignement moyen et secondaire (collèges et lycées) au Sénégal, rattachée à l'UCAD."
+      },
+      {
+        nom: "Institut National Supérieur de l'Éducation Populaire et du Sport",
+        sigle: "INSEPS (UCAD)",
+        ville: "Dakar (Corniche Ouest)",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État Gratuit (Bourses d'État universitaires)",
+        acces: "Concours direct d'entrée annuel (Niveau Baccalauréat ou Licence). Épreuves physiques et sportives éliminatoires (athlétisme, gymnastique, sports collectifs) suivies d'épreuves écrites scientifiques et de français.",
+        specialites: [
+          "CAPEPS (Certificat d'Aptitude au Professorat d'Éducation Physique et Sportive)",
+          "CAPEME (Professeur d'EPS pour le Collège)",
+          "Management et Économie du Sport",
+          "Entraînement Sportif de Haut Niveau & Préparation Physique"
+        ],
+        description: "Le temple national de formation des professeurs d'EPS (Éducation Physique et Sportive) des lycées et collèges du Sénégal, des cadres du Ministère des Sports et des directeurs techniques des fédérations sportives."
+      },
+      {
+        nom: "École Normale Supérieure d'Enseignement Technique et Professionnel",
+        sigle: "ENSETP (UCAD)",
+        ville: "Dakar",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État Gratuit",
+        acces: "Concours d'entrée national (Niveau Bac technique / scientifique ou Licence technique)",
+        specialites: [
+          "CAPET (Professeur d'Enseignement Technique : Génie Civil, Génie Mécanique, Génie Électrique)",
+          "Économie, Gestion & Techniques Commerciales",
+          "Sciences Industrielles de l'Ingénieur"
+        ],
+        description: "L'école normale formatrice des professeurs des Lycées Techniques sénégalais (Lycée Maurice Delafosse, Lycée Technique de Saint-Louis, Diourbel...) et des centres de formation professionnelle."
+      },
+      {
+        nom: "Centre National d'Éducation Populaire et Sportive",
+        sigle: "CNEPS de Thiès",
+        ville: "Thiès",
+        statutAcces: "concours",
+        fraisOuBourse: "Établissement Public d'État (Prise en charge publique)",
+        acces: "Concours direct (Niveau Bac ou BFEM selon la section)",
+        specialites: [
+          "Maîtres d'Éducation Physique et Sportive",
+          "Animateurs Socio-Éducatifs & Cadres de Jeunesse",
+          "Encadreurs Sportifs de Proximité"
+        ],
+        description: "Centre national historique basé à Thiès formant les éducateurs sportifs et les cadres de l'animation de jeunesse et du sport communautaire."
+      }
+    ],
+    debouches: [
+      "Instituteur d'École Primaire (Fonctionnaire de l'État - CRFPE)",
+      "Professeur Certifié de Lycée / Collège (Maths, Français, PC, SVT... - FASTEF)",
+      "Professeur d'Éducation Physique et Sportive (EPS - INSEPS)",
+      "Professeur d'Enseignement Technique et Professionnel (ENSETP)",
+      "Inspecteur de l'Éducation Nationale (IEN)",
+      "Cadre / Directeur Technique au Ministère des Sports et Fédérations"
+    ],
+    conseilOrientation: "Pour le CREM (primaire) : soignez impérativement l'orthographe, la dictée et la rédaction (zéro faute éliminatoire). Pour l'INSEPS (EPS) : entraînez-vous en demi-fond (1000m), sprint (100m) et gymnastique pour éviter les notes éliminatoires en sport !"
+  },
+  {
+    id: "justice-administration",
+    title: "Haute Administration Publique (ENA), Justice & Magistrature (CFJ)",
+    badge: "Droit & Haute Fonction Publique",
+    icon: "⚖️",
+    shortDesc: "ENA Sénégal (Administrateurs & Diplomates), CFJ (Magistrats & Greffiers), ENSAE (Statisticiens-Économistes)...",
     etablissements: [
       {
         nom: "École Nationale d'Administration du Sénégal",
@@ -274,6 +363,66 @@ const FILIERES: FiliereDetail[] = [
           "Enquêtes Économiques & Commerce Extérieur"
         ],
         description: "La prestigieuse institution de la République formant la haute fonction publique et les grands commis de l'État du Sénégal. L'admission se fait sur concours très sélectif et garantit une intégration directe dans la haute administration sénégalaise."
+      },
+      {
+        nom: "Centre de Formation Judiciaire du Sénégal",
+        sigle: "CFJ Dakar",
+        ville: "Dakar",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État Gratuit — Élèves magistrats et greffiers rémunérés avec une solde d'État dès leur admission",
+        acces: "Concours direct très sélectif : Section Magistrature (Master 2 en Droit, jusqu'à 40 ans), Section Greffe (Licence en Droit, jusqu'à 33 ans). Épreuves de dissertation juridique, cas pratique et grand oral.",
+        specialites: [
+          "Section Magistrature : Juges du Siège, Procureurs de la République, Juges d'Instruction",
+          "Section Greffe : Greffiers en Chef, Greffiers des Cours et Tribunaux"
+        ],
+        description: "L'institution judiciaire d'élite formant l'ensemble des magistrats et greffiers de la République du Sénégal. Intégration immédiate au corps de la magistrature sénégalaise."
+      },
+      {
+        nom: "École Nationale de la Statistique et de l'Analyse Économique",
+        sigle: "ENSAE Pierre Ndiaye (ANSD)",
+        ville: "Dakar",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'Excellence Gratuit — Bourse d'excellence complète de l'ANSD / État du Sénégal et débouchés internationaux",
+        acces: "Concours international d'entrée : Ingénieurs Statisticiens Économistes (ISE - Bac+2 Maths/Prépas), Ingénieurs des Travaux Statistiques (ITS - Bac S1/S2 ou L2 Maths), Analystes Statisticiens (AS)",
+        specialites: [
+          "Ingénierie Statistique, Data Science & Big Data",
+          "Macroéconomie & Modélisation Économétrique",
+          "Économie du Développement & Politiques Publiques"
+        ],
+        description: "Pôle d'excellence sous-régionale rattaché à l'Agence Nationale de la Statistique et de la Démographie (ANSD), formant les cerveaux de la modélisation économique et des données en Afrique."
+      }
+    ],
+    debouches: [
+      "Magistrat : Juge au Tribunal, Procureur de la République, Juge d'Instruction (CFJ)",
+      "Greffier en Chef et Greffier des Tribunaux (CFJ)",
+      "Administrateur Civil, Préfet, Sous-Préfet, Gouverneur (ENA)",
+      "Diplomate, Ambassadeur, Conseiller des Affaires Étrangères (ENA)",
+      "Inspecteur des Impôts / Inspecteur du Trésor Public (ENA)",
+      "Ingénieur Statisticien Économiste / Data Scientist (ENSAE)"
+    ],
+    conseilOrientation: "Pour le CFJ et l'ENA, lisez les décisions de justice et l'actualité institutionnelle et constitutionnelle. Pour l'ENSAE, un niveau exceptionnel en mathématiques pures (analyse, algèbre) est requis !"
+  },
+  {
+    id: "armee",
+    title: "Forces Armées, Défense Nationale & Sécurité",
+    badge: "Sécurité & Défense",
+    icon: "🛡️",
+    shortDesc: "EAA Thiès (Armée de l'Air), Concours CUGEM, ENOA Thiès, Douanes, Police, Gendarmerie, Sapeurs-Pompiers, Eaux & Forêts...",
+    etablissements: [
+      {
+        nom: "École de l'Armée de l'Air du Sénégal",
+        sigle: "EAA de Thiès (Base Aérienne BA 70)",
+        ville: "Thiès",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours Militaire d'État Gratuit — Prise en charge intégrale, élèves officiers et sous-officiers nourris, logés et soldés",
+        acces: "Concours direct national (concours.eaa.sn) : Élèves-officiers pilotes (Licence 3 scientifique/technique, 18-25 ans) ou Élèves sous-officiers mécaniciens (Bacs S1, S2, S3, T, 18-23 ans). Visite médicale d'aptitude pilote/militaire stricte.",
+        specialites: [
+          "Pilotage Militaire (Avions de Chasse, Transport, Hélicoptères de combat)",
+          "Maintenance et Avionique Aéronautique (Cellule, Moteurs, Systèmes d'armes)",
+          "Contrôle de la Circulation Aérienne & Navigation",
+          "Télécommunications Militaires & Systèmes Radars"
+        ],
+        description: "L'institution nationale de référence pour la formation des pilotes et des techniciens aéronautiques de pointe de l'Armée de l'Air sénégalaise, basée à la Base Aérienne Capitaine Andalla Cissé de Thiès."
       },
       {
         nom: "Concours Unique d'entrée dans les Grandes Écoles Militaires étrangères",
@@ -304,21 +453,6 @@ const FILIERES: FiliereDetail[] = [
           "Leadership et Éthique du Commandement"
         ],
         description: "L'école mère de formation des officiers de l'Armée de Terre sénégalaise et d'une quinzaine de pays africains partenaires."
-      },
-      {
-        nom: "École de l'Armée de l'Air du Sénégal",
-        sigle: "EAA de Thiès (Base Aérienne BA 70)",
-        ville: "Thiès",
-        statutAcces: "concours",
-        fraisOuBourse: "100% Concours Militaire d'État Gratuit — Prise en charge intégrale, élèves officiers et sous-officiers nourris, logés et soldés",
-        acces: "Concours direct national (concours.eaa.sn) : Élèves-officiers pilotes (Licence 3 scientifique/technique, 18-25 ans) ou Élèves sous-officiers mécaniciens (Bacs S1, S2, S3, T, 18-23 ans). Visite médicale d'aptitude pilote/militaire stricte.",
-        specialites: [
-          "Pilotage Militaire (Avions de Chasse, Transport, Hélicoptères de combat)",
-          "Maintenance et Avionique Aéronautique (Cellule, Moteurs, Systèmes d'armes)",
-          "Contrôle de la Circulation Aérienne & Navigation",
-          "Télécommunications Militaires & Systèmes Radars"
-        ],
-        description: "L'institution nationale de référence pour la formation des pilotes et des techniciens aéronautiques de pointe de l'Armée de l'Air sénégalaise, basée à la Base Aérienne Capitaine Andalla Cissé de Thiès."
       },
       {
         nom: "École Nationale de Police et de la Formation Permanente",
@@ -361,21 +495,32 @@ const FILIERES: FiliereDetail[] = [
           "Gestion des Risques et Catastrophes Naturelles"
         ],
         description: "Militaires du feu dévoués à la protection des populations sur tout le territoire national."
+      },
+      {
+        nom: "Eaux, Forêts, Chasse et Parcs Nationaux",
+        sigle: "Eaux & Forêts Sénégal",
+        ville: "Dakar / Djibélor / Guérina",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours d'État Gratuit",
+        acces: "Concours direct du Ministère de l'Environnement (Ingénieurs niveau Master, Agents techniques niveau Bac/BFEM)",
+        specialites: [
+          "Gestion des Forêts & Sylviculture",
+          "Protection de la Faune & Lutte contre le Braconnage",
+          "Écologie et Parcs Nationaux du Sénégal"
+        ],
+        description: "Corps paramilitaire chargé de la surveillance de l'environnement, de la préservation des ressources forestières et des parcs nationaux."
       }
     ],
     debouches: [
-      "Administrateur Civil, Préfet, Sous-Préfet, Gouverneur (ENA)",
-      "Diplomate, Ambassadeur, Conseiller des Affaires Étrangères (ENA)",
       "Pilote Militaire d'Avion ou d'Hélicoptère / Ingénieur Aéronautique (EAA)",
-      "Inspecteur des Impôts et Domaines / Inspecteur du Trésor Public (ENA)",
-      "Inspecteur du Travail et de la Sécurité Sociale (ENA)",
-      "Officier Supérieur d'Armée (Sous-Lieutenant, Capitaine...)",
+      "Officier Supérieur d'Armée (Sous-Lieutenant, Capitaine - ENOA)",
       "Commissaire ou Inspecteur de Police",
       "Inspecteur ou Contrôleur des Douanes",
-      "Officier de Sapeurs-Pompiers",
+      "Officier de Sapeurs-Pompiers (BNSP)",
+      "Officier forestier / Inspecteur des Eaux et Forêts",
       "Spécialiste de la Sécurité Nationale & du Renseignement"
     ],
-    conseilOrientation: "Pour l'ENA, une excellente maîtrise de la culture générale, du droit public et des finances publiques est requise. Pour l'EAA (Armée de l'Air) et le CUGEM, une acuité visuelle parfaite et une condition physique athlétique sont obligatoires !"
+    conseilOrientation: "Pour les concours militaires et paramilitaires (EAA, CUGEM, ENOA, Police, Douanes, Pompiers), l'entraînement physique est primordial : course de 1000m, tractions et grimper de corde."
   },
   {
     id: "universites",
