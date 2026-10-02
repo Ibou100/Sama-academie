@@ -27,6 +27,7 @@ const CONCOURS = [
   { name: "ENA", full: "École Nationale d'Administration", icon: "🏛️", desc: "Préfets, Diplomates, Administrateurs civils", couleur: "bg-blue-700" },
   { name: "CUGEM", full: "Concours Unique Grandes Écoles Militaires", icon: "🌍", desc: "Saint-Cyr, Navale, École de l'Air, Meknès (Officiers à l'étranger)", couleur: "bg-red-800" },
   { name: "EMS Dakar", full: "École Militaire de Santé (Camp Dial Diop)", icon: "⚕️", desc: "Médecins, Pharmaciens et Vétérinaires militaires (Logés, nourris et rémunérés)", couleur: "bg-emerald-800" },
+  { name: "EAA Thiès", full: "École de l'Armée de l'Air (Base Aérienne)", icon: "✈️", desc: "Pilotes de chasse, Transport, Hélicoptères et Mécaniciens (BA 70)", couleur: "bg-sky-800" },
   { name: "CPGE Thiès", full: "Classes Préparatoires aux Grandes Écoles", icon: "📐", desc: "MPSI, PCSI — Bourse d'État d'excellence pour bacheliers S", couleur: "bg-indigo-800" },
   { name: "Police", full: "Police Nationale du Sénégal", icon: "👮🏾", desc: "Commissaires, Officiers, Sous-Officiers, Agents", couleur: "bg-slate-700" },
   { name: "Gendarmerie", full: "Gendarmerie Nationale", icon: "🎖️", desc: "Sous-officiers, Gendarmes de Carrière", couleur: "bg-green-700" },

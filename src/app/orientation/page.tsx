@@ -306,6 +306,21 @@ const FILIERES: FiliereDetail[] = [
         description: "L'école mère de formation des officiers de l'Armée de Terre sénégalaise et d'une quinzaine de pays africains partenaires."
       },
       {
+        nom: "École de l'Armée de l'Air du Sénégal",
+        sigle: "EAA de Thiès (Base Aérienne BA 70)",
+        ville: "Thiès",
+        statutAcces: "concours",
+        fraisOuBourse: "100% Concours Militaire d'État Gratuit — Prise en charge intégrale, élèves officiers et sous-officiers nourris, logés et soldés",
+        acces: "Concours direct national (concours.eaa.sn) : Élèves-officiers pilotes (Licence 3 scientifique/technique, 18-25 ans) ou Élèves sous-officiers mécaniciens (Bacs S1, S2, S3, T, 18-23 ans). Visite médicale d'aptitude pilote/militaire stricte.",
+        specialites: [
+          "Pilotage Militaire (Avions de Chasse, Transport, Hélicoptères de combat)",
+          "Maintenance et Avionique Aéronautique (Cellule, Moteurs, Systèmes d'armes)",
+          "Contrôle de la Circulation Aérienne & Navigation",
+          "Télécommunications Militaires & Systèmes Radars"
+        ],
+        description: "L'institution nationale de référence pour la formation des pilotes et des techniciens aéronautiques de pointe de l'Armée de l'Air sénégalaise, basée à la Base Aérienne Capitaine Andalla Cissé de Thiès."
+      },
+      {
         nom: "École Nationale de Police et de la Formation Permanente",
         sigle: "ENP Dakar",
         ville: "Dakar",
@@ -351,6 +366,7 @@ const FILIERES: FiliereDetail[] = [
     debouches: [
       "Administrateur Civil, Préfet, Sous-Préfet, Gouverneur (ENA)",
       "Diplomate, Ambassadeur, Conseiller des Affaires Étrangères (ENA)",
+      "Pilote Militaire d'Avion ou d'Hélicoptère / Ingénieur Aéronautique (EAA)",
       "Inspecteur des Impôts et Domaines / Inspecteur du Trésor Public (ENA)",
       "Inspecteur du Travail et de la Sécurité Sociale (ENA)",
       "Officier Supérieur d'Armée (Sous-Lieutenant, Capitaine...)",
@@ -359,7 +375,7 @@ const FILIERES: FiliereDetail[] = [
       "Officier de Sapeurs-Pompiers",
       "Spécialiste de la Sécurité Nationale & du Renseignement"
     ],
-    conseilOrientation: "Pour l'ENA, une excellente maîtrise de la culture générale, du droit public, des finances publiques et de l'économie est requise. Pour le CUGEM et l'ENOA, une condition physique irréprochable est indispensable en plus de l'écrit !"
+    conseilOrientation: "Pour l'ENA, une excellente maîtrise de la culture générale, du droit public et des finances publiques est requise. Pour l'EAA (Armée de l'Air) et le CUGEM, une acuité visuelle parfaite et une condition physique athlétique sont obligatoires !"
   },
   {
     id: "universites",
