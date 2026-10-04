@@ -179,6 +179,7 @@ export default function Examens() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCycle, setSelectedCycle] = useState("TOUS");
 
   // Visionneuse Sécurisée In-App
@@ -210,10 +211,11 @@ export default function Examens() {
     };
 
     const fetchAnnales = async () => {
+      setLoading(true);
       const { data: dbAnnales } = await supabase.from("annales").select("*").order("created_at", { ascending: false });
       if (dbAnnales && dbAnnales.length > 0) {
         // Classifier chaque annale de façon précise
-        const merged = dbAnnales.map((doc, idx) => {
+        const mapped = dbAnnales.map((doc, idx) => {
           const lvl = (doc.level || "").toLowerCase();
           const cycle = (lvl.includes("cfee") || lvl.includes("primaire") || lvl.includes("cm") || lvl.includes("ce") || lvl.includes("ci") || lvl.includes("cp"))
             ? "Primaire"
@@ -224,22 +226,15 @@ export default function Examens() {
           return {
             ...doc,
             cycle,
-            exercices: DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length]?.exercices || DEFAULT_DOCUMENTS[0].exercices,
-            sample_corrige: DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length]?.sample_corrige || DEFAULT_DOCUMENTS[0].sample_corrige
+            exercices: doc.exercices || DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length]?.exercices || DEFAULT_DOCUMENTS[0].exercices,
+            sample_corrige: doc.sample_corrige || DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length]?.sample_corrige || DEFAULT_DOCUMENTS[0].sample_corrige
           };
         });
-
-        // Combiner avec DEFAULT_DOCUMENTS pour assurer un contenu complet dans tous les cycles
-        const allDocs = [...merged];
-        DEFAULT_DOCUMENTS.forEach((def) => {
-          if (!allDocs.some((d) => d.title?.toLowerCase().trim() === def.title?.toLowerCase().trim())) {
-            allDocs.push(def);
-          }
-        });
-        setDocuments(allDocs);
+        setDocuments(mapped);
       } else {
-        setDocuments(DEFAULT_DOCUMENTS);
+        setDocuments([]);
       }
+      setLoading(false);
     };
 
     fetchUserData();
@@ -589,11 +584,16 @@ export default function Examens() {
             <span className="text-xs text-gray-400">Lecture protégée anti-téléchargement</span>
           </div>
 
-          {filteredDocuments.length === 0 ? (
+          {loading ? (
+            <div className="bg-white rounded-3xl p-16 text-center border border-gray-100">
+              <i className="fas fa-spinner fa-spin text-4xl text-sama-primary mb-3 block"></i>
+              <p className="text-gray-500 font-semibold text-sm">Chargement des épreuves officielles...</p>
+            </div>
+          ) : filteredDocuments.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center border border-gray-100">
               <i className="fas fa-folder-open text-4xl text-gray-300 mb-3 block"></i>
-              <h3 className="font-bold text-gray-700">Aucun document pour ce filtre</h3>
-              <p className="text-xs text-gray-400 mt-1">Sélectionnez un autre cycle pour explorer les ressources.</p>
+              <h3 className="font-bold text-gray-700">Aucun document disponible pour ce cycle</h3>
+              <p className="text-xs text-gray-400 mt-1">Les épreuves et annales publiées par l&apos;Administration apparaîtront ici.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

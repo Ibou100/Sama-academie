@@ -11,68 +11,6 @@ function getYouTubeEmbedUrl(url: string) {
   return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}?autoplay=1` : null;
 }
 
-const DEFAULT_VIDEOS = [
-  // Primaire
-  {
-    id: "v-prim-1",
-    title: "Les 4 opérations de base et la résolution de problèmes au Primaire",
-    subject: "Mathématiques",
-    level: "Primaire (CI à CM2)",
-    duration: "18 min",
-    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-  },
-  {
-    id: "v-prim-2",
-    title: "Conjugaison et Grammaire : Le Présent et le Passé Composé",
-    subject: "Français",
-    level: "Primaire (CE1 à CM2)",
-    duration: "15 min",
-    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-  },
-  {
-    id: "v-prim-3",
-    title: "Sciences & Géographie du Sénégal pour le cycle Primaire",
-    subject: "Sciences & Éveil",
-    level: "Primaire (CE2 - CM2)",
-    duration: "20 min",
-    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-  },
-  // Collège
-  {
-    id: "v-col-1",
-    title: "Théorème de Thalès et Pythagore : Méthodologie Brevet BFEM",
-    subject: "Mathématiques",
-    level: "Collège (3e BFEM)",
-    duration: "25 min",
-    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-  },
-  {
-    id: "v-col-2",
-    title: "La reproduction humaine et l'immunologie expliquées pas à pas",
-    subject: "SVT",
-    level: "Collège (3e/BFEM)",
-    duration: "22 min",
-    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-  },
-  // Lycée
-  {
-    id: "v-lyc-1",
-    title: "Résolution complète de l'Épreuve de Mathématiques BAC S2",
-    subject: "Mathématiques",
-    level: "Terminale S2",
-    duration: "45 min",
-    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-  },
-  {
-    id: "v-lyc-2",
-    title: "Méthodologie de la Dissertation Philosophique au Baccalauréat",
-    subject: "Philosophie",
-    level: "Terminale L / S",
-    duration: "30 min",
-    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-  }
-];
-
 const CYCLES = [
   { id: "TOUS", label: "Tous les cycles", icon: "fas fa-layer-group" },
   { id: "Primaire", label: "Primaire (CI à CM2)", icon: "fas fa-child" },
@@ -81,13 +19,15 @@ const CYCLES = [
 ];
 
 export default function Videos() {
-  const [videosList, setVideosList] = useState<any[]>(DEFAULT_VIDEOS);
+  const [videosList, setVideosList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [selectedCycle, setSelectedCycle] = useState("TOUS");
   const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     const checkAccessAndFetch = async () => {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
@@ -104,19 +44,10 @@ export default function Videos() {
         }
       }
 
-      // Charger les vidéos depuis Supabase et combiner avec DEFAULT_VIDEOS
+      // Charger STRICTEMENT les vidéos depuis Supabase (la base de données est l'unique source de vérité)
       const { data: dbVideos } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
-      if (dbVideos && dbVideos.length > 0) {
-        const allVids = [...dbVideos];
-        DEFAULT_VIDEOS.forEach((def) => {
-          if (!allVids.some((v) => v.title?.toLowerCase().trim() === def.title?.toLowerCase().trim())) {
-            allVids.push(def);
-          }
-        });
-        setVideosList(allVids);
-      } else {
-        setVideosList(DEFAULT_VIDEOS);
-      }
+      setVideosList(dbVideos || []);
+      setLoading(false);
     };
 
     checkAccessAndFetch();
@@ -219,11 +150,16 @@ export default function Videos() {
       </div>
 
       {/* Grille des vidéos */}
-      {filteredVideos.length === 0 ? (
+      {loading ? (
+        <div className="bg-white rounded-3xl p-16 text-center border border-gray-100">
+          <i className="fas fa-spinner fa-spin text-4xl text-sama-primary mb-3 block"></i>
+          <p className="text-gray-500 font-semibold text-sm">Chargement des vidéos...</p>
+        </div>
+      ) : filteredVideos.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-gray-100">
           <i className="fas fa-video-slash text-4xl text-gray-300 mb-3 block"></i>
-          <h3 className="font-bold text-gray-700">Aucune vidéo pour ce cycle actuellement</h3>
-          <p className="text-xs text-gray-400 mt-1">Sélectionnez un autre cycle pour explorer les cours disponibles.</p>
+          <h3 className="font-bold text-gray-700">Aucune vidéo disponible pour ce cycle</h3>
+          <p className="text-xs text-gray-400 mt-1">Les vidéos publiées par l&apos;Administration apparaîtront ici.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
