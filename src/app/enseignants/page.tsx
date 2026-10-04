@@ -53,7 +53,8 @@ export default function Enseignants() {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("role", "enseignant");
+        .eq("role", "enseignant")
+        .eq("verified", true);
 
       if (data && !error) {
         setTeachers(data);

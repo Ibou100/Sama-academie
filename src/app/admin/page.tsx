@@ -133,6 +133,30 @@ export default function AdminDashboard() {
     setActionLoadingId(null);
   };
 
+  // Supprimer définitivement un enseignant
+  const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
+    if (!confirm(`Voulez-vous vraiment supprimer définitivement l'enseignant ${teacherName} ? Cette action est irréversible.`)) {
+      return;
+    }
+    setActionLoadingId(teacherId);
+
+    try {
+      await supabase.from("tutoring_requests").delete().eq("teacher_id", teacherId);
+      await supabase.from("virtual_classes").delete().eq("teacher_id", teacherId);
+
+      const { error } = await supabase.from("profiles").delete().eq("id", teacherId);
+      if (!error) {
+        showToast(`🗑️ L'enseignant ${teacherName} a été supprimé définitivement.`);
+        setProfiles((prev) => prev.filter((p) => p.id !== teacherId));
+      } else {
+        showToast("❌ Erreur : " + error.message);
+      }
+    } catch (err: any) {
+      showToast("❌ Erreur : " + err.message);
+    }
+    setActionLoadingId(null);
+  };
+
   // Valider tous les enseignants d'un clic
   const handleValidateAllTeachers = async () => {
     setActionLoadingId("all_teachers");
@@ -718,23 +742,35 @@ export default function AdminDashboard() {
                         </td>
 
                         <td className="p-4 text-right">
-                          <button
-                            onClick={() => toggleTeacherVerification(t.id, t.verified)}
-                            disabled={actionLoadingId === t.id}
-                            className={`font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm ${
-                              t.verified
-                                ? "border border-red-200 text-red-600 hover:bg-red-50"
-                                : "bg-green-600 hover:bg-green-700 text-white"
-                            }`}
-                          >
-                            {actionLoadingId === t.id ? (
-                              <i className="fas fa-spinner fa-spin"></i>
-                            ) : t.verified ? (
-                              "⏸️ Suspendre"
-                            ) : (
-                              "✅ Valider & Publier"
-                            )}
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => toggleTeacherVerification(t.id, t.verified)}
+                              disabled={actionLoadingId === t.id}
+                              className={`font-bold px-3 py-1.5 rounded-xl text-xs transition shadow-xs ${
+                                t.verified
+                                  ? "border border-amber-300 text-amber-700 hover:bg-amber-50"
+                                  : "bg-green-600 hover:bg-green-700 text-white"
+                              }`}
+                              title={t.verified ? "Masquer cet enseignant de l'annuaire" : "Rendre cet enseignant visible"}
+                            >
+                              {actionLoadingId === t.id ? (
+                                <i className="fas fa-spinner fa-spin"></i>
+                              ) : t.verified ? (
+                                "⏸️ Masquer"
+                              ) : (
+                                "✅ Publier"
+                              )}
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteTeacher(t.id, `${t.first_name} ${t.last_name}`)}
+                              disabled={actionLoadingId === t.id}
+                              className="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-xl text-xs transition shadow-xs flex items-center gap-1 border border-red-200"
+                              title="Supprimer définitivement cet enseignant"
+                            >
+                              <i className="fas fa-trash-alt"></i> Supprimer
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
