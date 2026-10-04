@@ -83,7 +83,7 @@ export default function Enseignants() {
       student_id: currentUser.id,
       teacher_id: contactTeacher.id,
       message: requestMessage.trim() || null,
-      status: "en_attente_admin"
+      status: "pending"
     }]);
 
     if (!error) {
