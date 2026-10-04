@@ -1,5 +1,6 @@
 "use client";
 
+import { detectCycle, studentCycleOf } from "@/lib/cycle";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -128,15 +129,18 @@ export default function Enseignants() {
       const teacherExp = (teacher.experience || "").toLowerCase();
       const teacherBio = (teacher.bio || "").toLowerCase();
 
-      const isStudentPrimaire = studentLvl.includes("primaire") || studentLvl.includes("ci") || studentLvl.includes("cp") || studentLvl.includes("ce") || studentLvl.includes("cm") || studentLvl.includes("cfee");
-      const isStudentCollege = studentLvl.includes("collège") || studentLvl.includes("college") || studentLvl.includes("6") || studentLvl.includes("5") || studentLvl.includes("4") || studentLvl.includes("3") || studentLvl.includes("bfem");
+      const sc = studentCycleOf(studentLvl);
+      const tc = detectCycle(teacherLvl);
+      const mentions = (words: string[]) => words.some((w) => teacherExp.includes(w) || teacherBio.includes(w));
 
-      if (isStudentPrimaire) {
-        matchCycle = teacherLvl.includes("primaire") || teacherLvl.includes("ci") || teacherLvl.includes("cm") || teacherExp.includes("primaire") || teacherExp.includes("élémentaire") || teacherBio.includes("primaire") || teacherBio.includes("élémentaire") || teacherBio.includes("cfee");
-      } else if (isStudentCollege) {
-        matchCycle = teacherLvl.includes("collège") || teacherLvl.includes("college") || teacherLvl.includes("bfem") || teacherExp.includes("collège") || teacherExp.includes("college") || teacherExp.includes("brevet") || teacherBio.includes("collège") || teacherBio.includes("college") || teacherBio.includes("bfem");
+      if (tc) {
+        matchCycle = tc === sc;
+      } else if (sc === "Primaire") {
+        matchCycle = mentions(["primaire", "élémentaire", "cfee"]);
+      } else if (sc === "College") {
+        matchCycle = mentions(["collège", "college", "bfem", "brevet"]);
       } else {
-        matchCycle = teacherLvl.includes("lycée") || teacherLvl.includes("lycee") || teacherLvl.includes("bac") || teacherExp.includes("lycée") || teacherExp.includes("lycee") || teacherExp.includes("baccalauréat") || teacherBio.includes("lycée") || teacherBio.includes("lycee") || teacherBio.includes("bac");
+        matchCycle = mentions(["lycée", "lycee", "baccalauréat", "bac "]);
       }
     }
 
@@ -351,8 +355,8 @@ export default function Enseignants() {
               <div>
                 <p className="font-extrabold text-sm text-sama-primary">
                   Annuaire Cloisonné : Enseignants Habilités {
-                    (currentUser.level || "").toLowerCase().includes("primaire") || (currentUser.level || "").toLowerCase().includes("ce") || (currentUser.level || "").toLowerCase().includes("cm") || (currentUser.level || "").toLowerCase().includes("ci") || (currentUser.level || "").toLowerCase().includes("cfee") ? "Cycle Primaire (CI à CM2)" :
-                    (currentUser.level || "").toLowerCase().includes("collège") || (currentUser.level || "").toLowerCase().includes("college") || (currentUser.level || "").toLowerCase().includes("6") || (currentUser.level || "").toLowerCase().includes("3") || (currentUser.level || "").toLowerCase().includes("bfem") ? "Cycle Collège (6e à 3e, BFEM)" : "Cycle Lycée (Seconde à Terminale, BAC)"
+                    studentCycleOf(currentUser.level) === "Primaire" ? "Cycle Primaire (CI à CM2)" :
+                    studentCycleOf(currentUser.level) === "College" ? "Cycle Collège (6e à 3e, BFEM)" : "Cycle Lycée (Seconde à Terminale, BAC)"
                   }
                 </p>
                 <p className="text-gray-600 mt-0.5">

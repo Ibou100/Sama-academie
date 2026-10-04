@@ -1,5 +1,6 @@
 "use client";
 
+import { detectCycle, studentCycleOf } from "@/lib/cycle";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -51,15 +52,8 @@ export default function DashboardEleve() {
     setCurrentUser(profile);
 
     // Détermination du cycle de l'élève
-    const lvl = (profile.level || "").toLowerCase();
-    let detectedCycle: "Primaire" | "Collège" | "Lycée" = "Lycée";
-    if (lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cp") || lvl.includes("ce") || lvl.includes("cm") || lvl.includes("cfee")) {
-      detectedCycle = "Primaire";
-    } else if (lvl.includes("collège") || lvl.includes("college") || lvl.includes("6") || lvl.includes("5") || lvl.includes("4") || lvl.includes("3") || lvl.includes("bfem")) {
-      detectedCycle = "Collège";
-    } else {
-      detectedCycle = "Lycée";
-    }
+    const sc = studentCycleOf(profile.level);
+    const detectedCycle: "Primaire" | "Collège" | "Lycée" = sc === "Primaire" ? "Primaire" : sc === "College" ? "Collège" : "Lycée";
     setStudentCycle(detectedCycle);
 
     // 1. Récupérer l'enseignant assigné (validé par l'administration)
@@ -127,24 +121,14 @@ export default function DashboardEleve() {
     // 2. Récupérer les documents officiels STRICTEMENT du cycle de l'élève
     const { data: allAnnales } = await supabase.from("annales").select("*").order("created_at", { ascending: false });
     if (allAnnales) {
-      const filtered = allAnnales.filter((a) => {
-        const aLvl = (a.level || "").toLowerCase();
-        if (detectedCycle === "Primaire") return aLvl.includes("ci") || aLvl.includes("cp") || aLvl.includes("ce") || aLvl.includes("cm") || aLvl.includes("primaire") || aLvl.includes("cfee");
-        if (detectedCycle === "Collège") return aLvl.includes("6") || aLvl.includes("5") || aLvl.includes("4") || aLvl.includes("3") || aLvl.includes("bfem") || aLvl.includes("college");
-        return aLvl.includes("seconde") || aLvl.includes("premiere") || aLvl.includes("terminale") || aLvl.includes("bac") || aLvl.includes("lycee");
-      });
+      const filtered = allAnnales.filter((a) => detectCycle(a.level) === sc);
       setCycleAnnales(filtered.slice(0, 8));
     }
 
     // 3. Récupérer les vidéos STRICTEMENT du cycle de l'élève
     const { data: allVideos } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
     if (allVideos) {
-      const filteredVids = allVideos.filter((v) => {
-        const vLvl = (v.level || "").toLowerCase();
-        if (detectedCycle === "Primaire") return vLvl.includes("ci") || vLvl.includes("cp") || vLvl.includes("ce") || vLvl.includes("cm") || vLvl.includes("primaire") || vLvl.includes("cfee");
-        if (detectedCycle === "Collège") return vLvl.includes("6") || vLvl.includes("5") || vLvl.includes("4") || vLvl.includes("3") || vLvl.includes("bfem") || vLvl.includes("college");
-        return vLvl.includes("seconde") || vLvl.includes("premiere") || vLvl.includes("terminale") || vLvl.includes("bac") || vLvl.includes("lycee");
-      });
+      const filteredVids = allVideos.filter((v) => detectCycle(v.level) === sc);
       setCycleVideos(filteredVids.slice(0, 6));
     }
 

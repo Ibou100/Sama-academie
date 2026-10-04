@@ -1,5 +1,6 @@
 "use client";
 
+import { detectCycle, studentCycleOf } from "@/lib/cycle";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -34,13 +35,8 @@ export default function Videos() {
         if (profile) {
           setUserProfile(profile);
           const lvl = (profile.level || "").toLowerCase();
-          if (lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cp") || lvl.includes("ce") || lvl.includes("cm") || lvl.includes("cfee")) {
-            setSelectedCycle("Primaire");
-          } else if (lvl.includes("collège") || lvl.includes("college") || lvl.includes("6") || lvl.includes("5") || lvl.includes("4") || lvl.includes("3") || lvl.includes("bfem")) {
-            setSelectedCycle("College");
-          } else if (lvl.includes("lycée") || lvl.includes("lycee") || lvl.includes("terminale") || lvl.includes("seconde") || lvl.includes("bac") || lvl.includes("première")) {
-            setSelectedCycle("Lycee");
-          }
+          const dc = detectCycle(lvl);
+          if (dc) setSelectedCycle(dc);
         }
       }
 
@@ -60,22 +56,14 @@ export default function Videos() {
   // Détection élève et cycle
   const isStudent = userProfile?.role === "eleve";
   const studentLevel = (userProfile?.level || "").toLowerCase();
-  const studentCycle: "Primaire" | "College" | "Lycee" | null = isStudent
-    ? (studentLevel.includes("primaire") || studentLevel.includes("ci") || studentLevel.includes("cp") || studentLevel.includes("ce") || studentLevel.includes("cm") || studentLevel.includes("cfee")
-      ? "Primaire"
-      : studentLevel.includes("collège") || studentLevel.includes("college") || studentLevel.includes("6") || studentLevel.includes("5") || studentLevel.includes("4") || studentLevel.includes("3") || studentLevel.includes("bfem")
-      ? "College"
-      : "Lycee")
-    : null;
+  const studentCycle: "Primaire" | "College" | "Lycee" | null = isStudent ? studentCycleOf(studentLevel) : null;
 
   const effectiveCycle = isStudent && studentCycle ? studentCycle : selectedCycle;
 
   const filteredVideos = videosList.filter((vid) => {
     if (effectiveCycle === "TOUS") return true;
-    const vLevel = (vid.level || "").toLowerCase();
-    if (effectiveCycle === "Primaire") return vLevel.includes("primaire") || vLevel.includes("cm") || vLevel.includes("ci") || vLevel.includes("cp") || vLevel.includes("ce") || vLevel.includes("cfee");
-    if (effectiveCycle === "College") return vLevel.includes("collège") || vLevel.includes("college") || vLevel.includes("6") || vLevel.includes("5") || vLevel.includes("4") || vLevel.includes("3") || vLevel.includes("bfem");
-    if (effectiveCycle === "Lycee") return vLevel.includes("lycée") || vLevel.includes("lycee") || vLevel.includes("seconde") || vLevel.includes("première") || vLevel.includes("premiere") || vLevel.includes("terminale") || vLevel.includes("bac");
+    const vc = detectCycle(vid.level);
+    if (effectiveCycle === "Primaire" || effectiveCycle === "College" || effectiveCycle === "Lycee") return vc === effectiveCycle;
     return true;
   });
 

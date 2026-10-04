@@ -1,5 +1,6 @@
 "use client";
 
+import { detectCycle, studentCycleOf } from "@/lib/cycle";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -199,13 +200,8 @@ export default function Examens() {
 
           // Détection automatique du cycle de l'utilisateur pour adapter la vue
           const lvl = (profile.level || "").toLowerCase();
-          if (lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cp") || lvl.includes("ce") || lvl.includes("cm") || lvl.includes("cfee")) {
-            setSelectedCycle("Primaire");
-          } else if (lvl.includes("collège") || lvl.includes("college") || lvl.includes("6") || lvl.includes("5") || lvl.includes("4") || lvl.includes("3") || lvl.includes("bfem")) {
-            setSelectedCycle("College");
-          } else if (lvl.includes("lycée") || lvl.includes("lycee") || lvl.includes("bac") || lvl.includes("terminale") || lvl.includes("seconde") || lvl.includes("première")) {
-            setSelectedCycle("Lycee");
-          }
+          const dc = detectCycle(lvl);
+          if (dc) setSelectedCycle(dc);
         }
       }
     };
@@ -216,12 +212,7 @@ export default function Examens() {
       if (dbAnnales && dbAnnales.length > 0) {
         // Classifier chaque annale de façon précise
         const mapped = dbAnnales.map((doc, idx) => {
-          const lvl = (doc.level || "").toLowerCase();
-          const cycle = (lvl.includes("cfee") || lvl.includes("primaire") || lvl.includes("cm") || lvl.includes("ce") || lvl.includes("ci") || lvl.includes("cp"))
-            ? "Primaire"
-            : (lvl.includes("bfem") || lvl.includes("collège") || lvl.includes("college") || lvl.includes("6") || lvl.includes("5") || lvl.includes("4") || lvl.includes("3"))
-            ? "College"
-            : "Lycee";
+          const cycle = detectCycle(doc.level) || "Lycee";
 
           return {
             ...doc,
@@ -253,31 +244,15 @@ export default function Examens() {
   // Détection du rôle élève et cycle associé
   const isStudent = userProfile?.role === "eleve";
   const studentLevel = (userProfile?.level || "").toLowerCase();
-  const studentCycle: "Primaire" | "College" | "Lycee" | null = isStudent
-    ? (studentLevel.includes("primaire") || studentLevel.includes("ci") || studentLevel.includes("cp") || studentLevel.includes("ce") || studentLevel.includes("cm") || studentLevel.includes("cfee")
-      ? "Primaire"
-      : studentLevel.includes("collège") || studentLevel.includes("college") || studentLevel.includes("6") || studentLevel.includes("5") || studentLevel.includes("4") || studentLevel.includes("3") || studentLevel.includes("bfem")
-      ? "College"
-      : "Lycee")
-    : null;
+  const studentCycle: "Primaire" | "College" | "Lycee" | null = isStudent ? studentCycleOf(studentLevel) : null;
 
   // Filtrage strict selon le cycle sélectionné ou imposé à l'élève
   const effectiveCycle = isStudent && studentCycle ? studentCycle : selectedCycle;
 
   const filteredDocuments = documents.filter((doc) => {
     if (effectiveCycle === "TOUS") return true;
-    const dCycle = doc.cycle;
-    const dLvl = (doc.level || "").toLowerCase();
-
-    if (effectiveCycle === "Primaire") {
-      return dCycle === "Primaire" || dLvl.includes("primaire") || dLvl.includes("cfee") || dLvl.includes("cm") || dLvl.includes("ce") || dLvl.includes("ci") || dLvl.includes("cp");
-    }
-    if (effectiveCycle === "College") {
-      return dCycle === "College" || dLvl.includes("bfem") || dLvl.includes("collège") || dLvl.includes("college") || dLvl.includes("6") || dLvl.includes("5") || dLvl.includes("4") || dLvl.includes("3");
-    }
-    if (effectiveCycle === "Lycee") {
-      return dCycle === "Lycee" || dLvl.includes("bac") || dLvl.includes("lycée") || dLvl.includes("lycee") || dLvl.includes("seconde") || dLvl.includes("première") || dLvl.includes("terminale");
-    }
+    const dc = doc.cycle || detectCycle(doc.level);
+    if (effectiveCycle === "Primaire" || effectiveCycle === "College" || effectiveCycle === "Lycee") return dc === effectiveCycle;
     return true;
   });
 

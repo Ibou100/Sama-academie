@@ -1,5 +1,6 @@
 "use client";
 
+import { detectCycle } from "@/lib/cycle";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -45,7 +46,7 @@ export default function Header() {
     }
     if (userProfile?.role === "eleve") {
       const lvl = (userProfile.level || "").toLowerCase();
-      const isPrimaire = lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cp") || lvl.includes("ce") || lvl.includes("cm") || lvl.includes("cfee");
+      const isPrimaire = detectCycle(lvl) === "Primaire";
       return [
         { href: "/", label: "Accueil" },
         { href: "/dashboard/eleve", label: "Mon Espace" },
