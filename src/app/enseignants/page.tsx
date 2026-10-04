@@ -138,7 +138,7 @@ export default function Enseignants() {
                   <div>
                     <h3 className="text-xl font-extrabold text-gray-900">{contactTeacher.first_name} {contactTeacher.last_name}</h3>
                     <p className="text-xs text-gray-500 font-medium">{contactTeacher.subject || "Matière non précisée"} • {contactTeacher.region || "Région non précisée"}</p>
-                    <p className="text-sama-primary font-bold text-sm mt-0.5">{contactTeacher.price || "Tarif non précisé"}</p>
+                    <p className="text-sama-primary font-bold text-xs mt-0.5">Encadrement personnalisé • Tarif fixé avec la Direction</p>
                   </div>
                 </div>
 
@@ -154,31 +154,17 @@ export default function Enseignants() {
                         </p>
                       </div>
 
-                      {/* Grille Tarifaire Officielle SAMA ACADÉMIE */}
+                      {/* Tarification flexible & concertée */}
                       <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 space-y-2 text-xs">
                         <div className="flex items-center justify-between text-amber-900 font-extrabold">
-                          <span className="flex items-center gap-1.5"><i className="fas fa-tags text-sama-orange"></i> Grille Tarifaire Officielle SAMA ACADÉMIE</span>
-                          <span className="text-[10px] bg-amber-200/70 text-amber-800 px-2 py-0.5 rounded-full font-bold">Régulé</span>
+                          <span className="flex items-center gap-1.5"><i className="fas fa-handshake text-sama-orange"></i> Tarif &amp; Modalités Personnalisés</span>
+                          <span className="text-[10px] bg-amber-200/70 text-amber-800 px-2 py-0.5 rounded-full font-bold">Sur Mesure</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 text-center pt-1">
-                          <div className="bg-white p-2 rounded-xl border border-amber-100 shadow-xs">
-                            <p className="text-[10px] text-gray-500 font-bold">Primaire</p>
-                            <p className="text-xs font-black text-gray-900">25 000 F</p>
-                            <p className="text-[9px] text-gray-400">/ mois</p>
-                          </div>
-                          <div className="bg-white p-2 rounded-xl border border-amber-100 shadow-xs">
-                            <p className="text-[10px] text-gray-500 font-bold">Collège</p>
-                            <p className="text-xs font-black text-gray-900">35 000 F</p>
-                            <p className="text-[9px] text-gray-400">/ mois</p>
-                          </div>
-                          <div className="bg-white p-2 rounded-xl border border-amber-100 shadow-xs">
-                            <p className="text-[10px] text-gray-500 font-bold">Lycée / BAC</p>
-                            <p className="text-xs font-black text-gray-900">45 000 F</p>
-                            <p className="text-[9px] text-gray-400">/ mois</p>
-                          </div>
-                        </div>
+                        <p className="text-gray-700 leading-relaxed text-[11px]">
+                          Le tarif est fixé directement par l&apos;Administration de SAMA ACADÉMIE en accord avec les parents et selon les exigences de l&apos;élève (fréquence, classe, matière) et la rémunération souhaitée par l&apos;enseignant.
+                        </p>
                         <p className="text-[10px] text-amber-800/80 leading-tight italic pt-0.5">
-                          * Règlement sécurisé auprès de SAMA ACADÉMIE incluant le suivi pédagogique continu.
+                          * Règlement sécurisé auprès de SAMA ACADÉMIE après accord mutuel.
                         </p>
                       </div>
 
@@ -335,17 +321,13 @@ export default function Enseignants() {
                         </p>
                       </div>
                       <div className="text-left sm:text-right flex-shrink-0">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-sama-primary text-[10px] font-black uppercase tracking-wider">
-                          Tarif Officiel SAMA
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wider">
+                          <i className="fas fa-handshake"></i> Encadrement SAMA
                         </span>
-                        <p className="text-xl sm:text-2xl font-black text-gray-900 mt-1">
-                          {teacher.level?.toLowerCase().includes("primaire")
-                            ? "25 000 FCFA"
-                            : teacher.level?.toLowerCase().includes("collège") || teacher.level?.toLowerCase().includes("college")
-                            ? "35 000 FCFA"
-                            : "45 000 FCFA"}
+                        <p className="text-base sm:text-lg font-black text-gray-900 mt-1">
+                          Tarif sur mesure
                         </p>
-                        <p className="text-[11px] text-gray-400 font-medium">/ mois • Suivi Garanti</p>
+                        <p className="text-[11px] text-gray-400 font-medium">Fixé par la Direction</p>
                       </div>
                     </div>
                     

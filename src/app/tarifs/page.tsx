@@ -93,10 +93,9 @@ export default function Tarifs() {
       {/* Info Banner */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <h4 className="font-bold text-gray-900 mb-2">Cours particuliers</h4>
+          <h4 className="font-bold text-gray-900 mb-2">Cours particuliers &amp; Encadrement</h4>
           <p className="text-sm text-gray-500">
-            Aucun abonnement nécessaire : chaque cours est payé à la réservation, au tarif de l&apos;enseignant. La plateforme
-            prélève une commission de 15 %.
+            Aucun abonnement nécessaire : le tarif de l&apos;encadrement est fixé sur mesure directement par la Direction de SAMA ACADÉMIE lors de votre échange, selon les besoins de l&apos;élève et la rémunération convenue avec l&apos;enseignant.
           </p>
         </div>
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">

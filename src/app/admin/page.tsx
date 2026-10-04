@@ -58,7 +58,7 @@ export default function AdminDashboard() {
     const { data: anns } = await supabase.from("annales").select("*").order("created_at", { ascending: false });
     const { data: reqs } = await supabase
       .from("tutoring_requests")
-      .select(`*, student:profiles!student_id(first_name, last_name, phone, email, region, level), teacher:profiles!teacher_id(first_name, last_name, phone, subject)`)
+      .select(`*, student:profiles!student_id(first_name, last_name, phone, email, region, level), teacher:profiles!teacher_id(first_name, last_name, phone, subject, price)`)
       .order("created_at", { ascending: false });
 
     if (profs) setProfiles(profs);
@@ -529,21 +529,36 @@ export default function AdminDashboard() {
                           <span className="text-gray-400 italic">Aucun professeur spécifique sélectionné</span>
                         )}
                       </div>
+
+                      {/* Base de négociation financière : Prétention du professeur */}
+                      <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3.5 text-xs space-y-1.5">
+                        <div className="flex flex-wrap items-center justify-between gap-1">
+                          <span className="font-extrabold text-amber-900 flex items-center gap-1.5">
+                            <i className="fas fa-coins text-amber-600"></i> Rémunération souhaitée par l&apos;enseignant :
+                          </span>
+                          <span className="bg-white border border-amber-300 text-sama-primary font-black px-2.5 py-0.5 rounded-lg text-xs">
+                            {req.teacher?.price ? req.teacher.price : "Non spécifié par le professeur"}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-600 leading-tight">
+                          💡 <strong>Règle de négociation SAMA ACADÉMIE :</strong> L&apos;administration fixe le tarif final avec les parents sur WhatsApp en tenant compte de ce montant souhaité et de la commission de la plateforme.
+                        </p>
+                      </div>
                     </div>
 
                     {/* Bloc d'action Admin */}
                     <div className="w-full lg:w-80 bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3 flex-shrink-0">
                       <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Actions de la Direction</p>
 
-                      {/* Contact WhatsApp direct avec l'élève/parent pour paiement */}
+                      {/* Contact WhatsApp direct avec l'élève/parent pour négociation et paiement */}
                       {cleanStudentPhone ? (
                         <a
-                          href={`https://wa.me/${cleanStudentPhone}?text=Bonjour%20${encodeURIComponent(req.student?.first_name || '')},%20je%20suis%20le%20responsable%20p%C3%A9dagogique%20de%20SAMA%20ACAD%C3%89MIE%20concernant%20votre%20demande%20de%20cours.`}
+                          href={`https://wa.me/${cleanStudentPhone}?text=Bonjour%20${encodeURIComponent(req.student?.first_name || '')},%20je%20suis%20le%20responsable%20p%C3%A9dagogique%20de%20SAMA%20ACAD%C3%89MIE.%20Concernant%20votre%20demande%20d'encadrement,%20je%20vous%20contacte%20pour%20convenir%20du%20planning%20et%20du%20tarif%20mensuel.`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-sm"
                         >
-                          <i className="fab fa-whatsapp text-base"></i> Contacter ({req.student?.phone})
+                          <i className="fab fa-whatsapp text-base"></i> Négocier sur WhatsApp ({req.student?.phone})
                         </a>
                       ) : (
                         <div className="text-[11px] text-gray-400 bg-white p-2 rounded-xl text-center border">
@@ -565,7 +580,7 @@ export default function AdminDashboard() {
                             <option value="">-- Sélectionner un enseignant --</option>
                             {allTeachers.map((t) => (
                               <option key={t.id} value={t.id}>
-                                {t.first_name} {t.last_name} — {t.subject || "Général"} {t.verified ? "✅" : "⏳"}
+                                {t.first_name} {t.last_name} — {t.subject || "Général"} ({t.price ? `Tarif souhaité: ${t.price}` : "Tarif libre"}) {t.verified ? "✅" : "⏳"}
                               </option>
                             ))}
                           </select>

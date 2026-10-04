@@ -67,6 +67,7 @@ export default function Register() {
   const [diploma, setDiploma] = useState(DIPLOMAS[0]);
   const [experienceYears, setExperienceYears] = useState(EXPERIENCES[1]);
   const [teacherBio, setTeacherBio] = useState("");
+  const [teacherPrice, setTeacherPrice] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -132,6 +133,7 @@ export default function Register() {
           level: userLevel,
           subject: isTeacher ? subject : null,
           experience: userExperience,
+          price: isTeacher ? (teacherPrice.trim() || null) : null,
           bio: userBio,
           verified: isVerified,
         }
@@ -158,6 +160,7 @@ export default function Register() {
           level: userLevel,
           subject: isTeacher ? subject : null,
           experience: userExperience,
+          price: isTeacher ? (teacherPrice.trim() || null) : null,
           bio: userBio,
           verified: isVerified,
         }, { onConflict: "id" });
@@ -472,6 +475,22 @@ export default function Register() {
                 >
                   {EXPERIENCES.map((exp) => <option key={exp} value={exp}>{exp}</option>)}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Rémunération souhaitée par élève (optionnel)
+                </label>
+                <input
+                  type="text"
+                  value={teacherPrice}
+                  onChange={(e) => setTeacherPrice(e.target.value)}
+                  placeholder="Ex: 30 000 FCFA / mois ou 5 000 FCFA / heure"
+                  className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white outline-none focus:border-sama-primary transition"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Transmis à l&apos;Administration de SAMA ACADÉMIE comme base de négociation avec les parents d&apos;élèves.
+                </p>
               </div>
 
               <div>
