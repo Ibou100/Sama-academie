@@ -5,13 +5,18 @@ import { supabase } from "@/lib/supabase";
 import { getSupportConfig, updateSupportConfig } from "@/lib/siteConfig";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"stats" | "videos" | "annales" | "users" | "support">("stats");
+  const [activeTab, setActiveTab] = useState<"stats" | "requests" | "teachers" | "videos" | "annales" | "users" | "support">("stats");
 
   // Données
   const [profiles, setProfiles] = useState<any[]>([]);
   const [videos, setVideos] = useState<any[]>([]);
   const [annales, setAnnales] = useState<any[]>([]);
+  const [tutoringRequests, setTutoringRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Actions modération & assignation
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [selectedTeacherForAssign, setSelectedTeacherForAssign] = useState<Record<string, string>>({});
 
   // Configuration Support WhatsApp
   const [supportPhone, setSupportPhone] = useState("+221 77 467 31 09");
@@ -51,10 +56,15 @@ export default function AdminDashboard() {
     const { data: profs } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
     const { data: vids } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
     const { data: anns } = await supabase.from("annales").select("*").order("created_at", { ascending: false });
+    const { data: reqs } = await supabase
+      .from("tutoring_requests")
+      .select(`*, student:profiles!student_id(first_name, last_name, phone, email, region, level), teacher:profiles!teacher_id(first_name, last_name, phone, subject)`)
+      .order("created_at", { ascending: false });
 
     if (profs) setProfiles(profs);
     if (vids) setVideos(vids);
     if (anns) setAnnales(anns);
+    if (reqs) setTutoringRequests(reqs);
 
     const supportCfg = await getSupportConfig();
     if (supportCfg && supportCfg.phone) {
@@ -62,6 +72,90 @@ export default function AdminDashboard() {
     }
 
     setLoading(false);
+  };
+
+  // 0. Assigner et valider une demande d'encadrement
+  const handleAssignAndApprove = async (requestId: string, teacherId?: string) => {
+    setActionLoadingId(requestId);
+    const assignedTeacher = teacherId || selectedTeacherForAssign[requestId];
+    
+    const updatePayload: any = {
+      status: "accepted",
+      updated_at: new Date().toISOString()
+    };
+    if (assignedTeacher) {
+      updatePayload.teacher_id = assignedTeacher;
+    }
+
+    const { error } = await supabase
+      .from("tutoring_requests")
+      .update(updatePayload)
+      .eq("id", requestId);
+
+    if (!error) {
+      showToast("✅ Demande validée et assignée ! L'élève et le professeur peuvent désormais échanger.");
+      setTutoringRequests((prev) => prev.map((r) => r.id === requestId ? { ...r, ...updatePayload } : r));
+    } else {
+      showToast("❌ Erreur : " + error.message);
+    }
+    setActionLoadingId(null);
+  };
+
+  // Rejeter ou archiver une demande
+  const handleRejectRequest = async (requestId: string) => {
+    setActionLoadingId(requestId);
+    const { error } = await supabase
+      .from("tutoring_requests")
+      .update({ status: "declined", updated_at: new Date().toISOString() })
+      .eq("id", requestId);
+
+    if (!error) {
+      showToast("Demande archivée / refusée.");
+      setTutoringRequests((prev) => prev.map((r) => r.id === requestId ? { ...r, status: "declined" } : r));
+    }
+    setActionLoadingId(null);
+  };
+
+  // Activer ou suspendre la validation d'un enseignant
+  const toggleTeacherVerification = async (teacherId: string, currentStatus: boolean) => {
+    setActionLoadingId(teacherId);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ verified: !currentStatus })
+      .eq("id", teacherId);
+
+    if (!error) {
+      showToast(!currentStatus ? "✅ Enseignant validé et accrédité dans l'annuaire !" : "⏸️ Visibilité de l'enseignant suspendue.");
+      setProfiles((prev) => prev.map((p) => p.id === teacherId ? { ...p, verified: !currentStatus } : p));
+    } else {
+      showToast("❌ Erreur : " + error.message);
+    }
+    setActionLoadingId(null);
+  };
+
+  // Valider tous les enseignants d'un clic
+  const handleValidateAllTeachers = async () => {
+    setActionLoadingId("all_teachers");
+    const unverifiedTeachers = profiles.filter((p) => p.role === "enseignant" && !p.verified);
+    if (unverifiedTeachers.length === 0) {
+      showToast("Tous les enseignants sont déjà validés !");
+      setActionLoadingId(null);
+      return;
+    }
+
+    const ids = unverifiedTeachers.map((t) => t.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ verified: true })
+      .in("id", ids);
+
+    if (!error) {
+      showToast(`✅ ${ids.length} enseignant(s) validé(s) avec succès !`);
+      setProfiles((prev) => prev.map((p) => p.role === "enseignant" ? { ...p, verified: true } : p));
+    } else {
+      showToast("❌ Erreur : " + error.message);
+    }
+    setActionLoadingId(null);
   };
 
   // Sauvegarder le numéro de support WhatsApp
@@ -174,6 +268,12 @@ export default function AdminDashboard() {
   }
 
   const premiumCount = profiles.filter((p) => p.is_premium).length;
+  const allTeachers = profiles.filter((p) => p.role === "enseignant");
+  const pendingTeachersCount = allTeachers.filter((p) => !p.verified).length;
+  const verifiedTeachersCount = allTeachers.filter((p) => p.verified).length;
+  const pendingRequestsCount = tutoringRequests.filter(
+    (r) => r.status === "en_attente_admin" || r.status === "pending"
+  ).length;
 
   return (
     <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
@@ -202,50 +302,92 @@ export default function AdminDashboard() {
       <div className="flex border-b border-gray-200 mb-8 overflow-x-auto space-x-2">
         <button
           onClick={() => setActiveTab("stats")}
-          className={`py-3 px-6 font-bold text-sm border-b-2 transition whitespace-nowrap ${
+          className={`py-3 px-5 font-bold text-sm border-b-2 transition whitespace-nowrap ${
             activeTab === "stats" ? "border-sama-primary text-sama-primary" : "border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
           <i className="fas fa-chart-line mr-2"></i>Vue d&apos;ensemble
         </button>
+
         <button
-          onClick={() => setActiveTab("videos")}
-          className={`py-3 px-6 font-bold text-sm border-b-2 transition whitespace-nowrap ${
-            activeTab === "videos" ? "border-sama-primary text-sama-primary" : "border-transparent text-gray-500 hover:text-gray-900"
+          onClick={() => setActiveTab("requests")}
+          className={`py-3 px-5 font-bold text-sm border-b-2 transition whitespace-nowrap flex items-center gap-2 ${
+            activeTab === "requests" ? "border-sama-primary text-sama-primary" : "border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
-          <i className="fas fa-video mr-2"></i>Vidéos ({videos.length})
+          <i className="fas fa-handshake"></i>
+          <span>Demandes d&apos;Encadrement</span>
+          {pendingRequestsCount > 0 ? (
+            <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse">
+              {pendingRequestsCount}
+            </span>
+          ) : (
+            <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full font-bold">
+              {tutoringRequests.length}
+            </span>
+          )}
         </button>
+
         <button
-          onClick={() => setActiveTab("annales")}
-          className={`py-3 px-6 font-bold text-sm border-b-2 transition whitespace-nowrap ${
-            activeTab === "annales" ? "border-sama-primary text-sama-primary" : "border-transparent text-gray-500 hover:text-gray-900"
+          onClick={() => setActiveTab("teachers")}
+          className={`py-3 px-5 font-bold text-sm border-b-2 transition whitespace-nowrap flex items-center gap-2 ${
+            activeTab === "teachers" ? "border-sama-primary text-sama-primary" : "border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
-          <i className="fas fa-file-pdf mr-2"></i>Annales PDF ({annales.length})
+          <i className="fas fa-chalkboard-teacher"></i>
+          <span>Validation Enseignants</span>
+          {pendingTeachersCount > 0 ? (
+            <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
+              {pendingTeachersCount}
+            </span>
+          ) : (
+            <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full font-bold">
+              {allTeachers.length}
+            </span>
+          )}
         </button>
+
         <button
           onClick={() => setActiveTab("users")}
-          className={`py-3 px-6 font-bold text-sm border-b-2 transition whitespace-nowrap ${
+          className={`py-3 px-5 font-bold text-sm border-b-2 transition whitespace-nowrap ${
             activeTab === "users" ? "border-sama-primary text-sama-primary" : "border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
           <i className="fas fa-users mr-2"></i>Utilisateurs ({profiles.length})
         </button>
+
+        <button
+          onClick={() => setActiveTab("videos")}
+          className={`py-3 px-5 font-bold text-sm border-b-2 transition whitespace-nowrap ${
+            activeTab === "videos" ? "border-sama-primary text-sama-primary" : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <i className="fas fa-video mr-2"></i>Vidéos ({videos.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab("annales")}
+          className={`py-3 px-5 font-bold text-sm border-b-2 transition whitespace-nowrap ${
+            activeTab === "annales" ? "border-sama-primary text-sama-primary" : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <i className="fas fa-file-pdf mr-2"></i>Annales PDF ({annales.length})
+        </button>
+
         <button
           onClick={() => setActiveTab("support")}
-          className={`py-3 px-6 font-bold text-sm border-b-2 transition whitespace-nowrap ${
+          className={`py-3 px-5 font-bold text-sm border-b-2 transition whitespace-nowrap ${
             activeTab === "support" ? "border-green-600 text-green-600 font-extrabold" : "border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
-          <i className="fab fa-whatsapp mr-2 text-green-500 text-base"></i>Support & WhatsApp Officiel
+          <i className="fab fa-whatsapp mr-2 text-green-500 text-base"></i>Support WhatsApp
         </button>
       </div>
 
       {/* 1. ONGLET STATS */}
       {activeTab === "stats" && (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
               <div className="w-12 h-12 bg-blue-50 text-sama-primary rounded-2xl flex items-center justify-center text-xl mb-3">
                 <i className="fas fa-users"></i>
@@ -263,6 +405,26 @@ export default function AdminDashboard() {
             </div>
 
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center text-xl mb-3">
+                <i className="fas fa-handshake"></i>
+              </div>
+              <h3 className="text-3xl font-extrabold text-gray-900">{tutoringRequests.length}</h3>
+              <p className="text-xs font-semibold mt-1 text-red-600">
+                {pendingRequestsCount} demande(s) en attente de traitement
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl mb-3">
+                <i className="fas fa-chalkboard-teacher"></i>
+              </div>
+              <h3 className="text-3xl font-extrabold text-gray-900">{allTeachers.length}</h3>
+              <p className="text-xs font-semibold mt-1 text-emerald-600">
+                {verifiedTeachersCount} validé(s) • {pendingTeachersCount} à valider
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
               <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-xl mb-3">
                 <i className="fas fa-video"></i>
               </div>
@@ -276,6 +438,294 @@ export default function AdminDashboard() {
               </div>
               <h3 className="text-3xl font-extrabold text-gray-900">{annales.length}</h3>
               <p className="text-gray-400 text-xs font-semibold mt-1">Documents PDF en ligne</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. ONGLET DEMANDES D'ENCADREMENT & INTERMÉDIATION */}
+      {activeTab === "requests" && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-3xl p-6 sm:p-8 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold mb-2">
+                <i className="fas fa-shield-alt text-sama-orange"></i> Intermédiation Sécurisée & Commissions
+              </div>
+              <h2 className="text-2xl font-black">Demandes d&apos;Encadrement & Cours Particuliers</h2>
+              <p className="text-blue-100 text-xs sm:text-sm mt-1 max-w-2xl">
+                Toutes les demandes formulées par les élèves et parents arrivent ici. Vous fixez le tarif, percevez la commission SAMA ACADÉMIE, et assignez l&apos;enseignant officiel.
+              </p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm px-5 py-3 rounded-2xl border border-white/20 text-center">
+              <span className="text-2xl font-black text-sama-orange">{pendingRequestsCount}</span>
+              <p className="text-[11px] text-blue-200 uppercase font-bold">À Traiter</p>
+            </div>
+          </div>
+
+          {tutoringRequests.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
+              <i className="fas fa-clipboard-check text-4xl text-gray-300 mb-3 block"></i>
+              <h3 className="font-bold text-gray-700 text-lg">Aucune demande d&apos;encadrement pour le moment</h3>
+              <p className="text-xs text-gray-400 mt-1">Les futures demandes d&apos;élèves ou de parents apparaîtront ici.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {tutoringRequests.map((req) => {
+                const isPending = req.status === "en_attente_admin" || req.status === "pending";
+                const isAccepted = req.status === "accepted";
+                const isDeclined = req.status === "declined";
+                const studentPhone = req.student?.phone || "";
+                const cleanStudentPhone = studentPhone.replace(/[^0-9]/g, "");
+
+                return (
+                  <div key={req.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col lg:flex-row gap-6 justify-between items-start">
+                    <div className="space-y-3 flex-grow max-w-2xl">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {isPending && (
+                          <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full flex items-center gap-1.5 animate-pulse">
+                            <i className="fas fa-clock"></i> À Valider & Assigner
+                          </span>
+                        )}
+                        {isAccepted && (
+                          <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+                            <i className="fas fa-check-circle"></i> Validée & En Cours
+                          </span>
+                        )}
+                        {isDeclined && (
+                          <span className="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full">
+                            ❌ Refusée / Archivée
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400">
+                          Reçue le {new Date(req.created_at).toLocaleDateString("fr-FR")} à {new Date(req.created_at).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                          <i className="fas fa-user-graduate text-sama-primary text-base"></i>
+                          {req.student?.first_name} {req.student?.last_name}
+                        </h4>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          <strong>Niveau / Classe :</strong> {req.student?.level || "Non précisé"} • 📍 <strong>Région :</strong> {req.student?.region || "Sénégal"}
+                        </p>
+                      </div>
+
+                      {req.message && (
+                        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3.5 text-xs text-gray-700 italic">
+                          <span className="font-bold not-italic text-gray-900 block mb-1">Message de la demande :</span>
+                          &quot;{req.message}&quot;
+                        </div>
+                      )}
+
+                      {/* Professeur souhaité / assigné */}
+                      <div className="text-xs text-gray-600 flex items-center gap-2">
+                        <span className="font-bold">Professeur ciblé/assigné :</span>
+                        {req.teacher ? (
+                          <span className="bg-blue-50 text-sama-primary px-2.5 py-1 rounded-lg font-bold border border-blue-100">
+                            👨‍🏫 {req.teacher.first_name} {req.teacher.last_name} ({req.teacher.subject || "Général"})
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 italic">Aucun professeur spécifique sélectionné</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bloc d'action Admin */}
+                    <div className="w-full lg:w-80 bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3 flex-shrink-0">
+                      <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Actions de la Direction</p>
+
+                      {/* Contact WhatsApp direct avec l'élève/parent pour paiement */}
+                      {cleanStudentPhone ? (
+                        <a
+                          href={`https://wa.me/${cleanStudentPhone}?text=Bonjour%20${encodeURIComponent(req.student?.first_name || '')},%20je%20suis%20le%20responsable%20p%C3%A9dagogique%20de%20SAMA%20ACAD%C3%89MIE%20concernant%20votre%20demande%20de%20cours.`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-sm"
+                        >
+                          <i className="fab fa-whatsapp text-base"></i> Contacter ({req.student?.phone})
+                        </a>
+                      ) : (
+                        <div className="text-[11px] text-gray-400 bg-white p-2 rounded-xl text-center border">
+                          Numéro téléphone non renseigné
+                        </div>
+                      )}
+
+                      {/* Sélecteur de professeur officiel */}
+                      {isPending && (
+                        <div className="space-y-2 pt-2 border-t border-gray-200">
+                          <label className="block text-[11px] font-bold text-gray-700">
+                            Choisir / Assigner le Professeur :
+                          </label>
+                          <select
+                            value={selectedTeacherForAssign[req.id] || req.teacher_id || ""}
+                            onChange={(e) => setSelectedTeacherForAssign({ ...selectedTeacherForAssign, [req.id]: e.target.value })}
+                            className="w-full border border-gray-300 rounded-xl p-2.5 text-xs bg-white outline-none focus:border-sama-primary font-medium"
+                          >
+                            <option value="">-- Sélectionner un enseignant --</option>
+                            {allTeachers.map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.first_name} {t.last_name} — {t.subject || "Général"} {t.verified ? "✅" : "⏳"}
+                              </option>
+                            ))}
+                          </select>
+
+                          <div className="flex gap-2 pt-1">
+                            <button
+                              onClick={() => handleAssignAndApprove(req.id)}
+                              disabled={actionLoadingId === req.id}
+                              className="flex-1 bg-sama-primary hover:bg-blue-800 disabled:bg-blue-300 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5"
+                            >
+                              {actionLoadingId === req.id ? (
+                                <i className="fas fa-spinner fa-spin"></i>
+                              ) : (
+                                <><i className="fas fa-check"></i> Valider & Activer</>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleRejectRequest(req.id)}
+                              disabled={actionLoadingId === req.id}
+                              className="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 px-3 rounded-xl text-xs transition"
+                            >
+                              Refuser
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {isAccepted && (
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-2.5 text-[11px] text-green-800 font-medium text-center">
+                          ✅ Cours validé. La messagerie interne est ouverte entre l&apos;élève et l&apos;enseignant.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. ONGLET VALIDATION ENSEIGNANTS */}
+      {activeTab === "teachers" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-gray-900">Modération du Corps Professoral</h2>
+              <p className="text-gray-500 text-xs sm:text-sm mt-1 max-w-2xl">
+                Contrôlez les diplômes et l&apos;expérience des enseignants avant de les afficher publiquement dans l&apos;annuaire.
+              </p>
+            </div>
+            {pendingTeachersCount > 0 && (
+              <button
+                onClick={handleValidateAllTeachers}
+                disabled={actionLoadingId === "all_teachers"}
+                className="bg-sama-primary hover:bg-blue-800 text-white font-bold px-5 py-3 rounded-2xl text-xs transition shadow-sm flex items-center gap-2"
+              >
+                {actionLoadingId === "all_teachers" ? (
+                  <i className="fas fa-spinner fa-spin"></i>
+                ) : (
+                  <><i className="fas fa-check-double"></i> Valider tous les profs en attente ({pendingTeachersCount})</>
+                )}
+              </button>
+            )}
+          </div>
+
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 text-gray-400 font-bold uppercase text-[10px] tracking-wider border-b border-gray-100">
+                  <tr>
+                    <th className="p-4">Enseignant</th>
+                    <th className="p-4">Matière & Niveau</th>
+                    <th className="p-4">Diplôme & Expérience</th>
+                    <th className="p-4">Contact WhatsApp</th>
+                    <th className="p-4">Statut Annuaire</th>
+                    <th className="p-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {allTeachers.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-gray-400 text-sm">
+                        Aucun enseignant inscrit pour le moment.
+                      </td>
+                    </tr>
+                  ) : (
+                    allTeachers.map((t) => (
+                      <tr key={t.id} className="hover:bg-gray-50 transition">
+                        <td className="p-4">
+                          <p className="font-extrabold text-gray-900">{t.first_name} {t.last_name}</p>
+                          <p className="text-xs text-gray-400">{t.email || "Email non renseigné"}</p>
+                          <p className="text-[11px] text-sama-primary font-semibold mt-0.5">📍 {t.region || "Région inconnue"}</p>
+                        </td>
+
+                        <td className="p-4">
+                          <span className="bg-blue-50 text-sama-primary text-xs font-bold px-2.5 py-1 rounded-lg border border-blue-100">
+                            {t.subject || "Général"}
+                          </span>
+                          <p className="text-xs text-gray-500 mt-1">{t.level || "Tous cycles"}</p>
+                        </td>
+
+                        <td className="p-4 max-w-xs">
+                          <p className="text-xs font-bold text-gray-800">{t.experience || "Expérience non renseignée"}</p>
+                          {t.bio && (
+                            <p className="text-[11px] text-gray-500 italic mt-0.5 line-clamp-2">&quot;{t.bio}&quot;</p>
+                          )}
+                        </td>
+
+                        <td className="p-4">
+                          {t.phone ? (
+                            <a
+                              href={`https://wa.me/${t.phone.replace(/[^0-9]/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-green-600 hover:text-green-700 font-bold text-xs inline-flex items-center gap-1.5"
+                            >
+                              <i className="fab fa-whatsapp text-base"></i> {t.phone}
+                            </a>
+                          ) : (
+                            <span className="text-xs text-gray-400">Non renseigné</span>
+                          )}
+                        </td>
+
+                        <td className="p-4">
+                          {t.verified ? (
+                            <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full inline-flex items-center gap-1">
+                              <i className="fas fa-check-circle"></i> Accrédité (Visible)
+                            </span>
+                          ) : (
+                            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full inline-flex items-center gap-1">
+                              <i className="fas fa-clock"></i> En Attente (Masqué)
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="p-4 text-right">
+                          <button
+                            onClick={() => toggleTeacherVerification(t.id, t.verified)}
+                            disabled={actionLoadingId === t.id}
+                            className={`font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm ${
+                              t.verified
+                                ? "border border-red-200 text-red-600 hover:bg-red-50"
+                                : "bg-green-600 hover:bg-green-700 text-white"
+                            }`}
+                          >
+                            {actionLoadingId === t.id ? (
+                              <i className="fas fa-spinner fa-spin"></i>
+                            ) : t.verified ? (
+                              "⏸️ Suspendre"
+                            ) : (
+                              "✅ Valider & Publier"
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

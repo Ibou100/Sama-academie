@@ -83,31 +83,11 @@ export default function Enseignants() {
       student_id: currentUser.id,
       teacher_id: contactTeacher.id,
       message: requestMessage.trim() || null,
-      status: "pending"
+      status: "en_attente_admin"
     }]);
 
     if (!error) {
       setBookedSuccess(true);
-      
-      // Envoi de la notification par email au professeur
-      if (contactTeacher.email) {
-        try {
-          await fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'new_request',
-              toEmail: contactTeacher.email,
-              recipientName: contactTeacher.first_name,
-              senderName: currentUser.first_name,
-              messagePreview: requestMessage.trim() || null
-            })
-          });
-        } catch (e) {
-          console.error("Erreur lors de l'envoi de la notification", e);
-        }
-      }
-      
     } else {
       alert("Erreur lors de l'envoi : " + error.message);
     }
@@ -178,7 +158,7 @@ export default function Enseignants() {
                         onClick={() => setIsRequesting(true)}
                         className="w-full bg-sama-primary hover:bg-blue-800 text-white font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-3 transition shadow-md text-sm"
                       >
-                        <i className="fas fa-calendar-check text-base"></i> Réserver un cours avec cet enseignant
+                        <i className="fas fa-calendar-check text-base"></i> Demander cet enseignant via SAMA ACADÉMIE
                       </button>
 
                       <a
@@ -192,14 +172,14 @@ export default function Enseignants() {
                     </>
                   ) : (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                      <p className="text-sm font-bold text-gray-900">Demande de cours à {contactTeacher.first_name}</p>
+                      <p className="text-sm font-bold text-gray-900">Demande d&apos;encadrement avec {contactTeacher.first_name}</p>
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1">Message (Optionnel)</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Précisez vos besoins (Classe, objectifs, disponibilités)</label>
                         <textarea 
                           rows={3} 
                           value={requestMessage}
                           onChange={(e) => setRequestMessage(e.target.value)}
-                          placeholder="Ex: Bonjour, je voudrais de l'aide en Maths pour le Bac..."
+                          placeholder="Ex: Bonjour, je prépare le Bac S2 et je souhaite 2 séances par semaine de renforcement en Maths..."
                           className="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-sama-primary resize-none"
                         ></textarea>
                       </div>
@@ -208,7 +188,7 @@ export default function Enseignants() {
                           Annuler
                         </button>
                         <button onClick={handleSendRequest} disabled={submittingRequest} className="flex-1 bg-sama-primary hover:bg-blue-800 text-white font-bold py-3 rounded-xl text-sm transition flex justify-center items-center gap-2">
-                          {submittingRequest ? <i className="fas fa-spinner fa-spin"></i> : "Envoyer"}
+                          {submittingRequest ? <i className="fas fa-spinner fa-spin"></i> : "Transmettre à la Direction"}
                         </button>
                       </div>
                     </div>
@@ -217,18 +197,26 @@ export default function Enseignants() {
               </>
             ) : (
               <div className="text-center py-4 space-y-4">
-                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl">
-                  <i className="fas fa-check"></i>
+                <div className="w-16 h-16 bg-blue-100 text-sama-primary rounded-full flex items-center justify-center mx-auto text-3xl">
+                  <i className="fas fa-clipboard-check"></i>
                 </div>
-                <h3 className="text-2xl font-extrabold text-gray-900">Demande envoyée !</h3>
-                <p className="text-gray-500 text-sm">
-                  Votre demande a été transmise à <strong>{contactTeacher.first_name}</strong>.
+                <h3 className="text-2xl font-extrabold text-gray-900">Demande transmise à la Direction !</h3>
+                <p className="text-gray-600 text-sm">
+                  Votre demande d&apos;encadrement avec <strong>{contactTeacher.first_name} {contactTeacher.last_name}</strong> a bien été reçue par l&apos;Administration de SAMA ACADÉMIE.
                 </p>
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 text-left space-y-1">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <i className="fas fa-shield-alt"></i> Procédure Officielle SAMA ACADÉMIE
+                  </p>
+                  <p>
+                    Un conseiller pédagogique va vérifier la disponibilité, convenir des créneaux officiels et valider votre inscription.
+                  </p>
+                </div>
                 <button
                   onClick={() => setContactTeacher(null)}
-                  className="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-black transition text-sm"
+                  className="w-full bg-sama-primary text-white font-bold py-3 rounded-xl hover:bg-blue-800 transition text-sm"
                 >
-                  Fermer
+                  Compris, fermer
                 </button>
               </div>
             )}
@@ -331,9 +319,9 @@ export default function Enseignants() {
                     <div className="flex sm:justify-end mt-4">
                       <button
                         onClick={() => handleContactClick(teacher)}
-                        className="bg-sama-primary hover:bg-blue-800 text-white px-6 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-sm"
+                        className="bg-sama-primary hover:bg-blue-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 shadow-sm"
                       >
-                        {isLoggedIn ? <><i className="fas fa-envelope"></i> Contacter</> : <><i className="fas fa-lock text-xs"></i> Contacter</>}
+                        <i className="fas fa-calendar-plus"></i> Demander un encadrement
                       </button>
                     </div>
                   </div>

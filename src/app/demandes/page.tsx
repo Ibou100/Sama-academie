@@ -42,18 +42,20 @@ export default function DemandesCours() {
 
       if (profile) {
         // 1. Récupérer les demandes REÇUES (l'utilisateur est le professeur)
+        // STRICT SAMA ACADÉMIE : Le professeur ne voit que les missions officiellement assignées/validées par l'administration
         const { data: received } = await supabase
           .from("tutoring_requests")
-          .select(`*, student:profiles!student_id(first_name, last_name, email, phone, region, level, avatar_url)`)
+          .select(`*, student:profiles!student_id(first_name, last_name, email, region, level, avatar_url)`)
           .eq("teacher_id", user.id)
+          .eq("status", "accepted")
           .order("created_at", { ascending: false });
         
         if (received) setReceivedRequests(received);
 
-        // 2. Récupérer les demandes ENVOYÉES (l'utilisateur est l'élève)
+        // 2. Récupérer les demandes ENVOYÉES (l'utilisateur est l'élève ou le parent)
         const { data: sent } = await supabase
           .from("tutoring_requests")
-          .select(`*, teacher:profiles!teacher_id(first_name, last_name, email, phone, subject, region, avatar_url)`)
+          .select(`*, teacher:profiles!teacher_id(first_name, last_name, email, subject, region, avatar_url)`)
           .eq("student_id", user.id)
           .order("created_at", { ascending: false });
         
@@ -221,51 +223,36 @@ export default function DemandesCours() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-end gap-3 min-w-[200px]">
-                {isPending && <span className="bg-yellow-100 text-yellow-700 font-bold px-3 py-1 rounded-full text-xs">⏳ En attente</span>}
-                {isAccepted && <span className="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-xs">✅ Acceptée</span>}
-                {isDeclined && <span className="bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-xs">❌ Refusée</span>}
-
-                {/* Boutons d'actions pour le PROFESSEUR (demandes reçues) */}
-                {isIncoming && isPending && (
-                  <div className="mt-2 flex gap-2 w-full">
-                    <button 
-                      onClick={() => updateStatus(req.id, "declined")}
-                      disabled={updatingId === req.id}
-                      className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 rounded-xl text-xs transition"
-                    >
-                      Refuser
-                    </button>
-                    <button 
-                      onClick={() => updateStatus(req.id, "accepted")}
-                      disabled={updatingId === req.id}
-                      className="flex-1 bg-sama-primary hover:bg-blue-800 text-white font-bold py-2 rounded-xl text-xs transition"
-                    >
-                      Accepter
-                    </button>
+              <div className="flex flex-col items-end gap-3 min-w-[220px]">
+                {isPending && (
+                  <div className="text-right">
+                    <span className="bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full text-xs inline-flex items-center gap-1">
+                      <i className="fas fa-clock text-amber-600"></i> Traitement Direction SAMA
+                    </span>
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      Validation pédagogique en cours
+                    </p>
                   </div>
                 )}
+                {isAccepted && (
+                  <span className="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-xs inline-flex items-center gap-1">
+                    <i className="fas fa-check-circle text-green-600"></i> Encadrement Actif
+                  </span>
+                )}
+                {isDeclined && <span className="bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-xs">❌ Non retenue</span>}
 
-                {/* Bouton Discuter Interne */}
+                {/* Bouton Discuter Interne — Uniquement lorsque la demande a été validée par la direction */}
                 {isAccepted && (
                   <div className="mt-2 w-full space-y-2 text-right">
                     <button 
                       onClick={() => openChat(req)}
-                      className="w-full bg-gray-900 hover:bg-black text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2"
+                      className="w-full bg-sama-primary hover:bg-blue-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2"
                     >
-                      <i className="fas fa-comments text-sm"></i> Ouvrir la discussion
+                      <i className="fas fa-comments text-sm"></i> Ouvrir la messagerie interne
                     </button>
-                    
-                    {/* Option WhatsApp alternative */}
-                    {partner.phone && (
-                      <a 
-                        href={`https://wa.me/${partner.phone.replace(/\+/g, '')}`}
-                        target="_blank" rel="noreferrer"
-                        className="inline-block text-gray-400 hover:text-green-500 font-semibold text-[11px] transition"
-                      >
-                        <i className="fab fa-whatsapp"></i> Ou passer sur WhatsApp
-                      </a>
-                    )}
+                    <p className="text-[10px] text-gray-400 flex items-center justify-center gap-1">
+                      <i className="fas fa-shield-alt text-sama-primary"></i> Espace d&apos;échange sécurisé SAMA
+                    </p>
                   </div>
                 )}
               </div>
