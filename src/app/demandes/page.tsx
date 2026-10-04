@@ -354,13 +354,17 @@ export default function DemandesCours() {
       )}
 
       {/* === PAGE PRINCIPALE === */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-6 rounded-3xl">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">
-            Tableau de bord des demandes
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sama-primary/10 text-sama-primary text-xs font-bold mb-2">
+            <i className="fas fa-shield-alt"></i> Espace Sécurisé & Encadré
+          </div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+            <i className="fas fa-comments text-sama-primary"></i>
+            Messagerie & Suivi Pédagogique
           </h1>
-          <p className="text-gray-500 mt-2">
-            Gérez vos demandes de cours reçues et suivez celles que vous avez envoyées.
+          <p className="text-gray-600 mt-2 text-sm max-w-2xl">
+            Échangez en direct avec vos enseignants ou élèves en toute sécurité au sein de la plateforme. Toutes les séances et messages sont encadrés par l&apos;équipe pédagogique de SAMA ACADÉMIE.
           </p>
         </div>
       </div>

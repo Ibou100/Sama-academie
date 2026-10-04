@@ -94,48 +94,70 @@ export default function Header() {
           {/* Boutons droite — Dynamiques selon l'état de connexion */}
           <div className="hidden md:flex items-center space-x-3">
             {userProfile ? (
-              // CONNECTÉ — Affiche avatar + menu déroulant
-              <div className="relative">
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 hover:bg-gray-50 rounded-xl px-3 py-2 transition"
+              // CONNECTÉ — Bouton Messagerie bien visible + Avatar
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/demandes"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-extrabold transition shadow-sm ${
+                    pathname === "/demandes" || pathname === "/messagerie"
+                      ? "bg-sama-primary text-white"
+                      : "bg-blue-50 text-sama-primary hover:bg-blue-100 border border-blue-100"
+                  }`}
+                  title="Accéder à la messagerie interne"
                 >
-                  {userProfile.avatar_url ? (
-                    <img
-                      src={userProfile.avatar_url}
-                      alt="Avatar"
-                      className="w-9 h-9 rounded-full object-cover border-2 border-sama-primary"
-                    />
-                  ) : (
-                    <div className={`w-9 h-9 rounded-full ${getAvatarBg(userProfile.first_name)} flex items-center justify-center text-white font-bold text-sm`}>
-                      {getInitials(userProfile.first_name, userProfile.last_name)}
+                  <i className="fas fa-comment-dots text-base"></i>
+                  <span>Messagerie</span>
+                </Link>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center gap-2 hover:bg-gray-50 rounded-xl px-3 py-2 transition"
+                  >
+                    {userProfile.avatar_url ? (
+                      <img
+                        src={userProfile.avatar_url}
+                        alt="Avatar"
+                        className="w-9 h-9 rounded-full object-cover border-2 border-sama-primary"
+                      />
+                    ) : (
+                      <div className={`w-9 h-9 rounded-full ${getAvatarBg(userProfile.first_name)} flex items-center justify-center text-white font-bold text-sm`}>
+                        {getInitials(userProfile.first_name, userProfile.last_name)}
+                      </div>
+                    )}
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-gray-900 leading-tight">{userProfile.first_name}</p>
+                    </div>
+                    <i className={`fas fa-chevron-down text-xs text-gray-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}></i>
+                  </button>
+
+                  {/* Menu déroulant du profil */}
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 top-14 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50">
+                      <Link
+                        href="/demandes"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-bold"
+                      >
+                        <i className="fas fa-comment-dots text-sama-primary w-4"></i> Messagerie & Suivi
+                      </Link>
+                      <Link
+                        href="/profil"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium"
+                      >
+                        <i className="fas fa-user-circle text-sama-primary w-4"></i> Mon profil
+                      </Link>
+                      <div className="border-t border-gray-100 my-1"></div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 font-medium"
+                      >
+                        <i className="fas fa-sign-out-alt w-4"></i> Se déconnecter
+                      </button>
                     </div>
                   )}
-                  <div className="text-left">
-                    <p className="text-sm font-bold text-gray-900 leading-tight">{userProfile.first_name}</p>
-                  </div>
-                  <i className={`fas fa-chevron-down text-xs text-gray-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}></i>
-                </button>
-
-                {/* Menu déroulant du profil */}
-                {isDropdownOpen && (
-                  <div className="absolute right-0 top-14 w-52 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50">
-                    <Link
-                      href="/profil"
-                      onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium"
-                    >
-                      <i className="fas fa-user-circle text-sama-primary w-4"></i> Mon profil
-                    </Link>
-                    <div className="border-t border-gray-100 my-1"></div>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 font-medium"
-                    >
-                      <i className="fas fa-sign-out-alt w-4"></i> Se déconnecter
-                    </button>
-                  </div>
-                )}
+                </div>
               </div>
             ) : (
               // NON CONNECTÉ — Affiche les boutons classiques
@@ -182,9 +204,16 @@ export default function Header() {
               {userProfile ? (
                 <>
                   <Link
+                    href="/demandes"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 text-center text-base font-bold bg-sama-primary text-white rounded-xl shadow-sm"
+                  >
+                    <i className="fas fa-comment-dots"></i> Messagerie & Suivi
+                  </Link>
+                  <Link
                     href="/profil"
                     onClick={() => setIsMenuOpen(false)}
-                    className="block px-3 py-2 text-center text-base font-medium text-sama-primary border border-sama-primary rounded-lg"
+                    className="block px-3 py-2 text-center text-base font-medium text-sama-primary border border-sama-primary rounded-xl"
                   >
                     Mon profil ({userProfile.first_name})
                   </Link>
