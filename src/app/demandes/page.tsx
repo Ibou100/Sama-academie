@@ -29,6 +29,35 @@ export default function DemandesCours() {
   const [sendingMsg, setSendingMsg] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // === SHARING DOCUMENTS & HOMEWORK ===
+  const [showDocModal, setShowDocModal] = useState(false);
+  const [docType, setDocType] = useState("Fiche d'exercices");
+  const [docTitle, setDocTitle] = useState("");
+  const [docInstruction, setDocInstruction] = useState("");
+  const [docResourceLink, setDocResourceLink] = useState("");
+
+  const handleShareDocument = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!docTitle.trim() || !activeChat || !currentUser) return;
+    setSendingMsg(true);
+
+    const formattedContent = `[SAMA_DOC]:::${docType}:::${docTitle.trim()}:::${docInstruction.trim() || "Aucune consigne spécifique"}:::${docResourceLink.trim()}`;
+
+    const { error } = await supabase.from("tutoring_messages").insert([{
+      request_id: activeChat.id,
+      sender_id: currentUser.id,
+      content: formattedContent,
+    }]);
+
+    if (!error) {
+      setShowDocModal(false);
+      setDocTitle("");
+      setDocInstruction("");
+      setDocResourceLink("");
+    }
+    setSendingMsg(false);
+  };
+
   useEffect(() => {
     const fetchRequests = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -304,6 +333,66 @@ export default function DemandesCours() {
               ) : (
                 messages.map((msg) => {
                   const isMe = msg.sender_id === currentUser.id;
+                  const isDoc = msg.content?.startsWith("[SAMA_DOC]");
+
+                  if (isDoc) {
+                    const parts = msg.content.split(":::");
+                    const docT = parts[1] || "Support";
+                    const title = parts[2] || "Document";
+                    const instructions = parts[3] || "";
+                    const link = parts[4] || "";
+
+                    return (
+                      <div key={msg.id} className={`flex flex-col max-w-[85%] ${isMe ? "self-end items-end" : "self-start items-start"}`}>
+                        <div className={`p-4 rounded-2xl text-xs sm:text-sm shadow-sm border ${
+                          isMe 
+                            ? "bg-slate-900 text-white border-slate-800 rounded-tr-none" 
+                            : "bg-white text-gray-900 border-blue-200 rounded-tl-none"
+                        }`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="w-8 h-8 rounded-xl bg-sama-orange text-sama-blue flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
+                              📚
+                            </span>
+                            <div>
+                              <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                isMe ? "bg-white/20 text-white" : "bg-blue-50 text-sama-primary border border-blue-100"
+                              }`}>
+                                {docT}
+                              </span>
+                              <h5 className="font-extrabold text-sm leading-tight mt-0.5">{title}</h5>
+                            </div>
+                          </div>
+
+                          {instructions && instructions !== "Aucune consigne spécifique" && (
+                            <p className={`text-xs p-2.5 rounded-xl mb-3 ${isMe ? "bg-white/10 text-blue-100" : "bg-gray-50 text-gray-700 border border-gray-100"}`}>
+                              <strong>Consignes :</strong> {instructions}
+                            </p>
+                          )}
+
+                          {link && link.trim() !== "" ? (
+                            <a
+                              href={link.startsWith("http") ? link : `https://${link}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition ${
+                                isMe ? "bg-sama-orange text-sama-blue hover:bg-amber-400" : "bg-sama-primary text-white hover:bg-blue-800"
+                              }`}
+                            >
+                              <i className="fas fa-external-link-alt text-xs"></i> Consulter le document
+                            </a>
+                          ) : (
+                            <span className={`text-[11px] italic ${isMe ? "text-blue-200" : "text-gray-400"}`}>
+                              Document à étudier ensemble en cours
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-gray-400 mt-1 px-1">
+                          {new Date(msg.created_at).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={msg.id} className={`flex flex-col max-w-[85%] ${isMe ? "self-end items-end" : "self-start items-start"}`}>
                       <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm ${isMe ? "bg-sama-primary text-white rounded-tr-none" : "bg-white text-gray-800 border border-gray-100 rounded-tl-none"}`}>
@@ -319,8 +408,99 @@ export default function DemandesCours() {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Modal Partage de Support / Devoir */}
+            {showDocModal && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <h4 className="font-extrabold text-sm text-gray-900 flex items-center gap-2">
+                      <span className="text-sama-orange">📚</span> Partager un Support de Cours
+                    </h4>
+                    <button onClick={() => setShowDocModal(false)} className="text-gray-400 hover:text-gray-600">
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleShareDocument} className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Type de document</label>
+                      <select
+                        value={docType}
+                        onChange={(e) => setDocType(e.target.value)}
+                        className="w-full border border-gray-300 rounded-xl p-2.5 text-xs bg-gray-50 outline-none focus:bg-white"
+                      >
+                        <option>Fiche d&apos;exercices</option>
+                        <option>Devoir maison à rendre</option>
+                        <option>Polycopié / Fiche de cours</option>
+                        <option>Sujet d&apos;entraînement type examen</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Titre de la fiche / Devoir</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ex: Devoir N°2 - Géométrie dans l'espace"
+                        value={docTitle}
+                        onChange={(e) => setDocTitle(e.target.value)}
+                        className="w-full border border-gray-300 rounded-xl p-2.5 text-xs bg-gray-50 outline-none focus:bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Consignes pour l&apos;élève</label>
+                      <textarea
+                        rows={2}
+                        placeholder="Ex: Exercices 1 et 3 à rédiger pour la séance du samedi..."
+                        value={docInstruction}
+                        onChange={(e) => setDocInstruction(e.target.value)}
+                        className="w-full border border-gray-300 rounded-xl p-2.5 text-xs bg-gray-50 outline-none focus:bg-white resize-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Lien de la ressource (Optionnel)</label>
+                      <input
+                        type="text"
+                        placeholder="https://drive.google.com/... ou lien PDF"
+                        value={docResourceLink}
+                        onChange={(e) => setDocResourceLink(e.target.value)}
+                        className="w-full border border-gray-300 rounded-xl p-2.5 text-xs bg-gray-50 outline-none focus:bg-white"
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowDocModal(false)}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-xs transition"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={!docTitle.trim() || sendingMsg}
+                        className="flex-1 bg-sama-primary hover:bg-blue-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm"
+                      >
+                        {sendingMsg ? <i className="fas fa-spinner fa-spin"></i> : "Partager"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
             {/* Chat Input */}
             <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-100 bg-white flex gap-2 items-center">
+              <button
+                type="button"
+                onClick={() => setShowDocModal(true)}
+                className="w-11 h-11 flex-shrink-0 bg-blue-50 hover:bg-blue-100 text-sama-primary rounded-full flex items-center justify-center transition"
+                title="Partager un support de cours ou un devoir"
+              >
+                <i className="fas fa-paperclip text-base"></i>
+              </button>
               <input 
                 type="text" 
                 value={newMessage}
@@ -331,9 +511,9 @@ export default function DemandesCours() {
               <button 
                 type="submit" 
                 disabled={!newMessage.trim() || sendingMsg}
-                className="w-12 h-12 flex-shrink-0 bg-sama-primary hover:bg-blue-800 text-white rounded-full flex items-center justify-center shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="w-11 h-11 flex-shrink-0 bg-sama-primary hover:bg-blue-800 text-white rounded-full flex items-center justify-center shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                {sendingMsg ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-paper-plane"></i>}
+                {sendingMsg ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-paper-plane text-sm"></i>}
               </button>
             </form>
           </div>

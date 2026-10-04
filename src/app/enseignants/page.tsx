@@ -154,6 +154,34 @@ export default function Enseignants() {
                         </p>
                       </div>
 
+                      {/* Grille Tarifaire Officielle SAMA ACADÉMIE */}
+                      <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 space-y-2 text-xs">
+                        <div className="flex items-center justify-between text-amber-900 font-extrabold">
+                          <span className="flex items-center gap-1.5"><i className="fas fa-tags text-sama-orange"></i> Grille Tarifaire Officielle SAMA ACADÉMIE</span>
+                          <span className="text-[10px] bg-amber-200/70 text-amber-800 px-2 py-0.5 rounded-full font-bold">Régulé</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                          <div className="bg-white p-2 rounded-xl border border-amber-100 shadow-xs">
+                            <p className="text-[10px] text-gray-500 font-bold">Primaire</p>
+                            <p className="text-xs font-black text-gray-900">25 000 F</p>
+                            <p className="text-[9px] text-gray-400">/ mois</p>
+                          </div>
+                          <div className="bg-white p-2 rounded-xl border border-amber-100 shadow-xs">
+                            <p className="text-[10px] text-gray-500 font-bold">Collège</p>
+                            <p className="text-xs font-black text-gray-900">35 000 F</p>
+                            <p className="text-[9px] text-gray-400">/ mois</p>
+                          </div>
+                          <div className="bg-white p-2 rounded-xl border border-amber-100 shadow-xs">
+                            <p className="text-[10px] text-gray-500 font-bold">Lycée / BAC</p>
+                            <p className="text-xs font-black text-gray-900">45 000 F</p>
+                            <p className="text-[9px] text-gray-400">/ mois</p>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-amber-800/80 leading-tight italic pt-0.5">
+                          * Règlement sécurisé auprès de SAMA ACADÉMIE incluant le suivi pédagogique continu.
+                        </p>
+                      </div>
+
                       <button
                         onClick={() => setIsRequesting(true)}
                         className="w-full bg-sama-primary hover:bg-blue-800 text-white font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-3 transition shadow-md text-sm"
@@ -306,9 +334,18 @@ export default function Enseignants() {
                           📍 {teacher.region || "Région inconnue"} {teacher.quarter ? `(${teacher.quarter})` : ""}
                         </p>
                       </div>
-                      <div className="text-left sm:text-right">
-                        <p className="text-2xl font-bold text-gray-900">{teacher.price || "N/A"}</p>
-                        <p className="text-xs text-gray-400">par heure</p>
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-sama-primary text-[10px] font-black uppercase tracking-wider">
+                          Tarif Officiel SAMA
+                        </span>
+                        <p className="text-xl sm:text-2xl font-black text-gray-900 mt-1">
+                          {teacher.level?.toLowerCase().includes("primaire")
+                            ? "25 000 FCFA"
+                            : teacher.level?.toLowerCase().includes("collège") || teacher.level?.toLowerCase().includes("college")
+                            ? "35 000 FCFA"
+                            : "45 000 FCFA"}
+                        </p>
+                        <p className="text-[11px] text-gray-400 font-medium">/ mois • Suivi Garanti</p>
                       </div>
                     </div>
                     
