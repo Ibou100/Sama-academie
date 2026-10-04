@@ -101,76 +101,109 @@ export default function Register() {
 
     setLoading(true);
 
-    const isTeacher = role === "enseignant";
-    const isParent = role === "parent";
+    try {
+      // Déconnecter toute session active locale pour éviter les conflits d'authentification
+      try {
+        await supabase.auth.signOut();
+      } catch (_) {}
 
-    const userLevel = isParent 
-      ? `Enfant : ${childName} (${childCycle} - ${childClass})`
-      : isTeacher 
-        ? teachingCycle 
-        : `${selectedCycle} - ${selectedClass}`;
+      const isTeacher = role === "enseignant";
+      const isParent = role === "parent";
 
-    const userBio = isParent
-      ? `Parent d'élève : ${childName} (Classe : ${childClass})`
-      : isTeacher
-        ? `Diplôme : ${diploma} • Expérience : ${experienceYears}${teacherBio.trim() ? ` • ${teacherBio.trim()}` : ""}`
-        : null;
+      const cycleLabel = selectedCycle === "Lycee" ? "Lycée" : selectedCycle === "College" ? "Collège" : selectedCycle;
+      const childCycleLabel = childCycle === "Lycee" ? "Lycée" : childCycle === "College" ? "Collège" : childCycle;
 
-    const userExperience = isTeacher ? `${experienceYears} (${diploma})` : null;
-    const isVerified = !isTeacher; // Les enseignants démarrent à false (en attente de validation admin)
+      const userLevel = isParent 
+        ? `Enfant : ${childName.trim()} (${childCycleLabel} - ${childClass})`
+        : isTeacher 
+          ? teachingCycle 
+          : `${cycleLabel} - ${selectedClass}`;
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          role: role,
-          email: email.trim(),
-          phone: phone.trim(),
-          region: region,
-          level: userLevel,
-          subject: isTeacher ? subject : null,
-          experience: userExperience,
-          price: isTeacher ? (teacherPrice.trim() || null) : null,
-          bio: userBio,
-          verified: isVerified,
+      const userBio = isParent
+        ? `Parent d'élève : ${childName.trim()} (Classe : ${childClass})`
+        : isTeacher
+          ? `Diplôme : ${diploma} • Expérience : ${experienceYears}${teacherBio.trim() ? ` • ${teacherBio.trim()}` : ""}`
+          : null;
+
+      const userExperience = isTeacher ? `${experienceYears} (${diploma})` : null;
+      const isVerified = !isTeacher; // Les enseignants démarrent à false (en attente de validation admin)
+
+      const normalizedEmail = email.trim().toLowerCase();
+
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: {
+          data: {
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            role: role,
+            email: normalizedEmail,
+            phone: phone.trim(),
+            region: region,
+            level: userLevel,
+            subject: isTeacher ? subject : null,
+            experience: userExperience,
+            price: isTeacher ? (teacherPrice.trim() || null) : null,
+            bio: userBio,
+            verified: isVerified,
+          }
+        }
+      });
+
+      if (signUpError) {
+        const msg = signUpError.message || "";
+        if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("already in use") || msg.toLowerCase().includes("user already exists")) {
+          setError("Cette adresse email est déjà enregistrée. Veuillez vous connecter directement.");
+        } else {
+          setError(signUpError.message);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Si Supabase renvoie un user avec identities vide (compte existant sans confirmation requise)
+      if (signUpData?.user && Array.isArray(signUpData.user.identities) && signUpData.user.identities.length === 0) {
+        setError("Cette adresse email est déjà enregistrée. Vous pouvez vous connecter directement avec votre mot de passe.");
+        setLoading(false);
+        return;
+      }
+
+      // Synchronisation directe avec profiles si possible
+      if (signUpData?.user) {
+        try {
+          await supabase.from("profiles").upsert({
+            id: signUpData.user.id,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            role: role,
+            email: normalizedEmail,
+            phone: phone.trim(),
+            region: region,
+            level: userLevel,
+            subject: isTeacher ? subject : null,
+            experience: userExperience,
+            price: isTeacher ? (teacherPrice.trim() || null) : null,
+            bio: userBio,
+            verified: isVerified,
+          }, { onConflict: "id" });
+        } catch (err) {
+          console.error("Profile upsert sync error:", err);
         }
       }
-    });
 
-    if (signUpError) {
-      setError(signUpError.message);
-      setLoading(false);
-      return;
-    }
-
-    // Synchronisation directe avec profiles si possible
-    if (signUpData?.user) {
-      try {
-        await supabase.from("profiles").upsert({
-          id: signUpData.user.id,
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          role: role,
-          email: email.trim(),
-          phone: phone.trim(),
-          region: region,
-          level: userLevel,
-          subject: isTeacher ? subject : null,
-          experience: userExperience,
-          price: isTeacher ? (teacherPrice.trim() || null) : null,
-          bio: userBio,
-          verified: isVerified,
-        }, { onConflict: "id" });
-      } catch (err) {
-        console.error("Profile upsert sync error:", err);
+      setSuccess(true);
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      const errMsg = err?.message || err?.toString() || "";
+      if (errMsg.includes("Failed to fetch")) {
+        setError("Session réinitialisée. Votre précédente connexion a été nettoyée. Veuillez cliquer à nouveau sur 'Créer mon compte'.");
+      } else {
+        setError(errMsg || "Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
       }
+    } finally {
+      setLoading(false);
     }
-
-    setSuccess(true);
-    setLoading(false);
   };
 
   if (success) {
@@ -291,8 +324,16 @@ export default function Register() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-xl text-center">
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3.5 rounded-xl text-center space-y-1.5">
+            <p className="font-semibold">{error}</p>
+            {(error.includes("déjà") || error.includes("connecter")) && (
+              <div>
+                <Link href="/login" className="inline-flex items-center gap-1 text-xs font-bold text-sama-primary hover:underline bg-white px-3 py-1 rounded-lg border border-red-200 shadow-xs">
+                  <span>Accéder à la page de connexion</span>
+                  <i className="fas fa-arrow-right text-[10px]"></i>
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
