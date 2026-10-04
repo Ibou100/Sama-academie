@@ -273,13 +273,30 @@ export default function AdminDashboard() {
     }
   };
 
-  // 4. Supprimer un élément
+  // 4. Supprimer un élément (vidéo ou annale)
   const handleDelete = async (table: "videos" | "annales", id: string) => {
     if (!confirm("Voulez-vous vraiment supprimer cet élément ?")) return;
-    const { error } = await supabase.from(table).delete().eq("id", id);
-    if (!error) {
-      showToast("🗑️ Élément supprimé !");
-      fetchData();
+    setActionLoadingId(id);
+
+    try {
+      const { data, error } = await supabase.from(table).delete().eq("id", id).select();
+
+      if (error) {
+        showToast("❌ Erreur de suppression : " + error.message);
+      } else if (!data || data.length === 0) {
+        showToast("⚠️ La sécurité Supabase (RLS) bloque la suppression. Exécutez le script SQL d'autorisation.");
+      } else {
+        showToast("🗑️ Élément supprimé définitivement de la base !");
+        if (table === "videos") {
+          setVideos((prev) => prev.filter((v) => v.id !== id));
+        } else {
+          setAnnales((prev) => prev.filter((a) => a.id !== id));
+        }
+      }
+    } catch (err: any) {
+      showToast("❌ Erreur : " + (err?.message || "Échec"));
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -877,10 +894,12 @@ export default function AdminDashboard() {
                     <h4 className="font-bold text-gray-900 text-sm">{vid.title}</h4>
                   </div>
                   <button
+                    disabled={actionLoadingId === vid.id}
                     onClick={() => handleDelete("videos", vid.id)}
-                    className="text-red-400 hover:text-red-600 p-2 text-sm font-bold transition"
+                    className="text-red-400 hover:text-red-600 p-2 text-sm font-bold transition disabled:opacity-50"
+                    title="Supprimer la vidéo"
                   >
-                    <i className="fas fa-trash-alt"></i>
+                    {actionLoadingId === vid.id ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-trash-alt"></i>}
                   </button>
                 </div>
               ))
@@ -987,10 +1006,12 @@ export default function AdminDashboard() {
                     </a>
                   </div>
                   <button
+                    disabled={actionLoadingId === ann.id}
                     onClick={() => handleDelete("annales", ann.id)}
-                    className="text-red-400 hover:text-red-600 p-2 text-sm font-bold transition"
+                    className="text-red-400 hover:text-red-600 p-2 text-sm font-bold transition disabled:opacity-50"
+                    title="Supprimer l'annale"
                   >
-                    <i className="fas fa-trash-alt"></i>
+                    {actionLoadingId === ann.id ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-trash-alt"></i>}
                   </button>
                 </div>
               ))
