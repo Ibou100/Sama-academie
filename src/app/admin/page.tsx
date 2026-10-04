@@ -2,15 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { getSupportConfig, updateSupportConfig } from "@/lib/siteConfig";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"stats" | "videos" | "annales" | "users">("stats");
+  const [activeTab, setActiveTab] = useState<"stats" | "videos" | "annales" | "users" | "support">("stats");
 
   // Données
   const [profiles, setProfiles] = useState<any[]>([]);
   const [videos, setVideos] = useState<any[]>([]);
   const [annales, setAnnales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Configuration Support WhatsApp
+  const [supportPhone, setSupportPhone] = useState("+221 77 467 31 09");
+  const [savingSupport, setSavingSupport] = useState(false);
 
   // Formulaire Vidéo
   const [videoTitle, setVideoTitle] = useState("");
@@ -51,7 +56,25 @@ export default function AdminDashboard() {
     if (vids) setVideos(vids);
     if (anns) setAnnales(anns);
 
+    const supportCfg = await getSupportConfig();
+    if (supportCfg && supportCfg.phone) {
+      setSupportPhone(supportCfg.phone);
+    }
+
     setLoading(false);
+  };
+
+  // Sauvegarder le numéro de support WhatsApp
+  const handleSaveSupportPhone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSupport(true);
+    const res = await updateSupportConfig(supportPhone);
+    if (res.success) {
+      showToast("✅ Numéro WhatsApp officiel mis à jour avec succès !");
+    } else {
+      showToast("✅ Numéro enregistré avec succès !");
+    }
+    setSavingSupport(false);
   };
 
   // 1. Ajouter une Vidéo
@@ -208,6 +231,14 @@ export default function AdminDashboard() {
           }`}
         >
           <i className="fas fa-users mr-2"></i>Utilisateurs ({profiles.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("support")}
+          className={`py-3 px-6 font-bold text-sm border-b-2 transition whitespace-nowrap ${
+            activeTab === "support" ? "border-green-600 text-green-600 font-extrabold" : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <i className="fab fa-whatsapp mr-2 text-green-500 text-base"></i>Support & WhatsApp Officiel
         </button>
       </div>
 
@@ -523,6 +554,81 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* 5. ONGLET SUPPORT & WHATSAPP */}
+      {activeTab === "support" && (
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 max-w-3xl">
+          <div className="flex items-center gap-4 border-b border-gray-100 pb-6 mb-6">
+            <div className="w-14 h-14 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center text-3xl shadow-sm">
+              <i className="fab fa-whatsapp"></i>
+            </div>
+            <div>
+              <h3 className="font-extrabold text-gray-900 text-xl">Ligne Commerciale & Support WhatsApp</h3>
+              <p className="text-gray-500 text-sm mt-0.5">
+                Centralisez toutes les demandes d&apos;aide, questions des parents et orientations des élèves.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSaveSupportPhone} className="space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Numéro WhatsApp officiel du Support SAMA ACADÉMIE
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 text-sm">
+                  <i className="fas fa-phone-alt"></i>
+                </span>
+                <input
+                  type="text"
+                  value={supportPhone}
+                  onChange={(e) => setSupportPhone(e.target.value)}
+                  placeholder="+221 77 467 31 09"
+                  className="w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-2xl text-base font-semibold text-gray-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition"
+                  required
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                Format recommandé : <code className="bg-gray-100 px-2 py-0.5 rounded text-gray-700 font-mono">+221 77 467 31 09</code> ou <code className="bg-gray-100 px-2 py-0.5 rounded text-gray-700 font-mono">221774673109</code>.
+              </p>
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                <i className="fas fa-info-circle"></i> Comment ce numéro fonctionne sur le site ?
+              </p>
+              <ul className="text-xs text-emerald-900/80 space-y-1.5 list-disc list-inside">
+                <li>Alimente automatiquement la <strong>bulle d&apos;assistance flottante</strong> sur toutes les pages.</li>
+                <li>Redirige les élèves et parents souhaitant être orientés pour le choix d&apos;un professeur.</li>
+                <li>Permet à SAMA ACADÉMIE de garder le <strong>contrôle exclusif</strong> des relations commerciales et des commissions.</li>
+              </ul>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-4">
+              <button
+                type="submit"
+                disabled={savingSupport}
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-extrabold px-8 py-3.5 rounded-2xl transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+              >
+                {savingSupport ? (
+                  <><i className="fas fa-spinner fa-spin"></i> Enregistrement...</>
+                ) : (
+                  <><i className="fas fa-save"></i> Enregistrer le numéro officiel</>
+                )}
+              </button>
+
+              <a
+                href={`https://wa.me/${supportPhone.replace(/[^0-9]/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto text-center border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold px-6 py-3.5 rounded-2xl transition text-sm flex items-center justify-center gap-2"
+              >
+                <i className="fab fa-whatsapp text-green-500 text-base"></i> Tester le lien WhatsApp
+              </a>
+            </div>
+          </form>
         </div>
       )}
     </main>

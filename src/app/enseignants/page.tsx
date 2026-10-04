@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { getSupportConfig } from "@/lib/siteConfig";
 
 const SENEGAL_REGIONS = [
   "Toutes les régions", "Dakar", "Thiès", "Saint-Louis", "Diourbel",
@@ -27,6 +28,7 @@ export default function Enseignants() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [teachers, setTeachers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [supportConfig, setSupportConfig] = useState<any>(null);
 
   // Filtres
   const [selectedSubject, setSelectedSubject] = useState("Toutes");
@@ -59,6 +61,7 @@ export default function Enseignants() {
       setLoading(false);
     };
     fetchTeachers();
+    getSupportConfig().then(setSupportConfig);
   }, []);
 
   const handleContactClick = (teacher: any) => {
@@ -162,29 +165,30 @@ export default function Enseignants() {
                 <div className="space-y-3">
                   {!isRequesting ? (
                     <>
-                      <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Comment souhaitez-vous contacter l&apos;enseignant ?</p>
-                      
-                      {contactTeacher.phone ? (
-                        <a
-                          href={`https://wa.me/${contactTeacher.phone.replace(/\+/g, '')}?text=Bonjour%20${encodeURIComponent(contactTeacher.first_name)},%20j'ai%20vu%20votre%20profil%20sur%20SAMA%20ACADÉMIE%20et%20je%20souhaite%20réserver%20un%20cours.`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-3 transition shadow-md text-sm"
-                        >
-                          <i className="fab fa-whatsapp text-xl"></i> Discuter directement sur WhatsApp
-                        </a>
-                      ) : (
-                        <div className="w-full bg-gray-100 text-gray-500 text-center py-3.5 px-4 rounded-2xl text-sm font-bold">
-                          Numéro WhatsApp non renseigné
-                        </div>
-                      )}
+                      <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-xs text-gray-700 leading-relaxed space-y-1">
+                        <p className="font-bold text-sama-primary flex items-center gap-1.5">
+                          <i className="fas fa-shield-alt"></i> Encadrement Sécurisé SAMA ACADÉMIE
+                        </p>
+                        <p className="text-gray-600">
+                          Pour assurer un suivi pédagogique rigoureux et garantir votre sécurité, les demandes de cours et les échanges s&apos;effectuent exclusivement via la plateforme.
+                        </p>
+                      </div>
 
                       <button
                         onClick={() => setIsRequesting(true)}
                         className="w-full bg-sama-primary hover:bg-blue-800 text-white font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-3 transition shadow-md text-sm"
                       >
-                        <i className="fas fa-calendar-check text-base"></i> Demander un cours de soutien
+                        <i className="fas fa-calendar-check text-base"></i> Réserver un cours avec cet enseignant
                       </button>
+
+                      <a
+                        href={supportConfig?.whatsappUrl || "https://wa.me/221774673109"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 font-bold py-3 px-4 rounded-2xl flex items-center justify-center gap-2 transition text-xs"
+                      >
+                        <i className="fab fa-whatsapp text-green-600 text-base"></i> Besoin d&apos;orientation ? Contacter le Support
+                      </a>
                     </>
                   ) : (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
