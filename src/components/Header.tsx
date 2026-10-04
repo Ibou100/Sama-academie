@@ -44,14 +44,15 @@ export default function Header() {
       ];
     }
     if (userProfile?.role === "eleve") {
+      const lvl = (userProfile.level || "").toLowerCase();
+      const isPrimaire = lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cp") || lvl.includes("ce") || lvl.includes("cm") || lvl.includes("cfee");
       return [
         { href: "/", label: "Accueil" },
         { href: "/dashboard/eleve", label: "Mon Espace" },
-        { href: "/enseignants", label: "Enseignants" },
-        { href: "/examens", label: "Exercices & Examens" },
-        { href: "/videos", label: "Vidéos ⭐" },
-        { href: "/classes", label: "Classes 🎥" },
-        { href: "/orientation", label: "Orientation 🧭" },
+        { href: "/enseignants", label: isPrimaire ? "Enseignants Primaire" : "Enseignants" },
+        { href: "/examens", label: isPrimaire ? "Épreuves Primaire" : "Exercices & Examens" },
+        { href: "/videos", label: isPrimaire ? "Vidéos Primaire ⭐" : "Vidéos ⭐" },
+        ...(!isPrimaire ? [{ href: "/orientation", label: "Orientation 🧭" }] : []),
       ];
     }
     if (userProfile?.role === "parent") {

@@ -53,7 +53,7 @@ export default function DashboardEleve() {
     // Détermination du cycle de l'élève
     const lvl = (profile.level || "").toLowerCase();
     let detectedCycle: "Primaire" | "Collège" | "Lycée" = "Lycée";
-    if (lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cp") || lvl.includes("ce1") || lvl.includes("ce2") || lvl.includes("cm1") || lvl.includes("cm2")) {
+    if (lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cp") || lvl.includes("ce") || lvl.includes("cm") || lvl.includes("cfee")) {
       detectedCycle = "Primaire";
     } else if (lvl.includes("collège") || lvl.includes("college") || lvl.includes("6") || lvl.includes("5") || lvl.includes("4") || lvl.includes("3") || lvl.includes("bfem")) {
       detectedCycle = "Collège";
@@ -129,7 +129,7 @@ export default function DashboardEleve() {
     if (allAnnales) {
       const filtered = allAnnales.filter((a) => {
         const aLvl = (a.level || "").toLowerCase();
-        if (detectedCycle === "Primaire") return aLvl.includes("ci") || aLvl.includes("cp") || aLvl.includes("ce1") || aLvl.includes("ce2") || aLvl.includes("cm1") || aLvl.includes("cm2") || aLvl.includes("primaire");
+        if (detectedCycle === "Primaire") return aLvl.includes("ci") || aLvl.includes("cp") || aLvl.includes("ce") || aLvl.includes("cm") || aLvl.includes("primaire") || aLvl.includes("cfee");
         if (detectedCycle === "Collège") return aLvl.includes("6") || aLvl.includes("5") || aLvl.includes("4") || aLvl.includes("3") || aLvl.includes("bfem") || aLvl.includes("college");
         return aLvl.includes("seconde") || aLvl.includes("premiere") || aLvl.includes("terminale") || aLvl.includes("bac") || aLvl.includes("lycee");
       });
@@ -141,7 +141,7 @@ export default function DashboardEleve() {
     if (allVideos) {
       const filteredVids = allVideos.filter((v) => {
         const vLvl = (v.level || "").toLowerCase();
-        if (detectedCycle === "Primaire") return vLvl.includes("ci") || vLvl.includes("cp") || vLvl.includes("ce1") || vLvl.includes("ce2") || vLvl.includes("cm1") || vLvl.includes("cm2") || vLvl.includes("primaire");
+        if (detectedCycle === "Primaire") return vLvl.includes("ci") || vLvl.includes("cp") || vLvl.includes("ce") || vLvl.includes("cm") || vLvl.includes("primaire") || vLvl.includes("cfee");
         if (detectedCycle === "Collège") return vLvl.includes("6") || vLvl.includes("5") || vLvl.includes("4") || vLvl.includes("3") || vLvl.includes("bfem") || vLvl.includes("college");
         return vLvl.includes("seconde") || vLvl.includes("premiere") || vLvl.includes("terminale") || vLvl.includes("bac") || vLvl.includes("lycee");
       });

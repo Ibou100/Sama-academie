@@ -43,9 +43,20 @@ export default function Enseignants() {
   const [bookedSuccess, setBookedSuccess] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       setIsLoggedIn(!!user);
-      if (user) setCurrentUser(user);
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        if (profile) {
+          setCurrentUser(profile);
+        } else {
+          setCurrentUser(user);
+        }
+      }
     });
 
     const fetchTeachers = async () => {
@@ -115,13 +126,17 @@ export default function Enseignants() {
       const studentLvl = currentUser.level.toLowerCase();
       const teacherLvl = (teacher.level || "").toLowerCase();
       const teacherExp = (teacher.experience || "").toLowerCase();
+      const teacherBio = (teacher.bio || "").toLowerCase();
 
-      if (studentLvl.includes("primaire") || studentLvl.includes("ci") || studentLvl.includes("cp") || studentLvl.includes("ce1") || studentLvl.includes("ce2") || studentLvl.includes("cm1") || studentLvl.includes("cm2")) {
-        matchCycle = teacherLvl.includes("primaire") || teacherExp.includes("primaire") || (!teacherLvl && !teacherExp);
-      } else if (studentLvl.includes("collège") || studentLvl.includes("college") || studentLvl.includes("6") || studentLvl.includes("5") || studentLvl.includes("4") || studentLvl.includes("3") || studentLvl.includes("bfem")) {
-        matchCycle = teacherLvl.includes("collège") || teacherLvl.includes("college") || teacherExp.includes("collège") || teacherExp.includes("college") || (!teacherLvl && !teacherExp);
+      const isStudentPrimaire = studentLvl.includes("primaire") || studentLvl.includes("ci") || studentLvl.includes("cp") || studentLvl.includes("ce") || studentLvl.includes("cm") || studentLvl.includes("cfee");
+      const isStudentCollege = studentLvl.includes("collège") || studentLvl.includes("college") || studentLvl.includes("6") || studentLvl.includes("5") || studentLvl.includes("4") || studentLvl.includes("3") || studentLvl.includes("bfem");
+
+      if (isStudentPrimaire) {
+        matchCycle = teacherLvl.includes("primaire") || teacherLvl.includes("ci") || teacherLvl.includes("cm") || teacherExp.includes("primaire") || teacherExp.includes("élémentaire") || teacherBio.includes("primaire") || teacherBio.includes("élémentaire") || teacherBio.includes("cfee");
+      } else if (isStudentCollege) {
+        matchCycle = teacherLvl.includes("collège") || teacherLvl.includes("college") || teacherLvl.includes("bfem") || teacherExp.includes("collège") || teacherExp.includes("college") || teacherExp.includes("brevet") || teacherBio.includes("collège") || teacherBio.includes("college") || teacherBio.includes("bfem");
       } else {
-        matchCycle = teacherLvl.includes("lycée") || teacherLvl.includes("lycee") || teacherLvl.includes("bac") || teacherExp.includes("lycée") || teacherExp.includes("lycee") || (!teacherLvl && !teacherExp);
+        matchCycle = teacherLvl.includes("lycée") || teacherLvl.includes("lycee") || teacherLvl.includes("bac") || teacherExp.includes("lycée") || teacherExp.includes("lycee") || teacherExp.includes("baccalauréat") || teacherBio.includes("lycée") || teacherBio.includes("lycee") || teacherBio.includes("bac");
       }
     }
 
@@ -328,12 +343,24 @@ export default function Enseignants() {
 
         {/* Cloisonnement Cycle actif pour élève */}
         {currentUser?.role === "eleve" && (
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-sama-primary">
-            <span className="font-bold flex items-center gap-2">
-              <i className="fas fa-graduation-cap text-base"></i>
-              Filtre automatique actif : Enseignants qualifiés pour votre cycle ({currentUser.level || "Élève"}).
-            </span>
-            <Link href="/dashboard/eleve" className="font-extrabold hover:underline whitespace-nowrap">
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-sama-primary">
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-xl bg-sama-primary text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                <i className="fas fa-lock"></i>
+              </span>
+              <div>
+                <p className="font-extrabold text-sm text-sama-primary">
+                  Annuaire Cloisonné : Enseignants Habilités {
+                    (currentUser.level || "").toLowerCase().includes("primaire") || (currentUser.level || "").toLowerCase().includes("ce") || (currentUser.level || "").toLowerCase().includes("cm") || (currentUser.level || "").toLowerCase().includes("ci") || (currentUser.level || "").toLowerCase().includes("cfee") ? "Cycle Primaire (CI à CM2)" :
+                    (currentUser.level || "").toLowerCase().includes("collège") || (currentUser.level || "").toLowerCase().includes("college") || (currentUser.level || "").toLowerCase().includes("6") || (currentUser.level || "").toLowerCase().includes("3") || (currentUser.level || "").toLowerCase().includes("bfem") ? "Cycle Collège (6e à 3e, BFEM)" : "Cycle Lycée (Seconde à Terminale, BAC)"
+                  }
+                </p>
+                <p className="text-gray-600 mt-0.5">
+                  Conformément aux règles pédagogiques de SAMA ACADÉMIE, seuls les professeurs qualifiés pour votre niveau ({currentUser.level}) vous sont présentés.
+                </p>
+              </div>
+            </div>
+            <Link href="/dashboard/eleve" className="font-extrabold hover:underline whitespace-nowrap bg-white text-sama-primary border border-blue-200 px-3 py-1.5 rounded-xl shadow-xs">
               Mon Espace Élève →
             </Link>
           </div>

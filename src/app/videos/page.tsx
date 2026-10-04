@@ -11,6 +11,68 @@ function getYouTubeEmbedUrl(url: string) {
   return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}?autoplay=1` : null;
 }
 
+const DEFAULT_VIDEOS = [
+  // Primaire
+  {
+    id: "v-prim-1",
+    title: "Les 4 opérations de base et la résolution de problèmes au Primaire",
+    subject: "Mathématiques",
+    level: "Primaire (CI à CM2)",
+    duration: "18 min",
+    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  },
+  {
+    id: "v-prim-2",
+    title: "Conjugaison et Grammaire : Le Présent et le Passé Composé",
+    subject: "Français",
+    level: "Primaire (CE1 à CM2)",
+    duration: "15 min",
+    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  },
+  {
+    id: "v-prim-3",
+    title: "Sciences & Géographie du Sénégal pour le cycle Primaire",
+    subject: "Sciences & Éveil",
+    level: "Primaire (CE2 - CM2)",
+    duration: "20 min",
+    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  },
+  // Collège
+  {
+    id: "v-col-1",
+    title: "Théorème de Thalès et Pythagore : Méthodologie Brevet BFEM",
+    subject: "Mathématiques",
+    level: "Collège (3e BFEM)",
+    duration: "25 min",
+    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  },
+  {
+    id: "v-col-2",
+    title: "La reproduction humaine et l'immunologie expliquées pas à pas",
+    subject: "SVT",
+    level: "Collège (3e/BFEM)",
+    duration: "22 min",
+    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  },
+  // Lycée
+  {
+    id: "v-lyc-1",
+    title: "Résolution complète de l'Épreuve de Mathématiques BAC S2",
+    subject: "Mathématiques",
+    level: "Terminale S2",
+    duration: "45 min",
+    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  },
+  {
+    id: "v-lyc-2",
+    title: "Méthodologie de la Dissertation Philosophique au Baccalauréat",
+    subject: "Philosophie",
+    level: "Terminale L / S",
+    duration: "30 min",
+    video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  }
+];
+
 const CYCLES = [
   { id: "TOUS", label: "Tous les cycles", icon: "fas fa-layer-group" },
   { id: "Primaire", label: "Primaire (CI à CM2)", icon: "fas fa-child" },
@@ -19,7 +81,7 @@ const CYCLES = [
 ];
 
 export default function Videos() {
-  const [videosList, setVideosList] = useState<any[]>([]);
+  const [videosList, setVideosList] = useState<any[]>(DEFAULT_VIDEOS);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [selectedCycle, setSelectedCycle] = useState("TOUS");
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -32,20 +94,28 @@ export default function Videos() {
         if (profile) {
           setUserProfile(profile);
           const lvl = (profile.level || "").toLowerCase();
-          if (lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cm2")) {
+          if (lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cp") || lvl.includes("ce") || lvl.includes("cm") || lvl.includes("cfee")) {
             setSelectedCycle("Primaire");
-          } else if (lvl.includes("collège") || lvl.includes("college") || lvl.includes("6e") || lvl.includes("3e") || lvl.includes("bfem")) {
+          } else if (lvl.includes("collège") || lvl.includes("college") || lvl.includes("6") || lvl.includes("5") || lvl.includes("4") || lvl.includes("3") || lvl.includes("bfem")) {
             setSelectedCycle("College");
-          } else if (lvl.includes("lycée") || lvl.includes("lycee") || lvl.includes("terminale") || lvl.includes("seconde") || lvl.includes("bac")) {
+          } else if (lvl.includes("lycée") || lvl.includes("lycee") || lvl.includes("terminale") || lvl.includes("seconde") || lvl.includes("bac") || lvl.includes("première")) {
             setSelectedCycle("Lycee");
           }
         }
       }
 
-      // Charger les vidéos depuis Supabase
+      // Charger les vidéos depuis Supabase et combiner avec DEFAULT_VIDEOS
       const { data: dbVideos } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
       if (dbVideos && dbVideos.length > 0) {
-        setVideosList(dbVideos);
+        const allVids = [...dbVideos];
+        DEFAULT_VIDEOS.forEach((def) => {
+          if (!allVids.some((v) => v.title?.toLowerCase().trim() === def.title?.toLowerCase().trim())) {
+            allVids.push(def);
+          }
+        });
+        setVideosList(allVids);
+      } else {
+        setVideosList(DEFAULT_VIDEOS);
       }
     };
 
@@ -56,12 +126,25 @@ export default function Videos() {
     setActiveVideoId(activeVideoId === videoId ? null : videoId);
   };
 
+  // Détection élève et cycle
+  const isStudent = userProfile?.role === "eleve";
+  const studentLevel = (userProfile?.level || "").toLowerCase();
+  const studentCycle: "Primaire" | "College" | "Lycee" | null = isStudent
+    ? (studentLevel.includes("primaire") || studentLevel.includes("ci") || studentLevel.includes("cp") || studentLevel.includes("ce") || studentLevel.includes("cm") || studentLevel.includes("cfee")
+      ? "Primaire"
+      : studentLevel.includes("collège") || studentLevel.includes("college") || studentLevel.includes("6") || studentLevel.includes("5") || studentLevel.includes("4") || studentLevel.includes("3") || studentLevel.includes("bfem")
+      ? "College"
+      : "Lycee")
+    : null;
+
+  const effectiveCycle = isStudent && studentCycle ? studentCycle : selectedCycle;
+
   const filteredVideos = videosList.filter((vid) => {
-    if (selectedCycle === "TOUS") return true;
+    if (effectiveCycle === "TOUS") return true;
     const vLevel = (vid.level || "").toLowerCase();
-    if (selectedCycle === "Primaire") return vLevel.includes("primaire") || vLevel.includes("cm2") || vLevel.includes("ci") || vLevel.includes("cp") || vLevel.includes("ce");
-    if (selectedCycle === "College") return vLevel.includes("collège") || vLevel.includes("college") || vLevel.includes("6e") || vLevel.includes("5e") || vLevel.includes("4e") || vLevel.includes("3e") || vLevel.includes("bfem");
-    if (selectedCycle === "Lycee") return vLevel.includes("lycée") || vLevel.includes("lycee") || vLevel.includes("seconde") || vLevel.includes("première") || vLevel.includes("terminale") || vLevel.includes("bac");
+    if (effectiveCycle === "Primaire") return vLevel.includes("primaire") || vLevel.includes("cm") || vLevel.includes("ci") || vLevel.includes("cp") || vLevel.includes("ce") || vLevel.includes("cfee");
+    if (effectiveCycle === "College") return vLevel.includes("collège") || vLevel.includes("college") || vLevel.includes("6") || vLevel.includes("5") || vLevel.includes("4") || vLevel.includes("3") || vLevel.includes("bfem");
+    if (effectiveCycle === "Lycee") return vLevel.includes("lycée") || vLevel.includes("lycee") || vLevel.includes("seconde") || vLevel.includes("première") || vLevel.includes("premiere") || vLevel.includes("terminale") || vLevel.includes("bac");
     return true;
   });
 
@@ -90,23 +173,49 @@ export default function Videos() {
           )}
         </div>
 
-        {/* Sélecteur de Cycle (Primaire / Collège / Lycée) */}
-        <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-gray-100">
-          {CYCLES.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setSelectedCycle(c.id)}
-              className={`py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-                selectedCycle === c.id
-                  ? "bg-sama-primary text-white shadow-sm"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
-              }`}
-            >
-              <i className={c.icon}></i>
-              <span>{c.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Sélecteur de Cycle (Cloisonné pour les élèves) */}
+        {isStudent && studentCycle ? (
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-xl bg-sama-primary text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                  <i className="fas fa-lock"></i>
+                </span>
+                <div>
+                  <p className="font-extrabold text-sama-primary text-sm flex items-center gap-2">
+                    <span>Vidéothèque Officielle • Cycle {studentCycle === "Primaire" ? "Primaire (CI à CM2)" : studentCycle === "College" ? "Collège (6e à 3e, BFEM)" : "Lycée (Seconde à Terminale, BAC)"}</span>
+                    <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Cloisonné</span>
+                  </p>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Connecté en tant qu&apos;élève ({userProfile?.first_name} • {userProfile?.level}). Seules les leçons vidéos de votre cycle vous sont présentées.
+                  </p>
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-sama-primary text-xs font-bold border border-blue-200 shadow-xs">
+                  <i className="fas fa-check-circle text-green-500"></i> Cycle Actif : {studentCycle}
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-gray-100">
+            {CYCLES.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedCycle(c.id)}
+                className={`py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                  selectedCycle === c.id
+                    ? "bg-sama-primary text-white shadow-sm"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                }`}
+              >
+                <i className={c.icon}></i>
+                <span>{c.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Grille des vidéos */}

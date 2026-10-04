@@ -5,14 +5,117 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 const DEFAULT_DOCUMENTS = [
+  // Primaire
   { 
-    id: "1", 
-    level: "BAC S2", 
-    cycle: "Lycée",
-    title: "Annales de Mathématiques 2015-2025", 
+    id: "prim-1", 
+    level: "Primaire (CM2/CFEE)", 
+    cycle: "Primaire",
+    title: "Épreuve CFEE & Entrée en 6e - Mathématiques & Résolution de Problèmes", 
     subject: "Mathématiques", 
     color: "bg-sama-blue", 
-    downloads: "2 140", 
+    downloads: "3 420", 
+    pages_info: "Sujet officiel Ministère + Barème", 
+    file_url: "#",
+    exercices: [
+      { num: "Épreuve 1 (Ressources - 40 pts)", desc: "Numération décimale, calcul de fractions, pourcentages et conversion d'unités de mesures métriques." },
+      { num: "Épreuve 2 (Compétence - 60 pts)", desc: "Résolution de problème de la vie courante : Calcul du budget d'achat familial, dépenses et bénéfice commercial." }
+    ],
+    sample_corrige: "Solution du problème : 1) Calcul de la longueur totale du grillage nécessaire : Périmètre = (Longueur + Largeur) × 2 = (45m + 25m) × 2 = 140 m. 2) Dépense totale pour l'achat du grillage : 140 m × 1 500 FCFA = 210 000 FCFA..."
+  },
+  { 
+    id: "prim-2", 
+    level: "Primaire (CM2/CFEE)", 
+    cycle: "Primaire",
+    title: "Épreuve CFEE & Entrée en 6e - Français (Texte suivi de questions & Dictée)", 
+    subject: "Français", 
+    color: "bg-sama-blue", 
+    downloads: "2 890", 
+    pages_info: "Sujet officiel Ministère + Grille de correction", 
+    file_url: "#",
+    exercices: [
+      { num: "Compréhension & Vocabulaire", desc: "Explication de texte, recherche de synonymes, contraires et formation de mots dérivés." },
+      { num: "Grammaire & Conjugaison", desc: "Analyse logique de propositions, accords du participe passé et conjugaison au plus-que-parfait et futur simple." },
+      { num: "Production d'Écrits", desc: "Rédaction d'une lettre amicale décrivant une fête traditionnelle de votre village ou quartier." }
+    ],
+    sample_corrige: "Barème officiel de notation : Respect du thème (4 points), cohérence du récit et connecteurs temporels (3 points), correction de la langue et accords grammaticaux (3 points)..."
+  },
+  { 
+    id: "prim-3", 
+    level: "Primaire (CE1/CE2)", 
+    cycle: "Primaire",
+    title: "Évaluation Trimestrielle CE1/CE2 - Opérations, Géométrie et Vocabulaire", 
+    subject: "Maths & Français", 
+    color: "bg-sama-blue", 
+    downloads: "2 150", 
+    pages_info: "Fiche d'évaluation nationale", 
+    file_url: "#",
+    exercices: [
+      { num: "Activités numériques", desc: "Addition et soustraction avec retenue, tables de multiplication de 2 à 5 et ordre croissant." },
+      { num: "Activités géométriques", desc: "Reconnaissance du carré, du rectangle et du triangle à l'aide de la règle graduée et de l'équerre." }
+    ],
+    sample_corrige: "Corrigé CE1/CE2 : Vérifier que l'enfant utilise correctement les alignements de chiffres en colonnes (unités sous unités, dizaines sous dizaines) et n'omet pas la retenue..."
+  },
+  { 
+    id: "prim-4", 
+    level: "Primaire (CI - CM2)", 
+    cycle: "Primaire",
+    title: "Fiche d'Éveil & Sciences d'Observation - Milieu Physique & Vivant", 
+    subject: "Sciences & Éveil", 
+    color: "bg-sama-blue", 
+    downloads: "1 940", 
+    pages_info: "Programme officiel sénégalais", 
+    file_url: "#",
+    exercices: [
+      { num: "Le corps humain & l'hygiène", desc: "Les organes des sens, le rôle des dents et les règles d'hygiène alimentaire au Sénégal." },
+      { num: "L'environnement", desc: "Le cycle de l'eau, la protection des arbres et la gestion des ordures ménagères." }
+    ],
+    sample_corrige: "Les 5 organes des sens : les yeux (la vue), les oreilles (l'ouïe), le nez (l'odorat), la langue (le goût), la peau (le toucher). Règle d'or : se laver les mains avant et après chaque repas..."
+  },
+
+  // Collège
+  { 
+    id: "col-1", 
+    level: "Collège (3e/BFEM)", 
+    cycle: "College",
+    title: "Épreuve BFEM Mathématiques - Exercices & Problème de synthèse", 
+    subject: "Mathématiques", 
+    color: "bg-sama-blue", 
+    downloads: "3 840", 
+    pages_info: "Sujet officiel Brevet + Corrigé", 
+    file_url: "#",
+    exercices: [
+      { num: "Exercice 1 (5 points)", desc: "Calcul littéral, factorisation par identités remarquables et équations produits-nuls." },
+      { num: "Exercice 2 (5 points)", desc: "Géométrie dans l'espace : Cône de révolution, calcul de volume et section par un plan parallèle à la base." },
+      { num: "Problème (10 points)", desc: "Théorème de Thalès, trigonométrie et fonctions affines appliquées à une facture de carburant." }
+    ],
+    sample_corrige: "Exercice 1 : A(x) = (2x - 3)² - (x + 1)². En appliquant a² - b² = (a - b)(a + b), on obtient A(x) = (2x - 3 - x - 1)(2x - 3 + x + 1) = (x - 4)(3x - 2). Les solutions de A(x) = 0 sont x = 4 et x = 2/3..."
+  },
+  { 
+    id: "col-2", 
+    level: "Collège (3e/BFEM)", 
+    cycle: "College",
+    title: "Épreuves de SVT et Sciences Physiques (BFEM Récent)", 
+    subject: "SVT / Physique-Chimie", 
+    color: "bg-sama-blue", 
+    downloads: "2 760", 
+    pages_info: "Sujets officiels brevet", 
+    file_url: "#",
+    exercices: [
+      { num: "Partie 1 (8 points)", desc: "Maîtrise des connaissances : Reproduction chez les mammifères et immunologie." },
+      { num: "Partie 2 (12 points)", desc: "Compétences méthodologiques : Analyse de graphiques sur la glycémie et la digestion." }
+    ],
+    sample_corrige: "Partie 1 : L'immunité non spécifique fait intervenir les barrières naturelles (peau, muqueuses) ainsi que la phagocytose assurée par les polynucléaires..."
+  },
+
+  // Lycée
+  { 
+    id: "lyc-1", 
+    level: "BAC S2", 
+    cycle: "Lycee",
+    title: "Annales de Mathématiques 2015-2025 - Séries S1/S2", 
+    subject: "Mathématiques", 
+    color: "bg-sama-blue", 
+    downloads: "4 140", 
     pages_info: "Sujet officiel + Barème", 
     file_url: "#",
     exercices: [
@@ -23,45 +126,13 @@ const DEFAULT_DOCUMENTS = [
     sample_corrige: "Pour la question 1.a : Résolution dans C de l'équation z² - 2(√3)z + 4 = 0. Le discriminant Δ' = 3 - 4 = -1 = i². Donc z1 = √3 - i et z2 = √3 + i. Module |z1| = 2, argument θ = -π/6..."
   },
   { 
-    id: "2", 
-    level: "BFEM", 
-    cycle: "Collège",
-    title: "Épreuves de SVT et Sciences Physiques", 
-    subject: "SVT / Physique-Chimie", 
-    color: "bg-sama-blue", 
-    downloads: "1 760", 
-    pages_info: "Sujets officiels brevet", 
-    file_url: "#",
-    exercices: [
-      { num: "Partie 1 (8 points)", desc: "Maîtrise des connaissances : Reproduction chez les mammifères et immunologie." },
-      { num: "Partie 2 (12 points)", desc: "Compétences méthodologiques : Analyse de graphiques sur la glycémie et la digestion." }
-    ],
-    sample_corrige: "Partie 1 : L'immunité non spécifique fait intervenir les barrières naturelles (peau, muqueuses) ainsi que la phagocytose assurée par les polynucléaires..."
-  },
-  { 
-    id: "3", 
-    level: "CFEE / 6e", 
-    cycle: "Primaire",
-    title: "CFEE et Entrée en Sixième (Session Récente)", 
-    subject: "Maths & Français", 
-    color: "bg-sama-blue", 
-    downloads: "3 020", 
-    pages_info: "Sujets officiels primaire", 
-    file_url: "#",
-    exercices: [
-      { num: "Épreuve 1 (Ressources)", desc: "Opérations sur les nombres décimaux, fractions et conversion d'unités de mesure." },
-      { num: "Épreuve 2 (Compétence)", desc: "Résolution de problème de la vie courante : Calcul du budget familial et périmètre d'un champ." }
-    ],
-    sample_corrige: "Solution du problème : 1) Calcul de la longueur totale du grillage nécessaire : Périmètre = (Longueur + Largeur) × 2 = (45m + 25m) × 2 = 140 m..."
-  },
-  { 
-    id: "4", 
+    id: "lyc-2", 
     level: "BAC L", 
-    cycle: "Lycée",
-    title: "Dissertations & Commentaires de Philosophie", 
+    cycle: "Lycee",
+    title: "Dissertations & Commentaires de Philosophie (Séries L & S)", 
     subject: "Philosophie", 
     color: "bg-sama-blue", 
-    downloads: "1 450", 
+    downloads: "2 450", 
     pages_info: "Sujets & plans détaillés", 
     file_url: "#",
     exercices: [
@@ -127,11 +198,11 @@ export default function Examens() {
 
           // Détection automatique du cycle de l'utilisateur pour adapter la vue
           const lvl = (profile.level || "").toLowerCase();
-          if (lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cm2") || lvl.includes("cfee")) {
+          if (lvl.includes("primaire") || lvl.includes("ci") || lvl.includes("cp") || lvl.includes("ce") || lvl.includes("cm") || lvl.includes("cfee")) {
             setSelectedCycle("Primaire");
-          } else if (lvl.includes("collège") || lvl.includes("college") || lvl.includes("6e") || lvl.includes("3e") || lvl.includes("bfem")) {
+          } else if (lvl.includes("collège") || lvl.includes("college") || lvl.includes("6") || lvl.includes("5") || lvl.includes("4") || lvl.includes("3") || lvl.includes("bfem")) {
             setSelectedCycle("College");
-          } else if (lvl.includes("lycée") || lvl.includes("lycee") || lvl.includes("bac") || lvl.includes("terminale") || lvl.includes("seconde")) {
+          } else if (lvl.includes("lycée") || lvl.includes("lycee") || lvl.includes("bac") || lvl.includes("terminale") || lvl.includes("seconde") || lvl.includes("première")) {
             setSelectedCycle("Lycee");
           }
         }
@@ -141,14 +212,31 @@ export default function Examens() {
     const fetchAnnales = async () => {
       const { data: dbAnnales } = await supabase.from("annales").select("*").order("created_at", { ascending: false });
       if (dbAnnales && dbAnnales.length > 0) {
-        // Fusionner avec structure enrichie
-        const merged = dbAnnales.map((doc, idx) => ({
-          ...doc,
-          cycle: doc.level?.toUpperCase().includes("BAC") ? "Lycee" : doc.level?.toUpperCase().includes("BFEM") ? "College" : "Primaire",
-          exercices: DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length].exercices,
-          sample_corrige: DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length].sample_corrige
-        }));
-        setDocuments(merged);
+        // Classifier chaque annale de façon précise
+        const merged = dbAnnales.map((doc, idx) => {
+          const lvl = (doc.level || "").toLowerCase();
+          const cycle = (lvl.includes("cfee") || lvl.includes("primaire") || lvl.includes("cm") || lvl.includes("ce") || lvl.includes("ci") || lvl.includes("cp"))
+            ? "Primaire"
+            : (lvl.includes("bfem") || lvl.includes("collège") || lvl.includes("college") || lvl.includes("6") || lvl.includes("5") || lvl.includes("4") || lvl.includes("3"))
+            ? "College"
+            : "Lycee";
+
+          return {
+            ...doc,
+            cycle,
+            exercices: DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length]?.exercices || DEFAULT_DOCUMENTS[0].exercices,
+            sample_corrige: DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length]?.sample_corrige || DEFAULT_DOCUMENTS[0].sample_corrige
+          };
+        });
+
+        // Combiner avec DEFAULT_DOCUMENTS pour assurer un contenu complet dans tous les cycles
+        const allDocs = [...merged];
+        DEFAULT_DOCUMENTS.forEach((def) => {
+          if (!allDocs.some((d) => d.title?.toLowerCase().trim() === def.title?.toLowerCase().trim())) {
+            allDocs.push(def);
+          }
+        });
+        setDocuments(allDocs);
       } else {
         setDocuments(DEFAULT_DOCUMENTS);
       }
@@ -167,12 +255,34 @@ export default function Examens() {
     }
   };
 
-  // Filtrage selon le cycle sélectionné
+  // Détection du rôle élève et cycle associé
+  const isStudent = userProfile?.role === "eleve";
+  const studentLevel = (userProfile?.level || "").toLowerCase();
+  const studentCycle: "Primaire" | "College" | "Lycee" | null = isStudent
+    ? (studentLevel.includes("primaire") || studentLevel.includes("ci") || studentLevel.includes("cp") || studentLevel.includes("ce") || studentLevel.includes("cm") || studentLevel.includes("cfee")
+      ? "Primaire"
+      : studentLevel.includes("collège") || studentLevel.includes("college") || studentLevel.includes("6") || studentLevel.includes("5") || studentLevel.includes("4") || studentLevel.includes("3") || studentLevel.includes("bfem")
+      ? "College"
+      : "Lycee")
+    : null;
+
+  // Filtrage strict selon le cycle sélectionné ou imposé à l'élève
+  const effectiveCycle = isStudent && studentCycle ? studentCycle : selectedCycle;
+
   const filteredDocuments = documents.filter((doc) => {
-    if (selectedCycle === "TOUS") return true;
-    if (selectedCycle === "Primaire") return doc.cycle === "Primaire" || doc.level?.toUpperCase().includes("CFEE") || doc.level?.toUpperCase().includes("PRIMAIRE");
-    if (selectedCycle === "College") return doc.cycle === "College" || doc.level?.toUpperCase().includes("BFEM") || doc.level?.toUpperCase().includes("COLLÈGE");
-    if (selectedCycle === "Lycee") return doc.cycle === "Lycee" || doc.level?.toUpperCase().includes("BAC") || doc.level?.toUpperCase().includes("LYCÉE");
+    if (effectiveCycle === "TOUS") return true;
+    const dCycle = doc.cycle;
+    const dLvl = (doc.level || "").toLowerCase();
+
+    if (effectiveCycle === "Primaire") {
+      return dCycle === "Primaire" || dLvl.includes("primaire") || dLvl.includes("cfee") || dLvl.includes("cm") || dLvl.includes("ce") || dLvl.includes("ci") || dLvl.includes("cp");
+    }
+    if (effectiveCycle === "College") {
+      return dCycle === "College" || dLvl.includes("bfem") || dLvl.includes("collège") || dLvl.includes("college") || dLvl.includes("6") || dLvl.includes("5") || dLvl.includes("4") || dLvl.includes("3");
+    }
+    if (effectiveCycle === "Lycee") {
+      return dCycle === "Lycee" || dLvl.includes("bac") || dLvl.includes("lycée") || dLvl.includes("lycee") || dLvl.includes("seconde") || dLvl.includes("première") || dLvl.includes("terminale");
+    }
     return true;
   });
 
@@ -424,23 +534,49 @@ export default function Examens() {
           )}
         </div>
 
-        {/* Sélecteur de Cycle Personnalisé (Primaire / Collège / Lycée / Concours) */}
-        <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-gray-100">
-          {CYCLES.map((cycle) => (
-            <button
-              key={cycle.id}
-              onClick={() => setSelectedCycle(cycle.id)}
-              className={`py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-                selectedCycle === cycle.id
-                  ? "bg-sama-primary text-white shadow-sm"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
-              }`}
-            >
-              <i className={cycle.icon}></i>
-              <span>{cycle.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Sélecteur de Cycle Personnalisé (Cloisonné pour les élèves) */}
+        {isStudent && studentCycle ? (
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-xl bg-sama-primary text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                  <i className="fas fa-lock"></i>
+                </span>
+                <div>
+                  <p className="font-extrabold text-sama-primary text-sm flex items-center gap-2">
+                    <span>Bibliothèque Officielle • Cycle {studentCycle === "Primaire" ? "Primaire (CI à CM2, CFEE)" : studentCycle === "College" ? "Collège (6e à 3e, BFEM)" : "Lycée (Seconde à Terminale, BAC)"}</span>
+                    <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Cloisonné</span>
+                  </p>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Connecté en tant qu&apos;élève ({userProfile?.first_name} • {userProfile?.level}). Seules les épreuves de votre niveau sont consultables.
+                  </p>
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-sama-primary text-xs font-bold border border-blue-200 shadow-xs">
+                  <i className="fas fa-check-circle text-green-500"></i> Cycle Actif : {studentCycle}
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-gray-100">
+            {CYCLES.map((cycle) => (
+              <button
+                key={cycle.id}
+                onClick={() => setSelectedCycle(cycle.id)}
+                className={`py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                  selectedCycle === cycle.id
+                    ? "bg-sama-primary text-white shadow-sm"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                }`}
+              >
+                <i className={cycle.icon}></i>
+                <span>{cycle.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Grille des Épreuves Documentaires */}
@@ -488,8 +624,8 @@ export default function Examens() {
         </div>
       )}
 
-      {/* ===== SECTION CONCOURS DE L'ÉTAT ===== */}
-      {(selectedCycle === "TOUS" || selectedCycle === "Concours") && (
+      {/* ===== SECTION CONCOURS DE L'ÉTAT (Masqué pour les élèves) ===== */}
+      {!isStudent && (selectedCycle === "TOUS" || selectedCycle === "Concours") && (
         <div className="mb-12">
           <div className="mb-6 bg-gradient-to-r from-purple-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-sm">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold mb-2">
