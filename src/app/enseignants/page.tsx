@@ -108,8 +108,63 @@ export default function Enseignants() {
       tSubject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tRegion.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchSubject && matchRegion && matchQuery;
+    // Cloisonnement strict par cycle pour les élèves
+    let matchCycle = true;
+    if (currentUser?.role === "eleve" && currentUser?.level) {
+      const studentLvl = currentUser.level.toLowerCase();
+      const teacherLvl = (teacher.level || "").toLowerCase();
+      const teacherExp = (teacher.experience || "").toLowerCase();
+
+      if (studentLvl.includes("primaire") || studentLvl.includes("ci") || studentLvl.includes("cp") || studentLvl.includes("ce1") || studentLvl.includes("ce2") || studentLvl.includes("cm1") || studentLvl.includes("cm2")) {
+        matchCycle = teacherLvl.includes("primaire") || teacherExp.includes("primaire") || (!teacherLvl && !teacherExp);
+      } else if (studentLvl.includes("collège") || studentLvl.includes("college") || studentLvl.includes("6") || studentLvl.includes("5") || studentLvl.includes("4") || studentLvl.includes("3") || studentLvl.includes("bfem")) {
+        matchCycle = teacherLvl.includes("collège") || teacherLvl.includes("college") || teacherExp.includes("collège") || teacherExp.includes("college") || (!teacherLvl && !teacherExp);
+      } else {
+        matchCycle = teacherLvl.includes("lycée") || teacherLvl.includes("lycee") || teacherLvl.includes("bac") || teacherExp.includes("lycée") || teacherExp.includes("lycee") || (!teacherLvl && !teacherExp);
+      }
+    }
+
+    return matchSubject && matchRegion && matchQuery && matchCycle;
   });
+
+  // STRICT SAMA ACADÉMIE : Les professeurs ne doivent pas se voir entre eux
+  if (currentUser?.role === "enseignant") {
+    return (
+      <main className="flex-grow max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full text-center space-y-6">
+        <div className="w-20 h-20 bg-blue-100 text-sama-primary rounded-full flex items-center justify-center mx-auto text-3xl shadow-sm">
+          <i className="fas fa-chalkboard-teacher"></i>
+        </div>
+        <div className="space-y-2">
+          <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+            Confidentialité &amp; Cloisonnement Enseignants
+          </span>
+          <h1 className="text-3xl font-extrabold text-gray-900">Espace Réservé aux Familles &amp; Élèves</h1>
+          <p className="text-gray-500 text-sm max-w-lg mx-auto">
+            En tant qu&apos;enseignant certifié de SAMA ACADÉMIE, l&apos;annuaire public des autres professeurs ne vous est pas accessible. Votre activité et vos cours sont centralisés sur votre espace dédié.
+          </p>
+        </div>
+        <div className="bg-blue-50 border border-blue-100 rounded-3xl p-6 text-xs text-blue-900 max-w-lg mx-auto space-y-2 text-left shadow-xs">
+          <p className="font-bold flex items-center gap-2 text-sama-primary text-sm">
+            <i className="fas fa-shield-alt"></i> Votre Espace Enseignant comprend :
+          </p>
+          <ul className="space-y-1.5 text-gray-700 pl-4 list-disc">
+            <li>Vos élèves officiellement assignés par l&apos;Administration</li>
+            <li>Le dépôt de cours, devoirs et fiches d&apos;exercices</li>
+            <li>La publication de vidéos et l&apos;animation de vos webinaires en direct</li>
+            <li>L&apos;évaluation de l&apos;assimilation pour informer les parents d&apos;élèves</li>
+          </ul>
+        </div>
+        <div>
+          <Link
+            href="/dashboard/enseignant"
+            className="inline-flex items-center gap-2 bg-sama-primary hover:bg-blue-800 text-white font-bold py-3.5 px-6 rounded-2xl text-sm transition shadow-md"
+          >
+            <i className="fas fa-columns"></i> Accéder à mon Espace Enseignant
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
@@ -269,6 +324,19 @@ export default function Enseignants() {
             </select>
           </div>
         </div>
+
+        {/* Cloisonnement Cycle actif pour élève */}
+        {currentUser?.role === "eleve" && (
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-sama-primary">
+            <span className="font-bold flex items-center gap-2">
+              <i className="fas fa-graduation-cap text-base"></i>
+              Filtre automatique actif : Enseignants qualifiés pour votre cycle ({currentUser.level || "Élève"}).
+            </span>
+            <Link href="/dashboard/eleve" className="font-extrabold hover:underline whitespace-nowrap">
+              Mon Espace Élève →
+            </Link>
+          </div>
+        )}
       </div>
 
       {loading ? (

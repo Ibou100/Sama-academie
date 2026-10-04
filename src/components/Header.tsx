@@ -10,6 +10,8 @@ type UserProfile = {
   last_name: string;
   avatar_url: string | null;
   is_premium: boolean;
+  role: string;
+  level?: string | null;
 };
 
 function getInitials(firstName: string, lastName: string) {
@@ -28,16 +30,53 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const links = [
-    { href: "/", label: "Accueil" },
-    { href: "/enseignants", label: "Enseignants" },
-    { href: "/matieres", label: "Matières & Niveaux" },
-    { href: "/examens", label: "Exercices & Examens" },
-    { href: "/videos", label: "Vidéos ⭐" },
-    { href: "/classes", label: "Classes 🎥" },
-    { href: "/orientation", label: "Orientation 🧭" },
-    { href: "/apropos", label: "À propos" },
-  ];
+  // Navigation dynamique selon le profil
+  const getNavLinks = () => {
+    if (userProfile?.role === "enseignant") {
+      return [
+        { href: "/", label: "Accueil" },
+        { href: "/dashboard/enseignant", label: "Espace Professeur" },
+        { href: "/classes", label: "Classes 🎥" },
+        { href: "/examens", label: "Exercices & Examens" },
+        { href: "/videos", label: "Vidéos ⭐" },
+        { href: "/orientation", label: "Orientation 🧭" },
+        { href: "/apropos", label: "À propos" },
+      ];
+    }
+    if (userProfile?.role === "eleve") {
+      return [
+        { href: "/", label: "Accueil" },
+        { href: "/dashboard/eleve", label: "Mon Espace" },
+        { href: "/enseignants", label: "Enseignants" },
+        { href: "/examens", label: "Exercices & Examens" },
+        { href: "/videos", label: "Vidéos ⭐" },
+        { href: "/classes", label: "Classes 🎥" },
+        { href: "/orientation", label: "Orientation 🧭" },
+      ];
+    }
+    if (userProfile?.role === "parent") {
+      return [
+        { href: "/", label: "Accueil" },
+        { href: "/dashboard/parent", label: "Espace Parent & Suivi" },
+        { href: "/enseignants", label: "Enseignants" },
+        { href: "/examens", label: "Exercices & Examens" },
+        { href: "/tarifs", label: "Tarifs" },
+        { href: "/apropos", label: "À propos" },
+      ];
+    }
+    return [
+      { href: "/", label: "Accueil" },
+      { href: "/enseignants", label: "Enseignants" },
+      { href: "/matieres", label: "Matières & Niveaux" },
+      { href: "/examens", label: "Exercices & Examens" },
+      { href: "/videos", label: "Vidéos ⭐" },
+      { href: "/classes", label: "Classes 🎥" },
+      { href: "/orientation", label: "Orientation 🧭" },
+      { href: "/apropos", label: "À propos" },
+    ];
+  };
+
+  const links = getNavLinks();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -46,7 +85,7 @@ export default function Header() {
 
       const { data } = await supabase
         .from("profiles")
-        .select("first_name, last_name, avatar_url, is_premium")
+        .select("first_name, last_name, avatar_url, is_premium, role, level")
         .eq("id", user.id)
         .single();
 
@@ -133,7 +172,45 @@ export default function Header() {
 
                   {/* Menu déroulant du profil */}
                   {isDropdownOpen && (
-                    <div className="absolute right-0 top-14 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50">
+                    <div className="absolute right-0 top-14 w-60 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50">
+                      {/* Tableau de bord selon le rôle */}
+                      {userProfile.role === "enseignant" && (
+                        <Link
+                          href="/dashboard/enseignant"
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-sama-primary hover:bg-blue-50 font-black border-b border-gray-100"
+                        >
+                          <i className="fas fa-chalkboard-teacher w-4"></i> Espace Enseignant
+                        </Link>
+                      )}
+                      {userProfile.role === "eleve" && (
+                        <Link
+                          href="/dashboard/eleve"
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-sama-primary hover:bg-blue-50 font-black border-b border-gray-100"
+                        >
+                          <i className="fas fa-graduation-cap w-4"></i> Mon Espace Élève
+                        </Link>
+                      )}
+                      {userProfile.role === "parent" && (
+                        <Link
+                          href="/dashboard/parent"
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-purple-700 hover:bg-purple-50 font-black border-b border-gray-100"
+                        >
+                          <i className="fas fa-child w-4"></i> Espace Parent &amp; Suivi
+                        </Link>
+                      )}
+                      {userProfile.role === "admin" && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-sama-primary hover:bg-blue-50 font-black border-b border-gray-100"
+                        >
+                          <i className="fas fa-cog w-4"></i> Espace Administration
+                        </Link>
+                      )}
+
                       <Link
                         href="/demandes"
                         onClick={() => setIsDropdownOpen(false)}
@@ -203,6 +280,34 @@ export default function Header() {
             <div className="border-t border-gray-200 mt-4 pt-4 flex flex-col gap-3">
               {userProfile ? (
                 <>
+                  {userProfile.role === "enseignant" && (
+                    <Link
+                      href="/dashboard/enseignant"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 text-center text-base font-black bg-blue-800 text-white rounded-xl shadow-sm"
+                    >
+                      <i className="fas fa-chalkboard-teacher"></i> Espace Enseignant
+                    </Link>
+                  )}
+                  {userProfile.role === "eleve" && (
+                    <Link
+                      href="/dashboard/eleve"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 text-center text-base font-black bg-blue-800 text-white rounded-xl shadow-sm"
+                    >
+                      <i className="fas fa-graduation-cap"></i> Mon Espace Élève
+                    </Link>
+                  )}
+                  {userProfile.role === "parent" && (
+                    <Link
+                      href="/dashboard/parent"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 text-center text-base font-black bg-purple-900 text-white rounded-xl shadow-sm"
+                    >
+                      <i className="fas fa-child"></i> Espace Parent &amp; Suivi
+                    </Link>
+                  )}
+
                   <Link
                     href="/demandes"
                     onClick={() => setIsMenuOpen(false)}
