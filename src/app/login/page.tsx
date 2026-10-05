@@ -80,7 +80,7 @@ function Login() {
           <div>
             <div className="flex justify-between items-center mb-1">
               <label className="block text-sm font-bold text-gray-700">Mot de passe</label>
-              <Link href="#" className="text-xs font-semibold text-sama-primary hover:underline">Mot de passe oublié ?</Link>
+              <Link href="/forgot-password" className="text-xs font-semibold text-sama-primary hover:underline">Mot de passe oublié ?</Link>
             </div>
             <div className="relative">
               <input 
