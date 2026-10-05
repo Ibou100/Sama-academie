@@ -1,5 +1,6 @@
 "use client";
 
+import { canAccessClass } from "@/lib/classAccess";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
@@ -54,7 +55,7 @@ export default function PreviewGreenRoom() {
       .eq("id", classId)
       .single();
 
-    if (vClass) {
+    if (vClass && (await canAccessClass(user.id, profile?.role, vClass.teacher_id))) {
       setVirtualClass(vClass);
     }
 

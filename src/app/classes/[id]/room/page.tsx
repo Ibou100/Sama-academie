@@ -1,5 +1,6 @@
 "use client";
 
+import { canAccessClass } from "@/lib/classAccess";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
@@ -337,7 +338,7 @@ export default function VirtualClassroomRoom() {
         .select("*, teacher:profiles(first_name, last_name)")
         .eq("id", classId).single();
       if (!mounted) return;
-      if (!vClass) { setErrorAlert("Classe introuvable."); setLoading(false); return; }
+      if (!vClass || !(await canAccessClass(user.id, profile?.role, vClass.teacher_id))) { setErrorAlert("Classe introuvable ou accès non autorisé."); setLoading(false); return; }
       if (vClass.status === "ended") { setMeetingEndedAlert(true); setLoading(false); return; }
 
       setVirtualClass(vClass);

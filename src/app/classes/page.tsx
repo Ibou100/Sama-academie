@@ -1,5 +1,6 @@
 "use client";
 
+import { getVisibleTeacherIds } from "@/lib/classAccess";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,7 @@ export default function ClassesVirtuellesDashboard() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
 
+    let viewerProfile: any = null;
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
@@ -43,25 +45,36 @@ export default function ClassesVirtuellesDashboard() {
         .maybeSingle();
 
       if (profile) {
+        viewerProfile = profile;
         setUserProfile(profile);
       } else {
-        setUserProfile({
+        viewerProfile = {
           id: user.id,
           first_name: user.user_metadata?.first_name || user.email?.split("@")[0] || "Professeur",
           last_name: user.user_metadata?.last_name || "",
           role: "enseignant",
-        });
+        };
+        setUserProfile(viewerProfile);
       }
     }
 
-    // Charger les classes virtuelles depuis Supabase
-    const { data: vClasses } = await supabase
-      .from("virtual_classes")
-      .select("*, teacher:profiles(first_name, last_name)")
-      .order("created_at", { ascending: false });
-
-    if (vClasses) {
-      setClassesList(vClasses);
+    // Charger UNIQUEMENT les classes auxquelles l'utilisateur a droit
+    // (prof = ses classes, élève = classes de son prof assigné, admin = tout)
+    if (user && viewerProfile) {
+      const allowed = await getVisibleTeacherIds(user.id, viewerProfile.role);
+      if (allowed === "all" || allowed.length > 0) {
+        let q = supabase
+          .from("virtual_classes")
+          .select("*, teacher:profiles(first_name, last_name)")
+          .order("created_at", { ascending: false });
+        if (allowed !== "all") q = q.in("teacher_id", allowed);
+        const { data: vClasses } = await q;
+        setClassesList(vClasses || []);
+      } else {
+        setClassesList([]);
+      }
+    } else {
+      setClassesList([]);
     }
 
     setLoading(false);
