@@ -38,6 +38,20 @@ export async function POST(req: Request) {
     const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
+    // Traçabilité serveur : audit de l'action
+    const { data: targetProfile } = await admin.from("profiles").select("first_name, last_name, email").eq("id", userId).maybeSingle();
+    const targetName = targetProfile ? `${targetProfile.first_name} ${targetProfile.last_name}` : userId;
+
+    const { recordServerAudit } = await import("@/lib/serverAudit");
+    await recordServerAudit(req, admin, {
+      adminId: caller.user.id,
+      adminEmail: caller.user.email,
+      action: "RESET_MOT_DE_PASSE",
+      targetUserId: userId,
+      targetName: targetName || "Utilisateur",
+      details: `Réinitialisation forcée du mot de passe pour ${targetName} (${targetProfile?.email || "sans email"})`,
+    });
+
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Erreur serveur." }, { status: 500 });

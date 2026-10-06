@@ -53,6 +53,16 @@ export async function DELETE(req: Request) {
       console.warn("Auth delete warning:", authDeleteErr.message);
     }
 
+    // Traçabilité serveur
+    const { recordServerAudit } = await import("@/lib/serverAudit");
+    await recordServerAudit(req, admin, {
+      adminId: caller.user.id,
+      adminEmail: caller.user.email,
+      action: "SUPPRESSION_UTILISATEUR",
+      targetUserId: userId,
+      details: `Suppression définitive du compte utilisateur (ID: ${userId}) par ${caller.user.email}`,
+    });
+
     return NextResponse.json({ ok: true, message: "Utilisateur supprimé avec succès." });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Erreur serveur." }, { status: 500 });
@@ -99,6 +109,17 @@ export async function PATCH(req: Request) {
         });
       } catch (_) {}
     }
+
+    // Traçabilité serveur
+    const { recordServerAudit } = await import("@/lib/serverAudit");
+    const summaryUpdates = Object.entries(updates).map(([k, v]) => `${k}: ${v}`).join(", ");
+    await recordServerAudit(req, admin, {
+      adminId: caller.user.id,
+      adminEmail: caller.user.email,
+      action: updates.role ? "MODIF_ROLE_UTILISATEUR" : "MODIF_PROFIL_UTILISATEUR",
+      targetUserId: userId,
+      details: `Modification utilisateur ID ${userId} : ${summaryUpdates}`,
+    });
 
     return NextResponse.json({ ok: true, message: "Utilisateur mis à jour avec succès." });
   } catch (e: any) {

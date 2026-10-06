@@ -5,8 +5,9 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getSupportConfig, updateSupportConfig } from "@/lib/siteConfig";
 import { detectCycle, Cycle } from "@/lib/cycle";
+import { logAdminAction } from "@/lib/auditLogger";
 
-type TabKey = "overview" | "users" | "requests" | "teachers" | "classes" | "content" | "settings";
+type TabKey = "overview" | "users" | "requests" | "teachers" | "classes" | "content" | "audit" | "settings";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
@@ -19,8 +20,20 @@ export default function AdminDashboard() {
   const [annales, setAnnales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Sécurité & Verrouillage par Mot de passe
+  // Journal d'Audit & Traçabilité (Surveillance Live)
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
+  const [auditSearch, setAuditSearch] = useState("");
+  const [auditActionFilter, setAuditActionFilter] = useState("all");
+  const [auditTableMissing, setAuditTableMissing] = useState(false);
+  const [currentAdminProfile, setCurrentAdminProfile] = useState<any>(null);
+
+  // Sécurité & Verrouillage d'Accès Multi-Admins
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [authMode, setAuthMode] = useState<"account" | "passcode">("account");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
   const [accessCodeInput, setAccessCodeInput] = useState("");
   const [accessError, setAccessError] = useState("");
   const [adminPasscode, setAdminPasscode] = useState("sama2026");
@@ -69,40 +82,59 @@ export default function AdminDashboard() {
     setTimeout(() => setToast(null), 4500);
   };
 
+  const fetchAuditLogs = async () => {
+    setLoadingAuditLogs(true);
+    try {
+      const res = await fetch("/api/admin/audit");
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.logs)) {
+        setAuditLogs(data.logs);
+        setAuditTableMissing(!!data.tableMissing);
+      }
+    } catch (err) {
+      console.warn("Erreur chargement logs audit:", err);
+    } finally {
+      setLoadingAuditLogs(false);
+    }
+  };
+
   useEffect(() => {
     const savedPasscode = typeof window !== "undefined" ? localStorage.getItem("sama_custom_admin_passcode") || "sama2026" : "sama2026";
     setAdminPasscode(savedPasscode);
 
     const sessionUnlocked = typeof window !== "undefined" ? sessionStorage.getItem("sama_admin_unlocked") === "true" : false;
 
-    if (sessionUnlocked) {
-      setIsUnlocked(true);
-      setCheckingAuth(false);
-      fetchData();
-    } else {
-      // Vérifier si l'utilisateur connecté est un compte admin officiel dans Supabase
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", user.id)
-            .maybeSingle()
-            .then(({ data: profile }) => {
+    // Récupérer le compte connecté
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle()
+          .then(({ data: profile }) => {
+            if (profile) setCurrentAdminProfile(profile);
+            if (profile?.role === "admin" || sessionUnlocked) {
+              setIsUnlocked(true);
               if (profile?.role === "admin") {
-                setIsUnlocked(true);
                 sessionStorage.setItem("sama_admin_unlocked", "true");
-                fetchData();
               }
-              setCheckingAuth(false);
-              setLoading(false);
-            });
-        } else {
-          setCheckingAuth(false);
-          setLoading(false);
+              fetchData();
+              fetchAuditLogs();
+            }
+            setCheckingAuth(false);
+            setLoading(false);
+          });
+      } else {
+        if (sessionUnlocked) {
+          setIsUnlocked(true);
+          fetchData();
+          fetchAuditLogs();
         }
-      });
-    }
+        setCheckingAuth(false);
+        setLoading(false);
+      }
+    });
   }, []);
 
   const fetchData = async () => {
@@ -280,8 +312,176 @@ export default function AdminDashboard() {
   }, [profiles, userSearch, userRoleFilter, userCycleFilter, userPremiumFilter]);
 
   /* ========================================================================= */
-  /*  SÉCURITÉ & VERROUILLAGE PAR MOT DE PASSE                                */
+  /*  JOURNAL D'AUDIT & TRAÇABILITÉ (STATISTIQUES & FILTRAGE)                  */
   /* ========================================================================= */
+  const auditStats = useMemo(() => {
+    const uniqueAdmins = new Set(auditLogs.map((l) => l.admin_email).filter(Boolean));
+    const uniqueCities = new Set(auditLogs.map((l) => l.city).filter(Boolean));
+    return {
+      total: auditLogs.length,
+      uniqueAdminsCount: uniqueAdmins.size || 1,
+      uniqueCitiesCount: uniqueCities.size || 1,
+    };
+  }, [auditLogs]);
+
+  const filteredAuditLogs = useMemo(() => {
+    return auditLogs.filter((l) => {
+      const q = auditSearch.toLowerCase().trim();
+      if (q) {
+        const adminName = (l.admin_name || "").toLowerCase();
+        const adminEmail = (l.admin_email || "").toLowerCase();
+        const action = (l.action || "").toLowerCase();
+        const details = (l.details || "").toLowerCase();
+        const targetName = (l.target_name || "").toLowerCase();
+        const ip = (l.ip_address || "").toLowerCase();
+        const city = (l.city || "").toLowerCase();
+        const country = (l.country || "").toLowerCase();
+        if (
+          !adminName.includes(q) &&
+          !adminEmail.includes(q) &&
+          !action.includes(q) &&
+          !details.includes(q) &&
+          !targetName.includes(q) &&
+          !ip.includes(q) &&
+          !city.includes(q) &&
+          !country.includes(q)
+        ) {
+          return false;
+        }
+      }
+
+      if (auditActionFilter === "all") return true;
+      if (auditActionFilter === "auth") {
+        return ["CONNEXION", "DEVERROUILLAGE_CODE", "VERROUILLAGE", "VERIFICATION_SECURITE"].includes(l.action);
+      }
+      if (auditActionFilter === "users") {
+        return ["MODIF_ROLE", "MODIF_ROLE_UTILISATEUR", "SUPPRESSION_UTILISATEUR", "STATUT_PREMIUM"].includes(l.action);
+      }
+      if (auditActionFilter === "password") {
+        return l.action.includes("MDP") || l.action.includes("PASSE");
+      }
+      if (auditActionFilter === "contracts") {
+        return ["ACCORD_FINANCIER", "VALIDATION_CONTRAT", "REJET_DEMANDE"].includes(l.action);
+      }
+      if (auditActionFilter === "content") {
+        return ["AJOUT_VIDEO", "AJOUT_ANNALE", "SUPPRESSION_CONTENU", "CLOTURE_CLASSE", "SUPPRESSION_CLASSE"].includes(l.action);
+      }
+      if (auditActionFilter === "settings") {
+        return ["MODIF_SUPPORT", "MODIF_CODE_ACCES", "MODIF_PARAMETRES_SUPPORT"].includes(l.action);
+      }
+      return true;
+    });
+  }, [auditLogs, auditSearch, auditActionFilter]);
+
+  const exportAuditLogsToCSV = () => {
+    if (filteredAuditLogs.length === 0) {
+      showToast("Aucun log à exporter.", "info");
+      return;
+    }
+    const headers = [
+      "Date (ISO)",
+      "Date Locale",
+      "Administrateur",
+      "Email",
+      "Action",
+      "Cible",
+      "Détails",
+      "Adresse IP",
+      "Ville",
+      "Pays",
+      "Appareil / Navigateur",
+      "Statut",
+    ];
+    const rows = filteredAuditLogs.map((l) => [
+      l.created_at,
+      new Date(l.created_at).toLocaleString("fr-FR"),
+      `"${(l.admin_name || "").replace(/"/g, '""')}"`,
+      `"${(l.admin_email || "").replace(/"/g, '""')}"`,
+      l.action,
+      `"${(l.target_name || "").replace(/"/g, '""')}"`,
+      `"${(l.details || "").replace(/"/g, '""')}"`,
+      l.ip_address || "127.0.0.1",
+      `"${(l.city || "").replace(/"/g, '""')}"`,
+      `"${(l.country || "").replace(/"/g, '""')}"`,
+      `"${(l.user_agent || "").replace(/"/g, '""')}"`,
+      l.status || "SUCCESS",
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8,\uFEFF" +
+      [headers.join(";"), ...rows.map((e) => e.join(";"))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `sama_audit_logs_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Fichier d'audit CSV téléchargé avec succès !", "success");
+  };
+
+  /* ========================================================================= */
+  /*  SÉCURITÉ & VERROUILLAGE MULTI-ADMINS                                    */
+  /* ========================================================================= */
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAccessError("");
+    if (!loginEmail.trim() || !loginPassword) {
+      setAccessError("Veuillez renseigner votre email et mot de passe administrateur.");
+      return;
+    }
+
+    setLoginLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail.trim(),
+        password: loginPassword,
+      });
+
+      if (error || !data.user) {
+        setAccessError("Identifiants incorrects ou compte introuvable. Veuillez vérifier.");
+        setLoginLoading(false);
+        return;
+      }
+
+      // Vérifier rôle admin dans profiles
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      if (profile?.role !== "admin") {
+        await supabase.auth.signOut();
+        setAccessError("⛔ Accès refusé : ce compte utilisateur n'a pas les droits Administrateur.");
+        setLoginLoading(false);
+        return;
+      }
+
+      setCurrentAdminProfile(profile);
+      setIsUnlocked(true);
+      if (typeof window !== "undefined") sessionStorage.setItem("sama_admin_unlocked", "true");
+      showToast(`Bienvenue ${profile.first_name || ""} ! Console d'administration déverrouillée.`, "success");
+
+      // Traçabilité immédiate de la connexion
+      logAdminAction({
+        action: "CONNEXION",
+        adminEmail: data.user.email || loginEmail,
+        adminName: `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || data.user.email || "Administrateur",
+        adminId: data.user.id,
+        targetName: "Console Direction",
+        details: `Connexion nominative réussie de ${profile.first_name || ""} ${profile.last_name || ""}`,
+      });
+
+      fetchData();
+      fetchAuditLogs();
+    } catch (err: any) {
+      setAccessError("Erreur : " + (err.message || "Impossible de se connecter."));
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
     setAccessError("");
@@ -292,13 +492,23 @@ export default function AdminDashboard() {
       setIsUnlocked(true);
       if (typeof window !== "undefined") sessionStorage.setItem("sama_admin_unlocked", "true");
       setAccessCodeInput("");
+      showToast("Console déverrouillée via code secret d'accès.", "success");
+      logAdminAction({
+        action: "DEVERROUILLAGE_CODE",
+        details: "Déverrouillage d'urgence de la console via Master Passcode",
+      });
       fetchData();
+      fetchAuditLogs();
     } else {
       setAccessError("Mot de passe incorrect. Veuillez vérifier et réessayer.");
     }
   };
 
   const handleLock = () => {
+    logAdminAction({
+      action: "VERROUILLAGE",
+      details: "Verrouillage manuel de la session d'administration",
+    });
     setIsUnlocked(false);
     if (typeof window !== "undefined") sessionStorage.removeItem("sama_admin_unlocked");
     showToast("Console administrateur verrouillée 🔒", "info");
@@ -315,6 +525,10 @@ export default function AdminDashboard() {
     setAdminPasscode(clean);
     setNewPasscodeInput("");
     showToast("Mot de passe d'accès administrateur modifié avec succès !", "success");
+    logAdminAction({
+      action: "MODIF_CODE_ACCES",
+      details: "Modification du Master Passcode de la console",
+    });
   };
 
   /* ========================================================================= */
@@ -342,6 +556,13 @@ export default function AdminDashboard() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         showToast(`Mot de passe mis à jour pour ${userName} ! Vous pouvez lui transmettre sur WhatsApp.`, "success");
+        logAdminAction({
+          action: "RESET_MOT_DE_PASSE",
+          targetUserId: userId,
+          targetName: userName,
+          details: `Réinitialisation manuelle du mot de passe pour ${userName}`,
+        });
+        fetchAuditLogs();
       } else {
         showToast(data.error || "Échec de la réinitialisation.", "error");
       }
@@ -370,6 +591,13 @@ export default function AdminDashboard() {
       if (res.ok) {
         showToast(`Rôle mis à jour (${newRole}) avec succès !`, "success");
         setProfiles((prev) => prev.map((p) => (p.id === userId ? { ...p, role: newRole } : p)));
+        logAdminAction({
+          action: "MODIF_ROLE",
+          targetUserId: userId,
+          targetName: currentName,
+          details: `Attribution du rôle ${newRole.toUpperCase()} à ${currentName}`,
+        });
+        fetchAuditLogs();
       } else {
         showToast(data.error || "Impossible de mettre à jour le rôle.", "error");
       }
@@ -400,6 +628,13 @@ export default function AdminDashboard() {
       if (res.ok) {
         showToast(`Compte de ${userName} supprimé définitivement.`, "success");
         setProfiles((prev) => prev.filter((p) => p.id !== userId));
+        logAdminAction({
+          action: "SUPPRESSION_UTILISATEUR",
+          targetUserId: userId,
+          targetName: userName,
+          details: `Suppression définitive du compte ${userName}`,
+        });
+        fetchAuditLogs();
       } else {
         showToast(data.error || "Échec de la suppression.", "error");
       }
@@ -416,6 +651,12 @@ export default function AdminDashboard() {
     if (!error) {
       showToast(`Statut Premium ${!currentStatus ? "activé ⭐" : "désactivé"} !`, "success");
       setProfiles((prev) => prev.map((p) => (p.id === userId ? { ...p, is_premium: !currentStatus } : p)));
+      logAdminAction({
+        action: "STATUT_PREMIUM",
+        targetUserId: userId,
+        details: `${!currentStatus ? "Activation" : "Désactivation"} du statut Premium pour l'utilisateur ID: ${userId}`,
+      });
+      fetchAuditLogs();
     } else {
       showToast("Erreur de mise à jour Premium.", "error");
     }
@@ -443,6 +684,13 @@ export default function AdminDashboard() {
     if (!error) {
       showToast("Accord financier enregistré avec succès !", "success");
       setTutoringRequests((prev) => prev.map((r) => (r.id === requestId ? { ...r, message: newMsg } : r)));
+      logAdminAction({
+        action: "ACCORD_FINANCIER",
+        targetUserId: req.student_id,
+        targetName: `${req.student?.first_name || ""} ${req.student?.last_name || ""}`.trim() || "Demande encadrement",
+        details: `Accord financier conclu : Famille ${pricing.familyPrice || "?"} / Prof ${pricing.teacherPayout || "?"}`,
+      });
+      fetchAuditLogs();
     } else {
       showToast("Erreur lors de l'enregistrement du contrat.", "error");
     }
@@ -471,6 +719,11 @@ export default function AdminDashboard() {
       setTutoringRequests((prev) =>
         prev.map((r) => (r.id === requestId ? { ...r, ...updatePayload } : r))
       );
+      logAdminAction({
+        action: "VALIDATION_CONTRAT",
+        details: `Validation et activation du contrat de tutorat ID: ${requestId}`,
+      });
+      fetchAuditLogs();
     } else {
       showToast("Erreur : " + error.message, "error");
     }
@@ -489,6 +742,11 @@ export default function AdminDashboard() {
       setTutoringRequests((prev) =>
         prev.map((r) => (r.id === requestId ? { ...r, status: "declined" } : r))
       );
+      logAdminAction({
+        action: "REJET_DEMANDE",
+        details: `Clôture / archivage de la demande de tutorat ID: ${requestId}`,
+      });
+      fetchAuditLogs();
     }
     setActionLoadingId(null);
   };
@@ -510,6 +768,12 @@ export default function AdminDashboard() {
       setProfiles((prev) =>
         prev.map((p) => (p.id === teacherId ? { ...p, verified: !currentStatus } : p))
       );
+      logAdminAction({
+        action: "ACCREDITATION_PROF",
+        targetUserId: teacherId,
+        details: `${!currentStatus ? "Accréditation accordée" : "Suspension accréditation"} pour professeur ID: ${teacherId}`,
+      });
+      fetchAuditLogs();
     }
     setActionLoadingId(null);
   };
@@ -530,6 +794,11 @@ export default function AdminDashboard() {
       setVirtualClasses((prev) =>
         prev.map((vc) => (vc.id === classId ? { ...vc, status: "ended" } : vc))
       );
+      logAdminAction({
+        action: "CLOTURE_CLASSE",
+        details: `Arrêt forcé de la session de classe virtuelle ID: ${classId}`,
+      });
+      fetchAuditLogs();
     }
     setActionLoadingId(null);
   };
@@ -543,6 +812,11 @@ export default function AdminDashboard() {
     if (!error) {
       showToast("Classe virtuelle supprimée.", "info");
       setVirtualClasses((prev) => prev.filter((vc) => vc.id !== classId));
+      logAdminAction({
+        action: "SUPPRESSION_CLASSE",
+        details: `Suppression définitive de la classe virtuelle ID: ${classId}`,
+      });
+      fetchAuditLogs();
     }
     setActionLoadingId(null);
   };
@@ -573,6 +847,11 @@ export default function AdminDashboard() {
     if (!error && data) {
       showToast("Vidéo ajoutée à la bibliothèque !", "success");
       setVideos((prev) => [data[0], ...prev]);
+      logAdminAction({
+        action: "AJOUT_VIDEO",
+        details: `Ajout d'une vidéo de cours : "${videoTitle.trim()}" (${videoSubject} - ${videoLevel})`,
+      });
+      fetchAuditLogs();
       setVideoTitle("");
       setVideoUrl("");
     } else {
@@ -615,6 +894,11 @@ export default function AdminDashboard() {
     if (!error && data) {
       showToast("Épreuve PDF ajoutée avec succès !", "success");
       setAnnales((prev) => [data[0], ...prev]);
+      logAdminAction({
+        action: "AJOUT_ANNALE",
+        details: `Publication d'une annale PDF : "${annaleTitle.trim()}" (${annaleSubject} - ${annaleLevel})`,
+      });
+      fetchAuditLogs();
       setAnnaleTitle("");
       setAnnaleFile(null);
     } else {
@@ -632,6 +916,11 @@ export default function AdminDashboard() {
       showToast("Élément supprimé de la base.", "info");
       if (table === "videos") setVideos((prev) => prev.filter((v) => v.id !== id));
       else setAnnales((prev) => prev.filter((a) => a.id !== id));
+      logAdminAction({
+        action: "SUPPRESSION_CONTENU",
+        details: `Suppression définitive dans la table ${table} [ID: ${id}]`,
+      });
+      fetchAuditLogs();
     } else {
       showToast("Erreur de suppression : " + error.message, "error");
     }
@@ -644,6 +933,11 @@ export default function AdminDashboard() {
     const { success } = await updateSupportConfig(supportPhone);
     if (success) {
       showToast("Numéro WhatsApp officiel mis à jour sur tout le site !", "success");
+      logAdminAction({
+        action: "MODIF_SUPPORT",
+        details: `Mise à jour de la ligne officielle WhatsApp : ${supportPhone}`,
+      });
+      fetchAuditLogs();
     } else {
       showToast("Erreur lors de la sauvegarde du support.", "error");
     }
@@ -670,12 +964,40 @@ export default function AdminDashboard() {
               <i className="fas fa-shield-alt"></i>
             </div>
             <div className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-wider mt-2">
-              Zone Sécurisée • Direction
+              Zone Sécurisée • Haute Surveillance
             </div>
             <h2 className="text-2xl font-black text-white">Espace d&apos;Administration</h2>
-            <p className="text-xs text-slate-400">
-              Cet espace est strictement confidentiel. Veuillez saisir le mot de passe d&apos;accès administrateur pour déverrouiller la console.
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Console de direction SAMA ACADÉMIE. Chaque accès et opération est tracé (date, heure, IP et lieu).
             </p>
+          </div>
+
+          {/* SÉLECTEUR DE MODE DE CONNEXION */}
+          <div className="flex rounded-xl bg-slate-800/80 p-1 border border-slate-700/80 text-xs">
+            <button
+              type="button"
+              onClick={() => { setAuthMode("account"); setAccessError(""); }}
+              className={`flex-1 py-2 rounded-lg font-extrabold transition text-center cursor-pointer ${
+                authMode === "account"
+                  ? "bg-sama-orange text-slate-950 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <i className="fas fa-user-lock mr-1.5"></i>
+              <span>Accès Nominatif</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthMode("passcode"); setAccessError(""); }}
+              className={`flex-1 py-2 rounded-lg font-extrabold transition text-center cursor-pointer ${
+                authMode === "passcode"
+                  ? "bg-slate-700 text-white shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <i className="fas fa-key mr-1.5"></i>
+              <span>Code de Secours</span>
+            </button>
           </div>
 
           {accessError && (
@@ -684,40 +1006,107 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <form onSubmit={handleUnlock} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                Mot de passe d&apos;accès Direction
-              </label>
-              <div className="relative">
-                <input
-                  type="password"
-                  required
-                  autoFocus
-                  value={accessCodeInput}
-                  onChange={(e) => setAccessCodeInput(e.target.value)}
-                  placeholder="Tapez le mot de passe..."
-                  className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-sama-orange transition font-medium"
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                  <i className="fas fa-key text-xs"></i>
-                </span>
+          {/* MODE 1 : CONNEXION NOMINATIVE INDIVIDUELLE (RECOMMANDÉ) */}
+          {authMode === "account" ? (
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Email Administrateur
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    required
+                    autoFocus
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="direction@sama-academie.sn"
+                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-sama-orange transition font-medium"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <i className="fas fa-envelope text-xs"></i>
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              className="w-full bg-sama-orange hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition text-sm shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <i className="fas fa-unlock-alt"></i>
-              <span>Déverrouiller la Console</span>
-            </button>
-          </form>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Mot de passe personnel
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    required
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-sama-orange transition font-medium"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <i className="fas fa-lock text-xs"></i>
+                  </span>
+                </div>
+              </div>
 
-          <div className="pt-4 border-t border-slate-800 text-center">
-            <Link href="/" className="text-xs font-bold text-slate-400 hover:text-white transition">
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full bg-sama-orange hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition text-sm shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                {loginLoading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    <span>Vérification & Traçage...</span>
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-shield-check"></i>
+                    <span>Connexion & Accès Tracé</span>
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            /* MODE 2 : CODE SECRET D'URGENCE (MASTER KEY) */
+            <form onSubmit={handleUnlock} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Code Secret d&apos;Urgence (Master Passcode)
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    required
+                    autoFocus
+                    value={accessCodeInput}
+                    onChange={(e) => setAccessCodeInput(e.target.value)}
+                    placeholder="Tapez le code..."
+                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-sama-orange transition font-medium"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <i className="fas fa-key text-xs"></i>
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-slate-700 hover:bg-slate-600 text-white font-black py-3 rounded-xl transition text-sm shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i className="fas fa-unlock-alt"></i>
+                <span>Déverrouiller avec le Code</span>
+              </button>
+            </form>
+          )}
+
+          <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-slate-400">
+            <Link href="/" className="hover:text-white transition">
               ← Retour au site public
             </Link>
+            <span className="text-[11px] text-slate-500">
+              <i className="fas fa-map-marker-alt text-emerald-400 mr-1"></i>
+              Localisation active
+            </span>
           </div>
         </div>
       </main>
@@ -784,6 +1173,21 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-2 self-end md:self-auto">
+            {currentAdminProfile && (
+              <div className="hidden sm:flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 px-3 py-1.5 rounded-xl text-xs">
+                <div className="w-6 h-6 rounded-full bg-sama-orange text-slate-950 font-black text-[11px] flex items-center justify-center shadow-xs">
+                  {currentAdminProfile.first_name?.[0]?.toUpperCase() || "A"}
+                </div>
+                <div className="text-left">
+                  <span className="font-bold text-slate-200 block text-[11px] leading-tight">
+                    {currentAdminProfile.first_name} {currentAdminProfile.last_name}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block font-mono">
+                    {currentAdminProfile.email}
+                  </span>
+                </div>
+              </div>
+            )}
             <Link
               href="/"
               target="_blank"
@@ -793,7 +1197,7 @@ export default function AdminDashboard() {
               <i className="fas fa-external-link-alt text-[10px]"></i>
             </Link>
             <button
-              onClick={fetchData}
+              onClick={() => { fetchData(); fetchAuditLogs(); }}
               className="text-xs font-bold bg-sama-primary hover:bg-blue-600 text-white px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
               <i className="fas fa-sync-alt text-xs"></i>
@@ -819,6 +1223,7 @@ export default function AdminDashboard() {
             { id: "teachers", label: "Corps Professoral", icon: "fa-chalkboard-teacher", badge: stats.pendingTeachersCount, badgeAlert: stats.pendingTeachersCount > 0 },
             { id: "classes", label: "Classes Virtuelles", icon: "fa-video", badge: stats.liveClassesCount > 0 ? "LIVE" : virtualClasses.length, badgeLive: stats.liveClassesCount > 0 },
             { id: "content", label: "Bibliothèque & Contenus", icon: "fa-folder-open", badge: videos.length + annales.length },
+            { id: "audit", label: "Traçabilité & Audit", icon: "fa-shield-halved", badge: auditLogs.length },
             { id: "settings", label: "Paramètres & Support", icon: "fa-sliders-h", badge: null },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
@@ -1895,7 +2300,288 @@ export default function AdminDashboard() {
         )}
 
         {/* =================================================================== */}
-        {/* 7. ONGLET : PARAMÈTRES & SUPPORT WHATSAPP                          */}
+        {/* 7. ONGLET : JOURNAL D'AUDIT & TRAÇABILITÉ EN TEMPS RÉEL (360°)     */}
+        {/* =================================================================== */}
+        {activeTab === "audit" && (
+          <div className="space-y-6">
+            {/* EN-TÊTE AVEC BADGES RADAR & ACTIONS */}
+            <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="space-y-2 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-800">
+                    Surveillance d&apos;Activité Live
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-400">
+                    • Fuseau GMT (Dakar)
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white">
+                  Journal d&apos;Audit & Traçabilité des Administrateurs
+                </h2>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Chaque opération effectuée dans la console de direction est automatiquement horodatée et géolocalisée (adresse IP, ville, pays, nom de l&apos;administrateur et détails de la modification).
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  onClick={fetchAuditLogs}
+                  disabled={loadingAuditLogs}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer"
+                >
+                  <i className={`fas fa-sync-alt ${loadingAuditLogs ? "fa-spin" : ""}`}></i>
+                  <span>Rafraîchir les logs</span>
+                </button>
+
+                <button
+                  onClick={exportAuditLogsToCSV}
+                  className="bg-sama-orange hover:bg-amber-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer"
+                >
+                  <i className="fas fa-file-csv"></i>
+                  <span>Exporter Registre CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 4 CARTES STATISTIQUES AUDIT */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                <div className="flex items-center justify-between text-slate-400 mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider">Événements Tracés</span>
+                  <i className="fas fa-list-check text-sama-primary text-sm"></i>
+                </div>
+                <div className="text-2xl font-black text-slate-900">{auditLogs.length}</div>
+                <p className="text-[11px] text-slate-500 mt-0.5">Historique d&apos;actions enregistrées</p>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                <div className="flex items-center justify-between text-slate-400 mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider">Admins Actifs</span>
+                  <i className="fas fa-user-shield text-purple-600 text-sm"></i>
+                </div>
+                <div className="text-2xl font-black text-purple-600">{auditStats.uniqueAdminsCount}</div>
+                <p className="text-[11px] text-slate-500 mt-0.5">Comptes direction identifiés</p>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                <div className="flex items-center justify-between text-slate-400 mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider">Localisations Détectées</span>
+                  <i className="fas fa-map-marker-alt text-emerald-600 text-sm"></i>
+                </div>
+                <div className="text-2xl font-black text-emerald-600">{auditStats.uniqueCitiesCount}</div>
+                <p className="text-[11px] text-slate-500 mt-0.5">Villes d&apos;origine des connexions</p>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                <div className="flex items-center justify-between text-slate-400 mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider">Dernière Action</span>
+                  <i className="fas fa-clock text-amber-500 text-sm"></i>
+                </div>
+                <div className="text-sm font-black text-slate-900 truncate">
+                  {auditLogs[0] ? new Date(auditLogs[0].created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—"}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                  {auditLogs[0]?.action ? auditLogs[0].action : "Aucune action"}
+                </p>
+              </div>
+            </div>
+
+            {/* BANNIÈRE NOTICE SUPABASE PERMANENCE */}
+            {auditTableMissing && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <i className="fas fa-info-circle text-amber-600 text-lg flex-shrink-0"></i>
+                  <div>
+                    <span className="font-bold">Mode Mémoire Actif : </span>
+                    <span>Les logs sont actuellement enregistrés dans la mémoire de l&apos;application. Pour les persister indéfiniment dans votre base Supabase, exécutez le script <code>supabase_audit_logs.sql</code> dans votre SQL Editor Supabase.</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`CREATE TABLE IF NOT EXISTS public.admin_audit_logs (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), created_at TIMESTAMPTZ DEFAULT NOW(), admin_id UUID, admin_name TEXT, admin_email TEXT, action TEXT NOT NULL, target_user_id TEXT, target_name TEXT, details TEXT, ip_address TEXT, country TEXT, city TEXT, user_agent TEXT, status TEXT DEFAULT 'SUCCESS');`);
+                    showToast("Code SQL copié dans le presse-papier ! Collez-le dans Supabase SQL Editor.", "info");
+                  }}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded-xl transition whitespace-nowrap text-xs cursor-pointer flex-shrink-0"
+                >
+                  <i className="fas fa-copy mr-1"></i> Copier SQL Supabase
+                </button>
+              </div>
+            )}
+
+            {/* BARRE DE FILTRES ET RECHERCHE */}
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-center gap-3">
+              <div className="relative w-full md:w-80">
+                <input
+                  type="text"
+                  value={auditSearch}
+                  onChange={(e) => setAuditSearch(e.target.value)}
+                  placeholder="Rechercher par admin, email, IP, ville..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs font-medium outline-none focus:border-sama-primary"
+                />
+                <i className="fas fa-search text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+              </div>
+
+              <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+                <select
+                  value={auditActionFilter}
+                  onChange={(e) => setAuditActionFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-sama-primary"
+                >
+                  <option value="all">Toutes les catégories ({auditLogs.length})</option>
+                  <option value="auth">Connexions & Sessions</option>
+                  <option value="users">Utilisateurs & Rôles</option>
+                  <option value="password">Mots de passe</option>
+                  <option value="contracts">Contrats & Négociations</option>
+                  <option value="content">Contenus & Classes</option>
+                  <option value="settings">Paramètres Système</option>
+                </select>
+              </div>
+            </div>
+
+            {/* TABLEAU DES LOGS D'AUDIT */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-100">
+                    <tr>
+                      <th className="p-4">Date & Heure (GMT)</th>
+                      <th className="p-4">Administrateur</th>
+                      <th className="p-4">Action</th>
+                      <th className="p-4">Cible & Détails</th>
+                      <th className="p-4">Lieu & Réseau</th>
+                      <th className="p-4">Appareil</th>
+                      <th className="p-4 text-center">Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredAuditLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="p-10 text-center text-slate-400 italic">
+                          Aucun log d&apos;audit ne correspond aux critères de recherche.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredAuditLogs.map((log: any) => {
+                        const dateObj = new Date(log.created_at);
+                        const formattedDate = dateObj.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+                        const formattedTime = dateObj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+                        // Badge d'action stylé
+                        let badgeColor = "bg-slate-100 text-slate-700 border-slate-200";
+                        let badgeIcon = "fa-circle-info";
+                        if (log.action.includes("CONNEXION")) {
+                          badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                          badgeIcon = "fa-sign-in-alt";
+                        } else if (log.action.includes("MDP") || log.action.includes("PASSE")) {
+                          badgeColor = "bg-amber-50 text-amber-700 border-amber-200";
+                          badgeIcon = "fa-key";
+                        } else if (log.action.includes("ROLE")) {
+                          badgeColor = "bg-purple-50 text-purple-700 border-purple-200";
+                          badgeIcon = "fa-user-tag";
+                        } else if (log.action.includes("SUPPRESSION")) {
+                          badgeColor = "bg-red-50 text-red-700 border-red-200";
+                          badgeIcon = "fa-trash-alt";
+                        } else if (log.action.includes("FINANCIER") || log.action.includes("CONTRAT")) {
+                          badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
+                          badgeIcon = "fa-file-signature";
+                        } else if (log.action.includes("CLASSE")) {
+                          badgeColor = "bg-indigo-50 text-indigo-700 border-indigo-200";
+                          badgeIcon = "fa-video";
+                        } else if (log.action.includes("VERROU")) {
+                          badgeColor = "bg-slate-100 text-slate-700 border-slate-300";
+                          badgeIcon = "fa-lock";
+                        }
+
+                        // Drapeau de localisation
+                        const isSenegal = log.country === "SN" || log.country === "Sénégal" || !log.country;
+                        const flag = isSenegal ? "🇸🇳" : "🌐";
+
+                        return (
+                          <tr key={log.id} className="hover:bg-slate-50/80 transition">
+                            {/* Date */}
+                            <td className="p-4 whitespace-nowrap">
+                              <div className="font-extrabold text-slate-900">{formattedDate}</div>
+                              <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1">
+                                <i className="far fa-clock text-[10px]"></i>
+                                <span>{formattedTime}</span>
+                              </div>
+                            </td>
+
+                            {/* Administrateur */}
+                            <td className="p-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-slate-900 text-sama-orange font-black flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
+                                  {log.admin_name?.[0]?.toUpperCase() || "A"}
+                                </div>
+                                <div>
+                                  <div className="font-extrabold text-slate-900 leading-tight">
+                                    {log.admin_name || "Admin Direction"}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400">{log.admin_email || "admin@sama-academie.sn"}</div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Action */}
+                            <td className="p-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-black border ${badgeColor}`}>
+                                <i className={`fas ${badgeIcon}`}></i>
+                                <span>{log.action}</span>
+                              </span>
+                            </td>
+
+                            {/* Cible & Détails */}
+                            <td className="p-4 max-w-xs">
+                              {log.target_name && (
+                                <div className="text-[11px] font-bold text-slate-800">
+                                  {log.target_name}
+                                </div>
+                              )}
+                              <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">
+                                {log.details}
+                              </p>
+                            </td>
+
+                            {/* Lieu & IP */}
+                            <td className="p-4 whitespace-nowrap">
+                              <div className="font-extrabold text-slate-800 flex items-center gap-1">
+                                <span>{flag}</span>
+                                <span>{log.city || "Dakar"}, {log.country || "SN"}</span>
+                              </div>
+                              <div className="text-[10px] font-mono text-slate-400 flex items-center gap-1 mt-0.5">
+                                <i className="fas fa-network-wired text-[9px]"></i>
+                                <span>IP: {log.ip_address || "127.0.0.1"}</span>
+                              </div>
+                            </td>
+
+                            {/* Appareil */}
+                            <td className="p-4 max-w-[140px] truncate text-[11px] text-slate-500" title={log.user_agent}>
+                              <i className="fas fa-laptop text-slate-400 mr-1"></i>
+                              {log.user_agent ? (log.user_agent.includes("Chrome") ? "Chrome" : log.user_agent.includes("Safari") ? "Safari" : log.user_agent.includes("Firefox") ? "Firefox" : "Web") : "Navigateur"}
+                              {log.user_agent?.includes("Windows") ? " / Windows" : log.user_agent?.includes("Mac") ? " / macOS" : log.user_agent?.includes("Android") ? " / Android" : log.user_agent?.includes("iPhone") ? " / iOS" : ""}
+                            </td>
+
+                            {/* Statut */}
+                            <td className="p-4 text-center whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <i className="fas fa-check-circle text-[9px]"></i>
+                                <span>{log.status || "SUCCESS"}</span>
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* 8. ONGLET : PARAMÈTRES & SUPPORT WHATSAPP                          */}
         {/* =================================================================== */}
         {activeTab === "settings" && (
           <div className="max-w-2xl mx-auto space-y-6">
