@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkAdminAuthorization } from "@/lib/adminAuthCheck";
 
-// Réinitialisation du mot de passe par un ADMIN (utile quand l'utilisateur n'a pas d'email valide).
-// Nécessite la variable d'environnement serveur SUPABASE_SERVICE_ROLE_KEY (jamais exposée au navigateur).
+// Réinitialisation du mot de passe par un ADMIN
+// Accepte soit une session Supabase active ayant role=admin, soit le Master Passcode direction.
 export async function POST(req: Request) {
   try {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -14,38 +15,31 @@ export async function POST(req: Request) {
       );
     }
 
-    const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-    if (!token) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
-
-    const { userId, newPassword } = await req.json();
+    const { userId, newPassword } = await req.json().catch(() => ({}));
     if (!userId || typeof newPassword !== "string" || newPassword.length < 6) {
       return NextResponse.json({ error: "Mot de passe invalide (6 caractères minimum)." }, { status: 400 });
     }
 
     const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
-    // 1. Qui appelle ?
-    const { data: caller, error: callerErr } = await admin.auth.getUser(token);
-    if (callerErr || !caller?.user) return NextResponse.json({ error: "Session invalide." }, { status: 401 });
-
-    // 2. L'appelant doit être administrateur
-    const { data: callerProfile } = await admin.from("profiles").select("role").eq("id", caller.user.id).maybeSingle();
-    if (callerProfile?.role !== "admin") {
-      return NextResponse.json({ error: "Accès réservé aux administrateurs." }, { status: 403 });
+    // 1. Vérification des autorisations admin
+    const authResult = await checkAdminAuthorization(req, admin);
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: authResult.reason || "Accès réservé aux administrateurs." }, { status: 403 });
     }
 
-    // 3. Mise à jour du mot de passe
+    // 2. Mise à jour du mot de passe dans Supabase Auth
     const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-    // Traçabilité serveur : audit de l'action
+    // 3. Traçabilité serveur : audit de l'action
     const { data: targetProfile } = await admin.from("profiles").select("first_name, last_name, email").eq("id", userId).maybeSingle();
     const targetName = targetProfile ? `${targetProfile.first_name} ${targetProfile.last_name}` : userId;
 
     const { recordServerAudit } = await import("@/lib/serverAudit");
     await recordServerAudit(req, admin, {
-      adminId: caller.user.id,
-      adminEmail: caller.user.email,
+      adminId: authResult.adminId,
+      adminEmail: authResult.adminEmail,
       action: "RESET_MOT_DE_PASSE",
       targetUserId: userId,
       targetName: targetName || "Utilisateur",

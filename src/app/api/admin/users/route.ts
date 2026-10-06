@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkAdminAuthorization } from "@/lib/adminAuthCheck";
 
 // API Administration Sécurisée : Gestion avancée des utilisateurs
 // Permet la modification de rôle, de statut, et la suppression définitive.
@@ -14,25 +15,19 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-    if (!token) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
-
-    const { userId } = await req.json();
+    const { userId } = await req.json().catch(() => ({}));
     if (!userId) return NextResponse.json({ error: "Identifiant utilisateur manquant." }, { status: 400 });
 
     const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
-    // 1. Vérification des droits administrateur de l'appelant
-    const { data: caller, error: callerErr } = await admin.auth.getUser(token);
-    if (callerErr || !caller?.user) return NextResponse.json({ error: "Session invalide." }, { status: 401 });
-
-    const { data: callerProfile } = await admin.from("profiles").select("role").eq("id", caller.user.id).maybeSingle();
-    if (callerProfile?.role !== "admin") {
-      return NextResponse.json({ error: "Accès réservé aux administrateurs." }, { status: 403 });
+    // 1. Vérification des droits administrateur (Session ou Passcode)
+    const authResult = await checkAdminAuthorization(req, admin);
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: authResult.reason || "Accès réservé aux administrateurs." }, { status: 403 });
     }
 
     // Protection : L'admin ne peut pas se supprimer lui-même
-    if (caller.user.id === userId) {
+    if (authResult.adminId === userId) {
       return NextResponse.json({ error: "Vous ne pouvez pas supprimer votre propre compte administrateur." }, { status: 400 });
     }
 
@@ -56,11 +51,11 @@ export async function DELETE(req: Request) {
     // Traçabilité serveur
     const { recordServerAudit } = await import("@/lib/serverAudit");
     await recordServerAudit(req, admin, {
-      adminId: caller.user.id,
-      adminEmail: caller.user.email,
+      adminId: authResult.adminId,
+      adminEmail: authResult.adminEmail,
       action: "SUPPRESSION_UTILISATEUR",
       targetUserId: userId,
-      details: `Suppression définitive du compte utilisateur (ID: ${userId}) par ${caller.user.email}`,
+      details: `Suppression définitive du compte utilisateur (ID: ${userId}) par ${authResult.adminEmail}`,
     });
 
     return NextResponse.json({ ok: true, message: "Utilisateur supprimé avec succès." });
@@ -80,24 +75,18 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-    if (!token) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
-
-    const { userId, updates } = await req.json();
+    const { userId, updates } = await req.json().catch(() => ({}));
     if (!userId || !updates) return NextResponse.json({ error: "Données incomplètes." }, { status: 400 });
 
     const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
-    // Vérification des droits administrateur
-    const { data: caller, error: callerErr } = await admin.auth.getUser(token);
-    if (callerErr || !caller?.user) return NextResponse.json({ error: "Session invalide." }, { status: 401 });
-
-    const { data: callerProfile } = await admin.from("profiles").select("role").eq("id", caller.user.id).maybeSingle();
-    if (callerProfile?.role !== "admin") {
-      return NextResponse.json({ error: "Accès réservé aux administrateurs." }, { status: 403 });
+    // Vérification des droits administrateur (Session ou Passcode)
+    const authResult = await checkAdminAuthorization(req, admin);
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: authResult.reason || "Accès réservé aux administrateurs." }, { status: 403 });
     }
 
-    // Mise à jour du profil
+    // Mise à jour du profil dans public.profiles
     const { error: updateErr } = await admin.from("profiles").update(updates).eq("id", userId);
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 400 });
 
@@ -105,7 +94,7 @@ export async function PATCH(req: Request) {
     if (updates.role) {
       try {
         await admin.auth.admin.updateUserById(userId, {
-          user_metadata: { role: updates.role }
+          user_metadata: { role: updates.role },
         });
       } catch (_) {}
     }
@@ -114,8 +103,8 @@ export async function PATCH(req: Request) {
     const { recordServerAudit } = await import("@/lib/serverAudit");
     const summaryUpdates = Object.entries(updates).map(([k, v]) => `${k}: ${v}`).join(", ");
     await recordServerAudit(req, admin, {
-      adminId: caller.user.id,
-      adminEmail: caller.user.email,
+      adminId: authResult.adminId,
+      adminEmail: authResult.adminEmail,
       action: updates.role ? "MODIF_ROLE_UTILISATEUR" : "MODIF_PROFIL_UTILISATEUR",
       targetUserId: userId,
       details: `Modification utilisateur ID ${userId} : ${summaryUpdates}`,

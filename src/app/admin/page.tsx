@@ -531,6 +531,19 @@ export default function AdminDashboard() {
     });
   };
 
+  const getAdminHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentCode = typeof window !== "undefined" ? localStorage.getItem("sama_custom_admin_passcode") || "sama2026" : "sama2026";
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-admin-passcode": currentCode,
+    };
+    if (session?.access_token) {
+      headers["Authorization"] = `Bearer ${session.access_token}`;
+    }
+    return headers;
+  };
+
   /* ========================================================================= */
   /*  ACTIONS ADMIN : UTILISATEURS (MOT DE PASSE, RÔLE, SUPPRESSION)          */
   /* ========================================================================= */
@@ -544,13 +557,10 @@ export default function AdminDashboard() {
 
     setActionLoadingId(userId);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const headers = await getAdminHeaders();
       const res = await fetch("/api/admin/reset-password", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token || ""}`,
-        },
+        headers,
         body: JSON.stringify({ userId, newPassword: pwd }),
       });
       const data = await res.json().catch(() => ({}));
@@ -578,13 +588,10 @@ export default function AdminDashboard() {
 
     setActionLoadingId(userId);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const headers = await getAdminHeaders();
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token || ""}`,
-        },
+        headers,
         body: JSON.stringify({ userId, updates: { role: newRole } }),
       });
       const data = await res.json().catch(() => ({}));
@@ -615,13 +622,10 @@ export default function AdminDashboard() {
 
     setActionLoadingId(userId);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const headers = await getAdminHeaders();
       const res = await fetch("/api/admin/users", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token || ""}`,
-        },
+        headers,
         body: JSON.stringify({ userId }),
       });
       const data = await res.json().catch(() => ({}));
