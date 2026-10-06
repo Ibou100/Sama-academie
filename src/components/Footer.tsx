@@ -48,11 +48,6 @@ export default function Footer() {
                 Contact
               </Link>
             </li>
-            <li>
-              <Link href="/admin" className="text-sama-primary font-bold hover:underline flex items-center gap-1">
-                <i className="fas fa-cog text-xs"></i> Espace Admin
-              </Link>
-            </li>
           </ul>
         </div>
         <div>

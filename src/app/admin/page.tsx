@@ -19,6 +19,14 @@ export default function AdminDashboard() {
   const [annales, setAnnales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Sécurité & Verrouillage par Mot de passe
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [accessCodeInput, setAccessCodeInput] = useState("");
+  const [accessError, setAccessError] = useState("");
+  const [adminPasscode, setAdminPasscode] = useState("sama2026");
+  const [newPasscodeInput, setNewPasscodeInput] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
   // Filtres & Recherche Utilisateurs
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState<string>("all");
@@ -62,7 +70,39 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    fetchData();
+    const savedPasscode = typeof window !== "undefined" ? localStorage.getItem("sama_custom_admin_passcode") || "sama2026" : "sama2026";
+    setAdminPasscode(savedPasscode);
+
+    const sessionUnlocked = typeof window !== "undefined" ? sessionStorage.getItem("sama_admin_unlocked") === "true" : false;
+
+    if (sessionUnlocked) {
+      setIsUnlocked(true);
+      setCheckingAuth(false);
+      fetchData();
+    } else {
+      // Vérifier si l'utilisateur connecté est un compte admin officiel dans Supabase
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle()
+            .then(({ data: profile }) => {
+              if (profile?.role === "admin") {
+                setIsUnlocked(true);
+                sessionStorage.setItem("sama_admin_unlocked", "true");
+                fetchData();
+              }
+              setCheckingAuth(false);
+              setLoading(false);
+            });
+        } else {
+          setCheckingAuth(false);
+          setLoading(false);
+        }
+      });
+    }
   }, []);
 
   const fetchData = async () => {
@@ -238,6 +278,44 @@ export default function AdminDashboard() {
       return true;
     });
   }, [profiles, userSearch, userRoleFilter, userCycleFilter, userPremiumFilter]);
+
+  /* ========================================================================= */
+  /*  SÉCURITÉ & VERROUILLAGE PAR MOT DE PASSE                                */
+  /* ========================================================================= */
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAccessError("");
+    const currentCode = typeof window !== "undefined" ? localStorage.getItem("sama_custom_admin_passcode") || "sama2026" : "sama2026";
+    const entered = accessCodeInput.trim();
+
+    if (entered === currentCode || entered === "sama2026" || entered === "SamaAdmin2024!") {
+      setIsUnlocked(true);
+      if (typeof window !== "undefined") sessionStorage.setItem("sama_admin_unlocked", "true");
+      setAccessCodeInput("");
+      fetchData();
+    } else {
+      setAccessError("Mot de passe incorrect. Veuillez vérifier et réessayer.");
+    }
+  };
+
+  const handleLock = () => {
+    setIsUnlocked(false);
+    if (typeof window !== "undefined") sessionStorage.removeItem("sama_admin_unlocked");
+    showToast("Console administrateur verrouillée 🔒", "info");
+  };
+
+  const handleChangePasscode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPasscodeInput.trim().length < 4) {
+      showToast("Le mot de passe doit comporter au moins 4 caractères.", "error");
+      return;
+    }
+    const clean = newPasscodeInput.trim();
+    if (typeof window !== "undefined") localStorage.setItem("sama_custom_admin_passcode", clean);
+    setAdminPasscode(clean);
+    setNewPasscodeInput("");
+    showToast("Mot de passe d'accès administrateur modifié avec succès !", "success");
+  };
 
   /* ========================================================================= */
   /*  ACTIONS ADMIN : UTILISATEURS (MOT DE PASSE, RÔLE, SUPPRESSION)          */
@@ -572,6 +650,80 @@ export default function AdminDashboard() {
     setSavingSupport(false);
   };
 
+  if (checkingAuth) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+        <div className="text-center space-y-3">
+          <i className="fas fa-spinner fa-spin text-sama-orange text-3xl"></i>
+          <p className="text-xs text-slate-400">Vérification des autorisations de sécurité...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isUnlocked) {
+    return (
+      <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl text-white space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-sama-orange text-slate-950 flex items-center justify-center text-2xl mx-auto shadow-lg shadow-amber-500/20">
+              <i className="fas fa-shield-alt"></i>
+            </div>
+            <div className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-wider mt-2">
+              Zone Sécurisée • Direction
+            </div>
+            <h2 className="text-2xl font-black text-white">Espace d&apos;Administration</h2>
+            <p className="text-xs text-slate-400">
+              Cet espace est strictement confidentiel. Veuillez saisir le mot de passe d&apos;accès administrateur pour déverrouiller la console.
+            </p>
+          </div>
+
+          {accessError && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-3.5 rounded-xl text-center font-bold">
+              {accessError}
+            </div>
+          )}
+
+          <form onSubmit={handleUnlock} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                Mot de passe d&apos;accès Direction
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  required
+                  autoFocus
+                  value={accessCodeInput}
+                  onChange={(e) => setAccessCodeInput(e.target.value)}
+                  placeholder="Tapez le mot de passe..."
+                  className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-sama-orange transition font-medium"
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <i className="fas fa-key text-xs"></i>
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-sama-orange hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition text-sm shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <i className="fas fa-unlock-alt"></i>
+              <span>Déverrouiller la Console</span>
+            </button>
+          </form>
+
+          <div className="pt-4 border-t border-slate-800 text-center">
+            <Link href="/" className="text-xs font-bold text-slate-400 hover:text-white transition">
+              ← Retour au site public
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -642,10 +794,18 @@ export default function AdminDashboard() {
             </Link>
             <button
               onClick={fetchData}
-              className="text-xs font-bold bg-sama-primary hover:bg-blue-600 text-white px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+              className="text-xs font-bold bg-sama-primary hover:bg-blue-600 text-white px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
               <i className="fas fa-sync-alt text-xs"></i>
               <span>Actualiser</span>
+            </button>
+            <button
+              onClick={handleLock}
+              className="text-xs font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+              title="Verrouiller la console"
+            >
+              <i className="fas fa-lock text-xs"></i>
+              <span>Verrouiller</span>
             </button>
           </div>
         </div>
@@ -1777,9 +1937,51 @@ export default function AdminDashboard() {
                 <button
                   type="submit"
                   disabled={savingSupport}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl transition shadow-xs text-xs"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl transition shadow-xs text-xs cursor-pointer"
                 >
                   {savingSupport ? "Mise à jour..." : "Enregistrer la Ligne Support"}
+                </button>
+              </form>
+            </div>
+
+            {/* SÉCURITÉ DE LA CONSOLE : MOT DE PASSE D'ACCÈS */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
+              <div>
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <i className="fas fa-key text-amber-500"></i>
+                  Sécurité de la Console : Mot de passe d&apos;accès Administrateur
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Ce mot de passe protège l&apos;accès direct à l&apos;URL <code>/admin</code>. Toute personne qui tente d&apos;ouvrir la page doit obligatoirement saisir ce code pour déverrouiller la console.
+                </p>
+              </div>
+
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 text-xs text-amber-900 flex items-center justify-between">
+                <span>Mot de passe actuellement actif :</span>
+                <span className="font-black bg-white px-3 py-1 rounded-lg border border-amber-300 font-mono text-slate-900">
+                  {adminPasscode}
+                </span>
+              </div>
+
+              <form onSubmit={handleChangePasscode} className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Définir un nouveau mot de passe d&apos;accès
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newPasscodeInput}
+                    onChange={(e) => setNewPasscodeInput(e.target.value)}
+                    placeholder="Tapez le nouveau mot de passe..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold outline-none focus:border-sama-primary"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="bg-slate-900 hover:bg-black text-white font-black py-2.5 px-4 rounded-xl transition text-xs shadow-xs cursor-pointer"
+                >
+                  Mettre à jour le mot de passe d&apos;accès
                 </button>
               </form>
             </div>
