@@ -273,6 +273,32 @@ export default function AdminDashboard() {
     }
   };
 
+  // 3b. Réinitialiser le mot de passe d'un utilisateur (admin uniquement, via le serveur)
+  const handleResetPassword = async (userId: string, userName: string) => {
+    const pwd = window.prompt(`Nouveau mot de passe temporaire pour ${userName} (6 caractères minimum) :`);
+    if (pwd === null) return;
+    if (pwd.length < 6) {
+      showToast("❌ Le mot de passe doit contenir au moins 6 caractères.");
+      return;
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/admin/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
+        body: JSON.stringify({ userId, newPassword: pwd }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (res.ok) {
+        showToast(`✅ Mot de passe de ${userName} modifié. Communiquez-le lui par WhatsApp.`);
+      } else {
+        showToast(`❌ ${out.error || "Échec de la réinitialisation."}`);
+      }
+    } catch {
+      showToast("❌ Problème de connexion au serveur.");
+    }
+  };
+
   // 4. Supprimer un élément (vidéo ou annale)
   const handleDelete = async (table: "videos" | "annales", id: string) => {
     if (!confirm("Voulez-vous vraiment supprimer cet élément ?")) return;
@@ -1060,6 +1086,13 @@ export default function AdminDashboard() {
                       )}
                     </td>
                     <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-2 flex-wrap">
+                      <button
+                        onClick={() => handleResetPassword(p.id, `${p.first_name} ${p.last_name}`)}
+                        className="text-xs font-bold px-4 py-2 rounded-xl transition border border-blue-200 text-sama-primary hover:bg-blue-50"
+                      >
+                        <i className="fas fa-key mr-1"></i>Mot de passe
+                      </button>
                       <button
                         onClick={() => togglePremium(p.id, p.is_premium)}
                         className={`text-xs font-bold px-4 py-2 rounded-xl transition ${
@@ -1070,6 +1103,7 @@ export default function AdminDashboard() {
                       >
                         {p.is_premium ? "Rétrograder en Gratuit" : "Activer Premium ⭐"}
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
