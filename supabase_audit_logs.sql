@@ -1,9 +1,15 @@
 -- =====================================================================
--- SAMA ACADÉMIE — Journal d'Audit & Traçabilité des Administrateurs
+-- SAMA ACADÉMIE — Configuration Supabase : Rôle Admin & Journal d'Audit
 -- À exécuter dans Supabase > SQL Editor > New query > Run
--- Idempotent : peut être relancé sans risque.
 -- =====================================================================
 
+-- 1. AUTORISER LE RÔLE 'admin' DANS LA TABLE PROFILES
+-- (Par défaut la base limitait les rôles à 'eleve', 'parent', 'enseignant')
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check 
+    CHECK (role IN ('eleve', 'parent', 'enseignant', 'admin'));
+
+-- 2. TABLE DU JOURNAL D'AUDIT & TRAÇABILITÉ DES ACTIONS
 CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT NOW(),

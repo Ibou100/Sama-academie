@@ -88,7 +88,17 @@ export async function PATCH(req: Request) {
 
     // Mise à jour du profil dans public.profiles
     const { error: updateErr } = await admin.from("profiles").update(updates).eq("id", userId);
-    if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 400 });
+    if (updateErr) {
+      if (updateErr.message.includes("profiles_role_check")) {
+        return NextResponse.json(
+          {
+            error: "La base de données Supabase limite les rôles aux profils classiques (eleve, parent, enseignant). Exécutez le script SQL 'ALTER TABLE profiles DROP CONSTRAINT profiles_role_check' dans Supabase pour autoriser 'admin'.",
+          },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({ error: updateErr.message }, { status: 400 });
+    }
 
     // Synchronisation métadonnées auth si le rôle a changé
     if (updates.role) {
