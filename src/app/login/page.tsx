@@ -31,9 +31,12 @@ function Login() {
     setLoading(true);
     setError(null);
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: cleanEmail,
+      password: cleanPassword,
     });
 
     if (signInError) {
@@ -41,7 +44,7 @@ function Login() {
       if (msg.toLowerCase().includes("email not confirmed")) {
         setError("Votre adresse email n'a pas encore été confirmée. Veuillez vérifier votre boîte mail ou contacter l'administration.");
       } else {
-        setError("Email ou mot de passe incorrect.");
+        setError("Email ou mot de passe incorrect. Vérifiez l'orthographe de votre email et les majuscules de votre mot de passe.");
       }
       setLoading(false);
       return;

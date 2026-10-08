@@ -15,9 +15,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const { userId, newPassword } = await req.json().catch(() => ({}));
-    if (!userId || typeof newPassword !== "string" || newPassword.length < 6) {
-      return NextResponse.json({ error: "Mot de passe invalide (6 caractères minimum)." }, { status: 400 });
+    const { userId, email, newPassword } = await req.json().catch(() => ({}));
+    if ((!userId && !email) || typeof newPassword !== "string" || newPassword.length < 6) {
+      return NextResponse.json({ error: "Identifiant ou email manquant, ou mot de passe invalide (6 caractères minimum)." }, { status: 400 });
     }
 
     const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
@@ -28,13 +28,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: authResult.reason || "Accès réservé aux administrateurs." }, { status: 403 });
     }
 
+    let targetUserId = userId;
+    if (!targetUserId && email) {
+      const cleanEmail = (email as string).trim().toLowerCase();
+      const { data: usersData } = await admin.auth.admin.listUsers();
+      const found = usersData?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
+      if (found) {
+        targetUserId = found.id;
+      } else {
+        const { data: p } = await admin.from("profiles").select("id").ilike("email", cleanEmail).maybeSingle();
+        if (p?.id) targetUserId = p.id;
+      }
+    }
+
+    if (!targetUserId) {
+      return NextResponse.json({ error: "Utilisateur introuvable avec cet email." }, { status: 404 });
+    }
+
     // 2. Mise à jour du mot de passe dans Supabase Auth
-    const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword });
+    const { error } = await admin.auth.admin.updateUserById(targetUserId, { password: newPassword });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
     // 3. Traçabilité serveur : audit de l'action
-    const { data: targetProfile } = await admin.from("profiles").select("first_name, last_name, email").eq("id", userId).maybeSingle();
-    const targetName = targetProfile ? `${targetProfile.first_name} ${targetProfile.last_name}` : userId;
+    const { data: targetProfile } = await admin.from("profiles").select("first_name, last_name, email").eq("id", targetUserId).maybeSingle();
+    const targetName = targetProfile ? `${targetProfile.first_name} ${targetProfile.last_name}` : targetUserId;
 
     const { recordServerAudit } = await import("@/lib/serverAudit");
     await recordServerAudit(req, admin, {
