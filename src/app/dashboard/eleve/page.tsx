@@ -31,25 +31,39 @@ export default function DashboardEleve() {
 
   const fetchStudentData = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      router.push("/login?redirect=/dashboard/eleve");
-      return;
-    }
+      if (!user) {
+        router.replace("/login?redirect=/dashboard/eleve");
+        return;
+      }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
 
-    if (!profile || profile.role !== "eleve") {
-      router.push("/dashboard");
-      return;
-    }
+      const userRole = profile?.role || user.user_metadata?.role;
 
-    setCurrentUser(profile);
+      if (userRole === "enseignant") {
+        router.replace("/dashboard/enseignant");
+        return;
+      } else if (userRole === "parent") {
+        router.replace("/dashboard/parent");
+        return;
+      } else if (userRole === "admin") {
+        router.replace("/admin");
+        return;
+      }
+
+      if (!profile) {
+        router.replace("/login");
+        return;
+      }
+
+      setCurrentUser(profile);
 
     // Détermination du cycle de l'élève
     const sc = studentCycleOf(profile.level);
@@ -131,8 +145,11 @@ export default function DashboardEleve() {
       const filteredVids = allVideos.filter((v) => detectCycle(v.level) === sc);
       setCycleVideos(filteredVids.slice(0, 6));
     }
-
-    setLoading(false);
+    } catch (err) {
+      console.error("Erreur chargement Espace Élève:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {

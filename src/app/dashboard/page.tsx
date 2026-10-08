@@ -10,31 +10,34 @@ export default function DashboardRedirect() {
 
   useEffect(() => {
     const checkRoleAndRedirect = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.push("/login?redirect=/dashboard");
-        return;
-      }
+        if (!user) {
+          router.replace("/login?redirect=/dashboard");
+          return;
+        }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
 
-      if (profile) {
-        if (profile.role === "enseignant") {
+        const role = profile?.role || user.user_metadata?.role;
+
+        if (role === "enseignant") {
           router.replace("/dashboard/enseignant");
-        } else if (profile.role === "parent") {
+        } else if (role === "parent") {
           router.replace("/dashboard/parent");
-        } else if (profile.role === "admin") {
+        } else if (role === "admin") {
           router.replace("/admin");
         } else {
           router.replace("/dashboard/eleve");
         }
-      } else {
-        router.replace("/dashboard/eleve");
+      } catch (err) {
+        console.error("Dashboard redirect error:", err);
+        router.replace("/login");
       }
     };
 

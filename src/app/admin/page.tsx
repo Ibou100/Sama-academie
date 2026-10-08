@@ -763,12 +763,31 @@ export default function AdminDashboard() {
 
   const toggleTeacherVerification = async (teacherId: string, currentStatus: boolean) => {
     setActionLoadingId(teacherId);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ verified: !currentStatus })
-      .eq("id", teacherId);
 
-    if (!error) {
+    // 1. Essai via RPC PostgreSQL SECURITY DEFINER (autorise la modification même avec Master Passcode)
+    let updateSuccess = false;
+    try {
+      const { data: rpcSuccess, error: rpcErr } = await supabase.rpc("set_teacher_verification", {
+        p_teacher_id: teacherId,
+        p_verified: !currentStatus,
+      });
+      if (!rpcErr) {
+        updateSuccess = true;
+      }
+    } catch (_) {}
+
+    // 2. Fallback via update direct sur profiles (compte admin connecté)
+    if (!updateSuccess) {
+      const { error: directErr } = await supabase
+        .from("profiles")
+        .update({ verified: !currentStatus })
+        .eq("id", teacherId);
+      if (!directErr) {
+        updateSuccess = true;
+      }
+    }
+
+    if (updateSuccess) {
       showToast(
         !currentStatus
           ? "Professeur accrédité et visible dans l'annuaire officiel ! ✅"

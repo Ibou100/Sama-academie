@@ -71,62 +71,79 @@ export default function DashboardEnseignant() {
 
   const fetchTeacherData = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      router.push("/login?redirect=/dashboard/enseignant");
-      return;
+      if (!user) {
+        router.replace("/login?redirect=/dashboard/enseignant");
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const userRole = profile?.role || user.user_metadata?.role;
+
+      if (userRole === "eleve") {
+        router.replace("/dashboard/eleve");
+        return;
+      } else if (userRole === "parent") {
+        router.replace("/dashboard/parent");
+        return;
+      } else if (userRole === "admin") {
+        router.replace("/admin");
+        return;
+      }
+
+      if (!profile) {
+        router.replace("/login");
+        return;
+      }
+
+      setCurrentUser(profile);
+      setVideoSubject(profile.subject || "Mathématiques");
+      setWebinarSubject(profile.subject || "Mathématiques");
+
+      // 1. RÈGLE D'OR SAMA ACADÉMIE : Récupérer UNIQUEMENT les élèves assignés et validés par l'administration
+      const { data: requests } = await supabase
+        .from("tutoring_requests")
+        .select(`*, student:profiles!student_id(id, first_name, last_name, email, phone, region, level, avatar_url)`)
+        .eq("teacher_id", user.id)
+        .eq("status", "accepted")
+        .order("created_at", { ascending: false });
+
+      if (requests && requests.length > 0) {
+        setAssignedStudents(requests);
+        setDocStudentId(requests[0].id);
+        setEvalStudentId(requests[0].id);
+        setSelectedStudentForChat(requests[0]);
+      }
+
+      // 2. Récupérer les classes virtuelles de cet enseignant
+      const { data: webinars } = await supabase
+        .from("virtual_classes")
+        .select("*")
+        .eq("teacher_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (webinars) setMyWebinars(webinars);
+
+      // 3. Récupérer les vidéos récentes
+      const { data: vids } = await supabase
+        .from("videos")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (vids) setMyVideos(vids);
+    } catch (err) {
+      console.error("Erreur chargement Espace Enseignant:", err);
+    } finally {
+      setLoading(false);
     }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.role !== "enseignant") {
-      router.push("/dashboard");
-      return;
-    }
-
-    setCurrentUser(profile);
-    setVideoSubject(profile.subject || "Mathématiques");
-    setWebinarSubject(profile.subject || "Mathématiques");
-
-    // 1. RÈGLE D'OR SAMA ACADÉMIE : Récupérer UNIQUEMENT les élèves assignés et validés par l'administration
-    const { data: requests } = await supabase
-      .from("tutoring_requests")
-      .select(`*, student:profiles!student_id(id, first_name, last_name, email, phone, region, level, avatar_url)`)
-      .eq("teacher_id", user.id)
-      .eq("status", "accepted")
-      .order("created_at", { ascending: false });
-
-    if (requests && requests.length > 0) {
-      setAssignedStudents(requests);
-      setDocStudentId(requests[0].id);
-      setEvalStudentId(requests[0].id);
-      setSelectedStudentForChat(requests[0]);
-    }
-
-    // 2. Récupérer les classes virtuelles de cet enseignant
-    const { data: webinars } = await supabase
-      .from("virtual_classes")
-      .select("*")
-      .eq("teacher_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (webinars) setMyWebinars(webinars);
-
-    // 3. Récupérer les vidéos récentes
-    const { data: vids } = await supabase
-      .from("videos")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(10);
-
-    if (vids) setMyVideos(vids);
-
-    setLoading(false);
   };
 
   // Chargement des messages pour la discussion active

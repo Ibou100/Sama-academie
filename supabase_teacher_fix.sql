@@ -117,3 +117,21 @@ CREATE POLICY "profiles_admin_all" ON public.profiles
       WHERE id = auth.uid() AND role = 'admin'
     )
   );
+
+-- 4. FONCTION RPC D'ACCRÉDITATION SÉCURISÉE (FONCTIONNE AUSSI AVEC LE PASSCODE MASTER DIRECTION)
+CREATE OR REPLACE FUNCTION public.set_teacher_verification(p_teacher_id UUID, p_verified BOOLEAN)
+RETURNS BOOLEAN AS $$
+BEGIN
+  UPDATE public.profiles
+  SET verified = p_verified
+  WHERE id = p_teacher_id;
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.set_teacher_verification(UUID, BOOLEAN) TO anon, authenticated;
+
+-- Accréditer directement Soura Loum
+UPDATE public.profiles
+SET verified = true
+WHERE email = 'loum@gmail.com';

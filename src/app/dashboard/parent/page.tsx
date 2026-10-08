@@ -30,25 +30,39 @@ export default function DashboardParent() {
 
   const fetchParentData = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      router.push("/login?redirect=/dashboard/parent");
-      return;
-    }
+      if (!user) {
+        router.replace("/login?redirect=/dashboard/parent");
+        return;
+      }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
 
-    if (!profile || profile.role !== "parent") {
-      router.push("/dashboard");
-      return;
-    }
+      const userRole = profile?.role || user.user_metadata?.role;
 
-    setCurrentUser(profile);
+      if (userRole === "enseignant") {
+        router.replace("/dashboard/enseignant");
+        return;
+      } else if (userRole === "eleve") {
+        router.replace("/dashboard/eleve");
+        return;
+      } else if (userRole === "admin") {
+        router.replace("/admin");
+        return;
+      }
+
+      if (!profile) {
+        router.replace("/login");
+        return;
+      }
+
+      setCurrentUser(profile);
 
     // Extraction des informations de l'enfant depuis la bio ou le profil
     if (profile.bio && profile.bio.includes("Enfant :")) {
@@ -120,8 +134,11 @@ export default function DashboardParent() {
 
     const cfg = await getSupportConfig();
     if (cfg) setSupportConfig(cfg);
-
-    setLoading(false);
+    } catch (err) {
+      console.error("Erreur chargement Espace Parent:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
