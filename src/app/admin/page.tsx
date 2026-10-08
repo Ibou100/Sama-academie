@@ -764,27 +764,33 @@ export default function AdminDashboard() {
   const toggleTeacherVerification = async (teacherId: string, currentStatus: boolean) => {
     setActionLoadingId(teacherId);
 
-    // 1. Essai via RPC PostgreSQL SECURITY DEFINER (autorise la modification même avec Master Passcode)
     let updateSuccess = false;
+
+    // 1. Appel sécurisé via API serveur /api/admin/users (Service Role, bypass RLS)
     try {
-      const { data: rpcSuccess, error: rpcErr } = await supabase.rpc("set_teacher_verification", {
-        p_teacher_id: teacherId,
-        p_verified: !currentStatus,
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-passcode": adminPasscode || "sama2026",
+        },
+        body: JSON.stringify({
+          userId: teacherId,
+          updates: { verified: !currentStatus },
+        }),
       });
-      if (!rpcErr) {
+      if (res.ok) {
         updateSuccess = true;
       }
     } catch (_) {}
 
-    // 2. Fallback via update direct sur profiles (compte admin connecté)
+    // 2. Fallback via client Supabase direct
     if (!updateSuccess) {
       const { error: directErr } = await supabase
         .from("profiles")
         .update({ verified: !currentStatus })
         .eq("id", teacherId);
-      if (!directErr) {
-        updateSuccess = true;
-      }
+      if (!directErr) updateSuccess = true;
     }
 
     if (updateSuccess) {
@@ -803,6 +809,8 @@ export default function AdminDashboard() {
         details: `${!currentStatus ? "Accréditation accordée" : "Suspension accréditation"} pour professeur ID: ${teacherId}`,
       });
       fetchAuditLogs();
+    } else {
+      showToast("Erreur lors de la mise à jour de l'accréditation.", "error");
     }
     setActionLoadingId(null);
   };
@@ -823,12 +831,34 @@ export default function AdminDashboard() {
       region: editingTeacher.region,
     };
 
-    const { error } = await supabase
-      .from("profiles")
-      .update(updates)
-      .eq("id", editingTeacher.id);
+    let updateSuccess = false;
 
-    if (!error) {
+    // 1. API Serveur sécurisée
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-passcode": adminPasscode || "sama2026",
+        },
+        body: JSON.stringify({
+          userId: editingTeacher.id,
+          updates,
+        }),
+      });
+      if (res.ok) updateSuccess = true;
+    } catch (_) {}
+
+    // 2. Fallback client direct
+    if (!updateSuccess) {
+      const { error: directErr } = await supabase
+        .from("profiles")
+        .update(updates)
+        .eq("id", editingTeacher.id);
+      if (!directErr) updateSuccess = true;
+    }
+
+    if (updateSuccess) {
       setProfiles((prev) =>
         prev.map((p) => (p.id === editingTeacher.id ? { ...p, ...updates } : p))
       );
@@ -841,7 +871,7 @@ export default function AdminDashboard() {
       fetchAuditLogs();
       setEditingTeacher(null);
     } else {
-      showToast("Erreur lors de l'enregistrement : " + error.message, "error");
+      showToast("Erreur lors de l'enregistrement du dossier.", "error");
     }
     setSavingTeacherDossier(false);
   };
