@@ -30,7 +30,7 @@ function Login() {
     setLoading(true);
     setError(null);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -39,6 +39,30 @@ function Login() {
       setError("Email ou mot de passe incorrect.");
       setLoading(false);
     } else {
+      // Auto-synchronisation des métadonnées vers profiles si des données manquent
+      if (signInData?.user) {
+        try {
+          const meta = signInData.user.user_metadata || {};
+          const { data: p } = await supabase
+            .from("profiles")
+            .select("experience, price, bio, level, subject")
+            .eq("id", signInData.user.id)
+            .maybeSingle();
+
+          if (p && (!p.experience || !p.price || !p.bio || !p.level || !p.subject)) {
+            const updates: Record<string, any> = {};
+            if (!p.experience && meta.experience) updates.experience = meta.experience;
+            if (!p.price && meta.price) updates.price = meta.price;
+            if (!p.bio && meta.bio) updates.bio = meta.bio;
+            if (!p.level && meta.level) updates.level = meta.level;
+            if (!p.subject && meta.subject) updates.subject = meta.subject;
+
+            if (Object.keys(updates).length > 0) {
+              await supabase.from("profiles").update(updates).eq("id", signInData.user.id);
+            }
+          }
+        } catch (_) {}
+      }
       router.push(redirectTo);
     }
   };

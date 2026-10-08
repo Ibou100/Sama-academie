@@ -122,7 +122,7 @@ export default function Register() {
       const userBio = isParent
         ? `Parent d'élève : ${childName.trim()} (Classe : ${childClass})`
         : isTeacher
-          ? `Diplôme : ${diploma} • Expérience : ${experienceYears}${teacherBio.trim() ? ` • ${teacherBio.trim()}` : ""}`
+          ? (teacherBio.trim() || `Diplôme : ${diploma} • Expérience : ${experienceYears}`)
           : null;
 
       const userExperience = isTeacher ? `${experienceYears} (${diploma})` : null;
@@ -169,11 +169,10 @@ export default function Register() {
         return;
       }
 
-      // Synchronisation directe avec profiles si possible
+      // Synchronisation directe avec profiles
       if (signUpData?.user) {
         try {
-          await supabase.from("profiles").upsert({
-            id: signUpData.user.id,
+          const profilePayload = {
             first_name: firstName.trim(),
             last_name: lastName.trim(),
             role: role,
@@ -186,9 +185,25 @@ export default function Register() {
             price: isTeacher ? (teacherPrice.trim() || null) : null,
             bio: userBio,
             verified: isVerified,
-          }, { onConflict: "id" });
+          };
+
+          // Mise à jour directe sur l'enregistrement créé par le trigger d'authentification
+          const { error: updateErr } = await supabase
+            .from("profiles")
+            .update(profilePayload)
+            .eq("id", signUpData.user.id);
+
+          if (updateErr) {
+            console.warn("Premier update profiles:", updateErr.message);
+            // En cas de micro-délai du trigger PostgreSQL, retenter après 350ms
+            await new Promise((resolve) => setTimeout(resolve, 350));
+            await supabase
+              .from("profiles")
+              .update(profilePayload)
+              .eq("id", signUpData.user.id);
+          }
         } catch (err) {
-          console.error("Profile upsert sync error:", err);
+          console.error("Profile sync error:", err);
         }
       }
 

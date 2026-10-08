@@ -19,6 +19,7 @@ type Profile = {
   experience: string | null;
   price: string | null;
   bio: string | null;
+  verified?: boolean;
 };
 
 const SENEGAL_REGIONS = [
@@ -32,6 +33,7 @@ const ROLE_LABELS: Record<string, string> = {
   eleve: "Élève",
   enseignant: "Enseignant",
   parent: "Parent",
+  admin: "Administrateur",
 };
 
 function getInitials(firstName: string, lastName: string) {
@@ -70,8 +72,38 @@ export default function Profil() {
 
       const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (!error && data) {
-        setProfile(data);
-        setFormData(data);
+        let currentProfile = data;
+
+        // Auto-guérison & Synchronisation :
+        // Si les champs clés d'inscription sont absents dans public.profiles mais présents dans user.user_metadata,
+        // on les persiste immédiatement dans la base pour que le profil et l'administration soient complets.
+        const meta = user.user_metadata || {};
+        const syncUpdates: Record<string, any> = {};
+        if (!currentProfile.experience && meta.experience) syncUpdates.experience = meta.experience;
+        if (!currentProfile.price && meta.price) syncUpdates.price = meta.price;
+        if (!currentProfile.bio && meta.bio) syncUpdates.bio = meta.bio;
+        if (!currentProfile.level && meta.level) syncUpdates.level = meta.level;
+        if (!currentProfile.subject && meta.subject) syncUpdates.subject = meta.subject;
+        if (!currentProfile.phone && meta.phone) syncUpdates.phone = meta.phone;
+        if (!currentProfile.region && meta.region) syncUpdates.region = meta.region;
+
+        if (Object.keys(syncUpdates).length > 0) {
+          const { data: synced, error: syncErr } = await supabase
+            .from("profiles")
+            .update(syncUpdates)
+            .eq("id", user.id)
+            .select()
+            .maybeSingle();
+
+          if (!syncErr && synced) {
+            currentProfile = synced;
+          } else {
+            currentProfile = { ...currentProfile, ...syncUpdates };
+          }
+        }
+
+        setProfile(currentProfile);
+        setFormData(currentProfile);
       }
       setLoading(false);
     };
@@ -107,6 +139,7 @@ export default function Profil() {
       region: formData.region,
       quarter: formData.quarter,
       subject: formData.subject,
+      level: formData.level,
       experience: formData.experience,
       price: formData.price,
       bio: formData.bio,
@@ -197,23 +230,67 @@ export default function Profil() {
             
             {!isEditing ? (
               <div className="space-y-4 text-sm">
+                {profile.role === "enseignant" && (
+                  profile.verified ? (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-lg flex-shrink-0">
+                        <i className="fas fa-check-circle"></i>
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-emerald-900 text-sm">Enseignant Accrédité &amp; Vérifié ✅</p>
+                        <p className="text-emerald-700 text-xs">Votre profil est validé par la Direction SAMA ACADÉMIE et actif dans l&apos;annuaire officiel des familles.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg flex-shrink-0">
+                        <i className="fas fa-user-clock"></i>
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-amber-900 text-sm">Dossier en attente d&apos;accréditation pédagogique ⏳</p>
+                        <p className="text-amber-700 text-xs">Vos qualifications sont en cours d&apos;examen par notre équipe pédagogique. Dès validation, votre profil sera publié.</p>
+                      </div>
+                    </div>
+                  )
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div><span className="text-gray-500 block text-xs">Téléphone (WhatsApp)</span><span className="font-bold text-gray-800">{profile.phone || "Non renseigné"}</span></div>
                   <div><span className="text-gray-500 block text-xs">Région</span><span className="font-bold text-gray-800">{profile.region || "Non renseignée"}</span></div>
                   <div><span className="text-gray-500 block text-xs">Quartier / Ville</span><span className="font-bold text-gray-800">{profile.quarter || "Non renseigné"}</span></div>
-                  {profile.role === "eleve" && <div><span className="text-gray-500 block text-xs">Niveau</span><span className="font-bold text-gray-800">{profile.level || "Non renseigné"}</span></div>}
+                  {profile.role === "eleve" && <div><span className="text-gray-500 block text-xs">Niveau scolaire</span><span className="font-bold text-gray-800">{profile.level || "Non renseigné"}</span></div>}
                 </div>
 
                 {profile.role === "enseignant" && (
                   <>
                     <hr className="border-gray-100" />
-                    <h4 className="font-bold text-sama-primary">Profil Enseignant</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div><span className="text-gray-500 block text-xs">Matière</span><span className="font-bold text-gray-800">{profile.subject || "Non renseignée"}</span></div>
-                      <div><span className="text-gray-500 block text-xs">Tarif / Heure</span><span className="font-bold text-gray-800">{profile.price || "Non renseigné"}</span></div>
-                      <div><span className="text-gray-500 block text-xs">Expérience</span><span className="font-bold text-gray-800">{profile.experience || "Non renseignée"}</span></div>
+                    <h4 className="font-bold text-sama-primary text-base flex items-center gap-2">
+                      <i className="fas fa-graduation-cap"></i> Dossier Pédagogique Officiel
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <span className="text-gray-500 block text-xs">Matière principale</span>
+                        <span className="font-bold text-gray-800">{profile.subject || "Non renseignée"}</span>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <span className="text-gray-500 block text-xs">Cycle d&apos;intervention</span>
+                        <span className="font-bold text-gray-800">{profile.level || "Non renseigné"}</span>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <span className="text-gray-500 block text-xs">Diplôme &amp; Expérience</span>
+                        <span className="font-bold text-gray-800">{profile.experience || "Non renseignée"}</span>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <span className="text-gray-500 block text-xs">Rémunération souhaitée / Tarif</span>
+                        <span className="font-bold text-gray-800">{profile.price || "Non renseigné"}</span>
+                      </div>
                     </div>
-                    <div><span className="text-gray-500 block text-xs">Bio / Présentation</span><p className="text-gray-800 mt-1">{profile.bio || "Aucune présentation."}</p></div>
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                      <span className="text-gray-500 block text-xs font-bold">Bio &amp; Présentation Pédagogique</span>
+                      <p className="text-gray-800 leading-relaxed text-sm whitespace-pre-line">
+                        {profile.bio || "Aucune présentation renseignée."}
+                      </p>
+                    </div>
                   </>
                 )}
               </div>
@@ -231,31 +308,43 @@ export default function Profil() {
                       {SENEGAL_REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
-                  <div>
+                  <div className={profile.role === "eleve" ? "col-span-1" : "col-span-2"}>
                     <label className="block text-xs font-bold text-gray-500 mb-1">Quartier / Ville</label>
                     <input type="text" value={formData.quarter || ""} onChange={(e) => setFormData({...formData, quarter: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-sama-primary" placeholder="Ex: Point E, Parcelles..." />
                   </div>
+                  {profile.role === "eleve" && (
+                    <div className="col-span-1">
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Classe / Niveau</label>
+                      <input type="text" value={formData.level || ""} onChange={(e) => setFormData({...formData, level: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-sama-primary" placeholder="Ex: Terminale S2, Troisième..." />
+                    </div>
+                  )}
                 </div>
 
                 {profile.role === "enseignant" && (
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-4 mt-4">
-                    <h4 className="font-bold text-sama-primary text-sm">Informations Enseignant</h4>
+                    <h4 className="font-bold text-sama-primary text-sm flex items-center gap-1.5">
+                      <i className="fas fa-chalkboard-teacher"></i> Informations Pédagogiques Enseignant
+                    </h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-500 mb-1">Matière enseignée</label>
                         <input type="text" value={formData.subject || ""} onChange={(e) => setFormData({...formData, subject: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-sama-primary" placeholder="Ex: Mathématiques" />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1">Tarif / Heure (FCFA)</label>
-                        <input type="text" value={formData.price || ""} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-sama-primary" placeholder="Ex: 5 000 F" />
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Cycle d&apos;intervention</label>
+                        <input type="text" value={formData.level || ""} onChange={(e) => setFormData({...formData, level: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-sama-primary" placeholder="Ex: Collège (6e à 3e) ou Lycée" />
                       </div>
                       <div className="col-span-2">
-                        <label className="block text-xs font-bold text-gray-500 mb-1">Années d'expérience</label>
-                        <input type="text" value={formData.experience || ""} onChange={(e) => setFormData({...formData, experience: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-sama-primary" placeholder="Ex: 5 ans" />
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Diplôme &amp; Années d&apos;expérience</label>
+                        <input type="text" value={formData.experience || ""} onChange={(e) => setFormData({...formData, experience: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-sama-primary" placeholder="Ex: 2 à 5 ans d'expérience (FASTEF / ENS)" />
                       </div>
                       <div className="col-span-2">
-                        <label className="block text-xs font-bold text-gray-500 mb-1">Courte présentation</label>
-                        <textarea rows={3} value={formData.bio || ""} onChange={(e) => setFormData({...formData, bio: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-sama-primary" placeholder="Décrivez votre méthode d'enseignement..."></textarea>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Rémunération souhaitée / Tarif</label>
+                        <input type="text" value={formData.price || ""} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-sama-primary" placeholder="Ex: 6000 FCFA PAR ELEVE" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Présentation pédagogique &amp; Démarche (Bio)</label>
+                        <textarea rows={4} value={formData.bio || ""} onChange={(e) => setFormData({...formData, bio: e.target.value})} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-sama-primary" placeholder="Décrivez votre méthode d'enseignement et votre approche auprès des élèves..."></textarea>
                       </div>
                     </div>
                   </div>

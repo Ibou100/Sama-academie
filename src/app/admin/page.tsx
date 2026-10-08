@@ -53,6 +53,12 @@ export default function AdminDashboard() {
   // Négociation financière par contrat
   const [contractPricing, setContractPricing] = useState<Record<string, { familyPrice: string; teacherPayout: string; notes: string }>>({});
 
+  // Gestion & Édition du dossier Enseignant (Accréditation)
+  const [editingTeacher, setEditingTeacher] = useState<any | null>(null);
+  const [savingTeacherDossier, setSavingTeacherDossier] = useState(false);
+  const [teacherFilterStatus, setTeacherFilterStatus] = useState<"all" | "pending" | "verified">("all");
+  const [teacherSearch, setTeacherSearch] = useState("");
+
   // Configuration Support & Annonce Globale
   const [supportPhone, setSupportPhone] = useState("+221 77 467 31 09");
   const [supportWelcomeMsg, setSupportWelcomeMsg] = useState("Bonjour SAMA ACADÉMIE, j'ai besoin d'une orientation pour mon enfant.");
@@ -780,6 +786,45 @@ export default function AdminDashboard() {
       fetchAuditLogs();
     }
     setActionLoadingId(null);
+  };
+
+  const handleSaveTeacherDossier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTeacher) return;
+    setSavingTeacherDossier(true);
+
+    const updates = {
+      subject: editingTeacher.subject,
+      level: editingTeacher.level,
+      experience: editingTeacher.experience,
+      price: editingTeacher.price,
+      bio: editingTeacher.bio,
+      verified: editingTeacher.verified,
+      phone: editingTeacher.phone,
+      region: editingTeacher.region,
+    };
+
+    const { error } = await supabase
+      .from("profiles")
+      .update(updates)
+      .eq("id", editingTeacher.id);
+
+    if (!error) {
+      setProfiles((prev) =>
+        prev.map((p) => (p.id === editingTeacher.id ? { ...p, ...updates } : p))
+      );
+      showToast("Dossier enseignant mis à jour avec succès !", "success");
+      logAdminAction({
+        action: "MODIFICATION_DOSSIER_PROF",
+        targetUserId: editingTeacher.id,
+        details: `Mise à jour dossier enseignant ${editingTeacher.first_name} ${editingTeacher.last_name} (${editingTeacher.subject || 'Matière'})`,
+      });
+      fetchAuditLogs();
+      setEditingTeacher(null);
+    } else {
+      showToast("Erreur lors de l'enregistrement : " + error.message, "error");
+    }
+    setSavingTeacherDossier(false);
   };
 
   /* ========================================================================= */
@@ -1924,85 +1969,372 @@ export default function AdminDashboard() {
         {/* =================================================================== */}
         {activeTab === "teachers" && (
           <div className="space-y-6">
+            {/* Barre d'en-tête & Filtres */}
             <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h2 className="text-lg font-black text-slate-900">Accréditation du Corps Professoral ({stats.teachersCount})</h2>
-                <p className="text-xs text-slate-500">Vérifiez les qualifications avant d&apos;autoriser la visibilité publique dans l&apos;annuaire officiel.</p>
+                <p className="text-xs text-slate-500">Examinez le dossier pédagogique complet (diplôme, cycle, expérience, rémunération souhaitée, bio) avant publication officielle.</p>
               </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="bg-emerald-50 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-200">
-                  {stats.verifiedTeachersCount} Validés
-                </span>
-                <span className="bg-amber-50 text-amber-800 font-bold px-3 py-1 rounded-full border border-amber-200">
-                  {stats.pendingTeachersCount} En attente
-                </span>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <button
+                  onClick={() => setTeacherFilterStatus("all")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer ${
+                    teacherFilterStatus === "all"
+                      ? "bg-slate-900 text-white"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  Tous ({stats.teachersCount})
+                </button>
+                <button
+                  onClick={() => setTeacherFilterStatus("pending")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                    teacherFilterStatus === "pending"
+                      ? "bg-amber-500 text-slate-950 font-black shadow-sm"
+                      : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
+                  }`}
+                >
+                  <span>⏳ En attente</span>
+                  <span className="bg-white/80 px-1.5 py-0.2 rounded-full text-[10px] font-black">{stats.pendingTeachersCount}</span>
+                </button>
+                <button
+                  onClick={() => setTeacherFilterStatus("verified")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                    teacherFilterStatus === "verified"
+                      ? "bg-emerald-600 text-white font-black shadow-sm"
+                      : "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+                  }`}
+                >
+                  <span>✅ Accrédités</span>
+                  <span className="bg-white/80 px-1.5 py-0.2 rounded-full text-[10px] font-black">{stats.verifiedTeachersCount}</span>
+                </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profiles
-                .filter((p) => p.role === "enseignant")
-                .map((t) => {
-                  const cleanPhone = (t.phone || "").replace(/[^0-9]/g, "");
+            {/* Barre de recherche */}
+            <div className="relative">
+              <input
+                type="text"
+                value={teacherSearch}
+                onChange={(e) => setTeacherSearch(e.target.value)}
+                placeholder="Rechercher un professeur (nom, matière, cycle, téléphone, région)..."
+                className="w-full bg-white border border-slate-200/90 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-sama-primary shadow-xs"
+              />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                <i className="fas fa-search text-xs"></i>
+              </span>
+              {teacherSearch && (
+                <button
+                  onClick={() => setTeacherSearch("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
 
-                  return (
-                    <div key={t.id} className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-sama-primary font-black flex items-center justify-center text-sm border border-blue-100">
-                            {t.first_name?.[0]}{t.last_name?.[0]}
+            {/* Grille des dossiers enseignants */}
+            {profiles
+              .filter((p) => p.role === "enseignant")
+              .filter((t) => {
+                if (teacherFilterStatus === "pending" && t.verified) return false;
+                if (teacherFilterStatus === "verified" && !t.verified) return false;
+                if (teacherSearch.trim()) {
+                  const q = teacherSearch.toLowerCase().trim();
+                  const fullName = `${t.first_name || ""} ${t.last_name || ""}`.toLowerCase();
+                  const subj = (t.subject || "").toLowerCase();
+                  const ph = (t.phone || "").toLowerCase();
+                  const reg = (t.region || "").toLowerCase();
+                  const lvl = (t.level || "").toLowerCase();
+                  if (!fullName.includes(q) && !subj.includes(q) && !ph.includes(q) && !reg.includes(q) && !lvl.includes(q)) {
+                    return false;
+                  }
+                }
+                return true;
+              }).length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-xs">
+                  <i className="fas fa-user-slash text-4xl text-slate-300 mb-3 block"></i>
+                  <h3 className="font-extrabold text-slate-800 text-base">Aucun professeur trouvé</h3>
+                  <p className="text-xs text-slate-400 mt-1">Aucun dossier ne correspond à vos filtres de recherche.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {profiles
+                    .filter((p) => p.role === "enseignant")
+                    .filter((t) => {
+                      if (teacherFilterStatus === "pending" && t.verified) return false;
+                      if (teacherFilterStatus === "verified" && !t.verified) return false;
+                      if (teacherSearch.trim()) {
+                        const q = teacherSearch.toLowerCase().trim();
+                        const fullName = `${t.first_name || ""} ${t.last_name || ""}`.toLowerCase();
+                        const subj = (t.subject || "").toLowerCase();
+                        const ph = (t.phone || "").toLowerCase();
+                        const reg = (t.region || "").toLowerCase();
+                        const lvl = (t.level || "").toLowerCase();
+                        if (!fullName.includes(q) && !subj.includes(q) && !ph.includes(q) && !reg.includes(q) && !lvl.includes(q)) {
+                          return false;
+                        }
+                      }
+                      return true;
+                    })
+                    .map((t) => {
+                      const cleanPhone = (t.phone || "").replace(/[^0-9]/g, "");
+
+                      return (
+                        <div key={t.id} className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition space-y-4 flex flex-col justify-between">
+                          <div className="space-y-4">
+                            {/* En-tête Professeur */}
+                            <div className="flex justify-between items-start gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-blue-600 to-sama-primary text-white font-black flex items-center justify-center text-base shadow-sm">
+                                  {t.first_name?.[0]}{t.last_name?.[0]}
+                                </div>
+                                <div>
+                                  <h3 className="font-extrabold text-slate-900 text-base">
+                                    {t.first_name} {t.last_name}
+                                  </h3>
+                                  <p className="text-xs text-sama-primary font-bold">{t.subject || "Matière générale"}</p>
+                                  <p className="text-[11px] text-slate-400 font-medium">{t.email || "Email non renseigné"}</p>
+                                </div>
+                              </div>
+
+                              <span className={`text-[10px] font-black px-2.5 py-1 rounded-full flex-shrink-0 ${
+                                t.verified ? "bg-emerald-100 text-emerald-800 border border-emerald-200" : "bg-amber-100 text-amber-800 border border-amber-200"
+                              }`}>
+                                {t.verified ? "Accrédité ✅" : "En attente ⏳"}
+                              </span>
+                            </div>
+
+                            {/* Dossier Pédagogique Détaillé */}
+                            <div className="bg-slate-50 p-4 rounded-2xl text-xs space-y-2 border border-slate-100">
+                              <div className="grid grid-cols-2 gap-2 text-slate-700">
+                                <div>
+                                  <span className="text-slate-400 block text-[10px] font-bold uppercase">Cycle d&apos;intervention</span>
+                                  <strong className="text-slate-900">{t.level || "Non précisé"}</strong>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 block text-[10px] font-bold uppercase">Prétention tarifaire</span>
+                                  <strong className="text-slate-900 text-sama-primary">{t.price || "Tarif libre"}</strong>
+                                </div>
+                              </div>
+
+                              <div className="pt-1 border-t border-slate-200/60">
+                                <span className="text-slate-400 block text-[10px] font-bold uppercase">Diplôme &amp; Expérience</span>
+                                <strong className="text-slate-900">{t.experience || "Non renseigné"}</strong>
+                              </div>
+
+                              <div className="pt-1 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-600">
+                                <span><i className="fas fa-map-marker-alt text-sama-orange mr-1"></i> {t.region || "Région non précisée"} {t.quarter ? `(${t.quarter})` : ""}</span>
+                                <span><i className="fas fa-phone text-emerald-600 mr-1"></i> {t.phone || "Non renseigné"}</span>
+                              </div>
+
+                              {t.bio ? (
+                                <div className="mt-2 bg-blue-50/60 p-3 rounded-xl border border-blue-100/70 text-slate-700 italic text-[11px] leading-relaxed">
+                                  <div className="font-bold not-italic text-[10px] text-sama-primary uppercase mb-0.5">Présentation pédagogique :</div>
+                                  &quot;{t.bio}&quot;
+                                </div>
+                              ) : (
+                                <div className="mt-2 bg-amber-50/50 p-2.5 rounded-xl border border-amber-100/70 text-amber-800 text-[11px] italic">
+                                  Aucune présentation rédigée pour ce professeur.
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-extrabold text-slate-900 text-sm">
-                              {t.first_name} {t.last_name}
-                            </h3>
-                            <p className="text-xs text-sama-primary font-bold">{t.subject || "Matière générale"}</p>
+
+                          {/* Boutons d'Action */}
+                          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+                            {cleanPhone && (
+                              <a
+                                href={`https://wa.me/${cleanPhone}?text=Bonjour%20M.%20${encodeURIComponent(t.last_name || '')},%20je%20suis%20la%20Direction%20SAMA%20ACAD%C3%89MIE%20concernant%20votre%20dossier%20d'accr%C3%A9ditation.`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1.5 border border-emerald-200 cursor-pointer"
+                                title="Contacter par WhatsApp"
+                              >
+                                <i className="fab fa-whatsapp text-emerald-600"></i>
+                                <span>WhatsApp</span>
+                              </a>
+                            )}
+
+                            <button
+                              onClick={() => setEditingTeacher({ ...t })}
+                              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer"
+                              title="Modifier ou compléter ce dossier"
+                            >
+                              <i className="fas fa-edit text-xs"></i>
+                              <span>Modifier</span>
+                            </button>
+
+                            <button
+                              onClick={() => toggleTeacherVerification(t.id, t.verified)}
+                              disabled={actionLoadingId === t.id}
+                              className={`flex-1 font-bold py-2 px-3 rounded-xl text-xs transition cursor-pointer ${
+                                t.verified
+                                  ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                                  : "bg-sama-primary hover:bg-blue-700 text-white shadow-xs"
+                              }`}
+                            >
+                              {actionLoadingId === t.id ? (
+                                <i className="fas fa-spinner fa-spin"></i>
+                              ) : t.verified ? (
+                                "Suspendre l'accréditation"
+                              ) : (
+                                "Accréditer le Professeur ✅"
+                              )}
+                            </button>
                           </div>
                         </div>
+                      );
+                    })}
+                </div>
+              )}
 
-                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${
-                          t.verified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-                        }`}>
-                          {t.verified ? "Accrédité ✅" : "En attente ⏳"}
-                        </span>
+            {/* Modal d'édition du dossier Enseignant */}
+            {editingTeacher && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <div>
+                      <h3 className="text-lg font-black text-slate-900">
+                        Modifier le Dossier Enseignant
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        {editingTeacher.first_name} {editingTeacher.last_name} ({editingTeacher.email})
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setEditingTeacher(null)}
+                      className="text-slate-400 hover:text-slate-600 text-lg"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveTeacherDossier} className="space-y-4 text-xs">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Matière enseignée</label>
+                        <input
+                          type="text"
+                          value={editingTeacher.subject || ""}
+                          onChange={(e) => setEditingTeacher({ ...editingTeacher, subject: e.target.value })}
+                          className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                          placeholder="Ex: Mathématiques"
+                        />
                       </div>
-
-                      <div className="bg-slate-50 p-3 rounded-2xl text-xs space-y-1.5 border border-slate-100">
-                        <div><strong>Cycle enseigné :</strong> {t.level || "Non précisé"}</div>
-                        <div><strong>Diplôme & Expérience :</strong> {t.experience || "Non renseigné"}</div>
-                        <div><strong>Prétention tarifaire :</strong> {t.price || "Tarif libre"}</div>
-                        {t.bio && <div className="text-slate-500 italic mt-1">&quot;{t.bio}&quot;</div>}
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                        {cleanPhone && (
-                          <a
-                            href={`https://wa.me/${cleanPhone}?text=Bonjour%20M.%20${encodeURIComponent(t.last_name || '')},%20je%20suis%20la%20Direction%20SAMA%20ACAD%C3%89MIE.`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1.5 border border-emerald-200"
-                          >
-                            <i className="fab fa-whatsapp text-emerald-600"></i>
-                            <span>WhatsApp</span>
-                          </a>
-                        )}
-
-                        <button
-                          onClick={() => toggleTeacherVerification(t.id, t.verified)}
-                          disabled={actionLoadingId === t.id}
-                          className={`flex-1 font-bold py-2 px-3 rounded-xl text-xs transition ${
-                            t.verified
-                              ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                              : "bg-sama-primary hover:bg-blue-700 text-white shadow-xs"
-                          }`}
-                        >
-                          {t.verified ? "Suspendre l'accréditation" : "Accréditer le Professeur ✅"}
-                        </button>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Cycle d&apos;intervention</label>
+                        <input
+                          type="text"
+                          value={editingTeacher.level || ""}
+                          onChange={(e) => setEditingTeacher({ ...editingTeacher, level: e.target.value })}
+                          className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                          placeholder="Ex: Collège (6e à 3e)"
+                        />
                       </div>
                     </div>
-                  );
-                })}
-            </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Téléphone (WhatsApp)</label>
+                        <input
+                          type="tel"
+                          value={editingTeacher.phone || ""}
+                          onChange={(e) => setEditingTeacher({ ...editingTeacher, phone: e.target.value })}
+                          className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Région</label>
+                        <input
+                          type="text"
+                          value={editingTeacher.region || ""}
+                          onChange={(e) => setEditingTeacher({ ...editingTeacher, region: e.target.value })}
+                          className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                          placeholder="Ex: Dakar"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Diplôme &amp; Années d&apos;expérience</label>
+                      <input
+                        type="text"
+                        value={editingTeacher.experience || ""}
+                        onChange={(e) => setEditingTeacher({ ...editingTeacher, experience: e.target.value })}
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                        placeholder="Ex: 2 à 5 ans d'expérience (FASTEF / ENS)"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Prétention tarifaire / Rémunération souhaitée</label>
+                      <input
+                        type="text"
+                        value={editingTeacher.price || ""}
+                        onChange={(e) => setEditingTeacher({ ...editingTeacher, price: e.target.value })}
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                        placeholder="Ex: 6000 FCFA PAR ELEVE"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Présentation pédagogique &amp; Bio</label>
+                      <textarea
+                        rows={4}
+                        value={editingTeacher.bio || ""}
+                        onChange={(e) => setEditingTeacher({ ...editingTeacher, bio: e.target.value })}
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                        placeholder="Décrivez la méthode et l'expérience du professeur..."
+                      />
+                    </div>
+
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-slate-900 block text-xs">Statut d&apos;accréditation officielle</span>
+                        <span className="text-[11px] text-slate-500">Visible dans l&apos;annuaire public de SAMA ACADÉMIE</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!editingTeacher.verified}
+                          onChange={(e) => setEditingTeacher({ ...editingTeacher, verified: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setEditingTeacher(null)}
+                        className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-bold transition cursor-pointer"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={savingTeacherDossier}
+                        className="bg-sama-primary hover:bg-blue-800 text-white font-black px-5 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer shadow-sm"
+                      >
+                        {savingTeacherDossier ? (
+                          <>
+                            <i className="fas fa-spinner fa-spin"></i>
+                            <span>Enregistrement...</span>
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-save"></i>
+                            <span>Enregistrer le Dossier</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
