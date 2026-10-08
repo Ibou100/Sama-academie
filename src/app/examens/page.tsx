@@ -142,6 +142,72 @@ const DEFAULT_DOCUMENTS = [
       { num: "Sujet 3", desc: "Commentaire de texte : Extrait de Kant, Idée d'une histoire universelle." }
     ],
     sample_corrige: "Plan détaillé Sujet 1 : I. L'État perçu comme contrainte et appareil coercitif (thèse anarchiste et marxiste). II. Mais sans État, la liberté dégénère en loi du plus fort (Hobbes). III. L'État de droit comme garant effectif de la liberté citoyenne (Rousseau)..."
+  },
+
+  // Concours d'État & Grandes Écoles (Spécial Lycée & Post-BAC)
+  {
+    id: "conc-1",
+    level: "Concours (EPT / ESP)",
+    cycle: "Concours",
+    title: "Concours d'Ingénieurs EPT Thiès / ESP Dakar — Mathématiques & Sciences Physiques",
+    subject: "Mathématiques & Physique",
+    color: "bg-purple-900",
+    downloads: "5 320",
+    pages_info: "Sujets Officiels d'Admissibilité + Corrigé Type",
+    file_url: "#",
+    exercices: [
+      { num: "Épreuve de Mathématiques (4h)", desc: "Algèbre linéaire, calcul matriciel, suites récurrentes, intégrales impropres et équations différentielles de niveau Terminale S1/S3." },
+      { num: "Épreuve de Physique-Chimie (3h)", desc: "Mécanique du point, circuits RLC en régime transitoire, interférences lumineuses et cinétique chimique." }
+    ],
+    sample_corrige: "Corrigé EPT Mathématiques : Résolution de l'équation différentielle y'' + 2y' + 5y = e^(-x). Équation caractéristique r² + 2r + 5 = 0, racines r = -1 ± 2i. Solution générale de l'équation homogène : yh(x) = e^(-x) [A cos(2x) + B sin(2x)]..."
+  },
+  {
+    id: "conc-2",
+    level: "Concours (CPGE Thiès)",
+    cycle: "Concours",
+    title: "Classes Préparatoires aux Grandes Écoles (CPGE) — Épreuves types MPSI & PCSI",
+    subject: "Sciences de l'Ingénieur",
+    color: "bg-indigo-900",
+    downloads: "3 890",
+    pages_info: "Sujets Nationaux d'Excellence",
+    file_url: "#",
+    exercices: [
+      { num: "Mathématiques Approfondies", desc: "Arithmétique avancée, polynômes de Tchebychev, espaces vectoriels et géométrie euclidienne." },
+      { num: "Physique & Modélisation", desc: "Thermodynamique appliquée aux moteurs thermiques, induction électromagnétique et optique ondulatoire." }
+    ],
+    sample_corrige: "Méthodologie CPGE Thiès : Rigueur de rédaction, précision du vocabulaire mathématique et soin des schémas mécaniques valorisés au barème national d'excellence..."
+  },
+  {
+    id: "conc-3",
+    level: "Concours Général Sénégalais",
+    cycle: "Concours",
+    title: "Concours Général Sénégalais — Mathématiques & Sciences Physiques (Terminale)",
+    subject: "Épreuves d'Excellence",
+    color: "bg-amber-800",
+    downloads: "6 120",
+    pages_info: "Annales Officielles Ministère de l'Éducation",
+    file_url: "#",
+    exercices: [
+      { num: "Problème 1 (Mathématiques)", desc: "Étude d'une famille de fonctions spéciales, inégalités intégrales et convergence de séries numériques." },
+      { num: "Problème 2 (Sciences Physiques)", desc: "Effet Doppler relativiste, mouvement de particules chargées dans des champs croisés et diffraction." }
+    ],
+    sample_corrige: "Rapport du jury du Concours Général : Les meilleures copies se distinguent par l'élégance de la démonstration et la concision du raisonnement scientifique..."
+  },
+  {
+    id: "conc-4",
+    level: "Concours (CUGEM / EMS)",
+    cycle: "Concours",
+    title: "Grandes Écoles Militaires & École Militaire de Santé (EMS) — Sciences & Culture Générale",
+    subject: "Santé & Militaire",
+    color: "bg-red-900",
+    downloads: "4 780",
+    pages_info: "Épreuves d'Officier & Médecine Militaire",
+    file_url: "#",
+    exercices: [
+      { num: "SVT & Physiologie Humaine", desc: "Génétique mendélienne et moléculaire, neurophysiologie, régulation de la pression artérielle." },
+      { num: "Dissertation de Culture Générale", desc: "La géopolitique sahélienne, la souveraineté alimentaire en Afrique et l'éthique de la recherche biomédicale." }
+    ],
+    sample_corrige: "Critères de notation EMS / CUGEM : Esprit de synthèse, clarté de l'argumentation, justesse scientifique et maîtrise irréprochable de la langue française..."
   }
 ];
 
@@ -204,6 +270,15 @@ export default function Examens() {
           if (dc) setSelectedCycle(dc);
         }
       }
+
+      // Lecture des paramètres d'URL (ex: /examens?cycle=Concours)
+      if (typeof window !== "undefined") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlCycle = urlParams.get("cycle");
+        if (urlCycle && (urlCycle === "Concours" || urlCycle === "Lycee" || urlCycle === "College" || urlCycle === "Primaire" || urlCycle === "TOUS")) {
+          setSelectedCycle(urlCycle);
+        }
+      }
     };
 
     const fetchAnnales = async () => {
@@ -212,7 +287,8 @@ export default function Examens() {
       if (dbAnnales && dbAnnales.length > 0) {
         // Classifier chaque annale de façon précise
         const mapped = dbAnnales.map((doc, idx) => {
-          const cycle = detectCycle(doc.level) || "Lycee";
+          const isDocConcours = doc.level && (doc.level.toLowerCase().includes("concours") || doc.level.toLowerCase().includes("ept") || doc.level.toLowerCase().includes("esp") || doc.level.toLowerCase().includes("cpge"));
+          const cycle = isDocConcours ? "Concours" : (detectCycle(doc.level) || "Lycee");
 
           return {
             ...doc,
@@ -221,9 +297,13 @@ export default function Examens() {
             sample_corrige: doc.sample_corrige || DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length]?.sample_corrige || DEFAULT_DOCUMENTS[0].sample_corrige
           };
         });
-        setDocuments(mapped);
+
+        // Garantir la présence des épreuves de Concours d'État & Grandes Écoles
+        const hasConcoursDocs = mapped.some((d: any) => d.cycle === "Concours");
+        const finalDocs = hasConcoursDocs ? mapped : [...mapped, ...DEFAULT_DOCUMENTS.filter(d => d.cycle === "Concours")];
+        setDocuments(finalDocs);
       } else {
-        setDocuments([]);
+        setDocuments(DEFAULT_DOCUMENTS);
       }
       setLoading(false);
     };
@@ -246,13 +326,24 @@ export default function Examens() {
   const studentLevel = (userProfile?.level || "").toLowerCase();
   const studentCycle: "Primaire" | "College" | "Lycee" | null = isStudent ? studentCycleOf(studentLevel) : null;
 
-  // Filtrage strict selon le cycle sélectionné ou imposé à l'élève
-  const effectiveCycle = isStudent && studentCycle ? studentCycle : selectedCycle;
+  // Filtrage intelligent : pour un élève de Lycée, autoriser la consultation des épreuves du BAC ET des Concours d'État / Grandes Écoles
+  let effectiveCycle = selectedCycle;
+  if (isStudent && studentCycle) {
+    if (studentCycle === "Lycee") {
+      // Un lycéen peut consulter le Lycée (BAC), les Concours Grandes Écoles, ou Tout
+      effectiveCycle = (selectedCycle === "Concours" || selectedCycle === "TOUS") ? selectedCycle : "Lycee";
+    } else {
+      effectiveCycle = studentCycle;
+    }
+  }
 
   const filteredDocuments = documents.filter((doc) => {
     if (effectiveCycle === "TOUS") return true;
-    const dc = doc.cycle || detectCycle(doc.level);
-    if (effectiveCycle === "Primaire" || effectiveCycle === "College" || effectiveCycle === "Lycee") return dc === effectiveCycle;
+    const isDocConcours = doc.level && (doc.level.toLowerCase().includes("concours") || doc.level.toLowerCase().includes("ept") || doc.level.toLowerCase().includes("esp") || doc.level.toLowerCase().includes("cpge"));
+    const dc = doc.cycle || (isDocConcours ? "Concours" : detectCycle(doc.level));
+    if (effectiveCycle === "Primaire" || effectiveCycle === "College" || effectiveCycle === "Lycee" || effectiveCycle === "Concours") {
+      return dc === effectiveCycle;
+    }
     return true;
   });
 
@@ -504,30 +595,100 @@ export default function Examens() {
           )}
         </div>
 
-        {/* Sélecteur de Cycle Personnalisé (Cloisonné pour les élèves) */}
+        {/* Sélecteur de Cycle Personnalisé (Adapté et enrichi pour le Lycée) */}
         {isStudent && studentCycle ? (
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="w-10 h-10 rounded-xl bg-sama-primary text-white flex items-center justify-center font-bold text-lg shadow-sm">
-                  <i className="fas fa-lock"></i>
-                </span>
-                <div>
-                  <p className="font-extrabold text-sama-primary text-sm flex items-center gap-2">
-                    <span>Bibliothèque Officielle • Cycle {studentCycle === "Primaire" ? "Primaire (CI à CM2, CFEE)" : studentCycle === "College" ? "Collège (6e à 3e, BFEM)" : "Lycée (Seconde à Terminale, BAC)"}</span>
-                    <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Cloisonné</span>
-                  </p>
-                  <p className="text-xs text-gray-600 mt-0.5">
-                    Connecté en tant qu&apos;élève ({userProfile?.first_name} • {userProfile?.level}). Seules les épreuves de votre niveau sont consultables.
-                  </p>
+            {studentCycle === "Lycee" ? (
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-purple-950 text-white rounded-3xl p-5 sm:p-6 shadow-md border border-white/10">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start sm:items-center gap-3">
+                      <span className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md text-amber-300 flex items-center justify-center font-bold text-2xl border border-white/10 shadow-sm flex-shrink-0">
+                        🎓
+                      </span>
+                      <div>
+                        <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[11px] font-black uppercase mb-1">
+                          <i className="fas fa-award text-amber-300"></i> Programme Spécial Lycée &amp; Post-BAC
+                        </div>
+                        <h2 className="text-lg sm:text-xl font-black text-white leading-tight">
+                          Espace d&apos;Excellence Lycée : BAC &amp; Concours des Grandes Écoles
+                        </h2>
+                        <p className="text-xs text-blue-100 mt-1 max-w-2xl">
+                          Connecté en tant qu&apos;élève ({userProfile?.first_name} • {userProfile?.level || "Lycée"}). Préparez à la fois votre Baccalauréat et l&apos;entrée dans les Grandes Écoles sénégalaises d&apos;ingénieurs, de santé, militaires et de l&apos;État.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 text-white text-xs font-bold border border-white/20 backdrop-blur-md">
+                        <i className="fas fa-check-circle text-emerald-400"></i> Cycle Actif : Lycée &amp; Concours
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Onglets de bascule spécifiques pour le Lycéen */}
+                <div className="flex flex-wrap gap-2.5">
+                  <button
+                    onClick={() => setSelectedCycle("Lycee")}
+                    className={`py-3 px-5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
+                      effectiveCycle === "Lycee"
+                        ? "bg-sama-primary text-white shadow-md ring-2 ring-sama-primary/30"
+                        : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                    }`}
+                  >
+                    <i className="fas fa-graduation-cap text-sm"></i>
+                    <span>Épreuves du BAC &amp; Lycée (Séries S &amp; L)</span>
+                  </button>
+
+                  <button
+                    onClick={() => setSelectedCycle("Concours")}
+                    className={`py-3 px-5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
+                      effectiveCycle === "Concours"
+                        ? "bg-purple-900 text-white shadow-md ring-2 ring-purple-600/30"
+                        : "bg-purple-50 text-purple-900 hover:bg-purple-100 border border-purple-200"
+                    }`}
+                  >
+                    <i className="fas fa-landmark text-sama-orange text-sm"></i>
+                    <span>Concours d&apos;État &amp; Grandes Écoles (EPT, ESP, CPGE, CUGEM...)</span>
+                    <span className="bg-amber-400 text-gray-900 text-[10px] font-black px-2 py-0.5 rounded-full ml-1">OFFICIEL</span>
+                  </button>
+
+                  <button
+                    onClick={() => setSelectedCycle("TOUS")}
+                    className={`py-3 px-4 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+                      effectiveCycle === "TOUS"
+                        ? "bg-gray-900 text-white shadow-md"
+                        : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                    }`}
+                  >
+                    <i className="fas fa-layer-group"></i>
+                    <span>Tout afficher (BAC + Concours)</span>
+                  </button>
                 </div>
               </div>
-              <div className="text-right flex-shrink-0">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-sama-primary text-xs font-bold border border-blue-200 shadow-xs">
-                  <i className="fas fa-check-circle text-green-500"></i> Cycle Actif : {studentCycle}
-                </span>
+            ) : (
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-xl bg-sama-primary text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                    <i className="fas fa-lock"></i>
+                  </span>
+                  <div>
+                    <p className="font-extrabold text-sama-primary text-sm flex items-center gap-2">
+                      <span>Bibliothèque Officielle • Cycle {studentCycle === "Primaire" ? "Primaire (CI à CM2, CFEE)" : "Collège (6e à 3e, BFEM)"}</span>
+                      <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Cloisonné</span>
+                    </p>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Connecté en tant qu&apos;élève ({userProfile?.first_name} • {userProfile?.level}). Seules les épreuves de votre niveau sont consultables.
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-sama-primary text-xs font-bold border border-blue-200 shadow-xs">
+                    <i className="fas fa-check-circle text-green-500"></i> Cycle Actif : {studentCycle}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-gray-100">
@@ -550,11 +711,11 @@ export default function Examens() {
       </div>
 
       {/* Grille des Épreuves Documentaires */}
-      {selectedCycle !== "Concours" && (
+      {filteredDocuments.length > 0 && (
         <div className="space-y-4 mb-12">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">
-              {filteredDocuments.length} épreuve(s) disponible(s) pour ce cycle
+              {filteredDocuments.length} épreuve(s) disponible(s) {effectiveCycle === "Concours" ? "pour les Concours d'État & Grandes Écoles" : "pour ce cycle"}
             </h2>
             <span className="text-xs text-gray-400">Lecture protégée anti-téléchargement</span>
           </div>
@@ -564,19 +725,13 @@ export default function Examens() {
               <i className="fas fa-spinner fa-spin text-4xl text-sama-primary mb-3 block"></i>
               <p className="text-gray-500 font-semibold text-sm">Chargement des épreuves officielles...</p>
             </div>
-          ) : filteredDocuments.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-gray-100">
-              <i className="fas fa-folder-open text-4xl text-gray-300 mb-3 block"></i>
-              <h3 className="font-bold text-gray-700">Aucun document disponible pour ce cycle</h3>
-              <p className="text-xs text-gray-400 mt-1">Les épreuves et annales publiées par l&apos;Administration apparaîtront ici.</p>
-            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {filteredDocuments.map((doc) => (
-                <div key={doc.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition">
-                  <div className="bg-sama-blue text-white p-6 pb-8">
-                    <span className="text-xs font-bold uppercase tracking-widest text-sama-orange mb-2 block">{doc.level}</span>
-                    <h3 className="text-lg font-bold leading-tight">{doc.title}</h3>
+                <div key={doc.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition group">
+                  <div className={`${doc.color || "bg-sama-blue"} text-white p-6 pb-8`}>
+                    <span className="text-xs font-bold uppercase tracking-widest text-amber-300 mb-2 block">{doc.level}</span>
+                    <h3 className="text-lg font-bold leading-tight group-hover:text-amber-200 transition">{doc.title}</h3>
                   </div>
                   <div className="p-5 flex-grow flex flex-col justify-between bg-white -mt-4 rounded-t-2xl relative">
                     <p className="text-xs text-gray-500 mb-4 font-medium flex items-center gap-1.5">
@@ -599,16 +754,16 @@ export default function Examens() {
         </div>
       )}
 
-      {/* ===== SECTION CONCOURS DE L'ÉTAT (Masqué pour les élèves) ===== */}
-      {!isStudent && (selectedCycle === "TOUS" || selectedCycle === "Concours") && (
+      {/* ===== SECTION CONCOURS DE L'ÉTAT & GRANDES ÉCOLES (Accessible à tous et spécialement aux Lycéens) ===== */}
+      {(!isStudent || studentCycle === "Lycee") && (effectiveCycle === "TOUS" || effectiveCycle === "Concours" || selectedCycle === "Concours") && (
         <div className="mb-12">
           <div className="mb-6 bg-gradient-to-r from-purple-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-sm">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold mb-2">
-              <i className="fas fa-landmark text-sama-orange"></i> Fonction Publique & Grandes Écoles
+              <i className="fas fa-landmark text-sama-orange"></i> Fonction Publique &amp; Grandes Écoles
             </div>
-            <h2 className="text-2xl font-black mb-1">Concours Officiels de l&apos;État du Sénégal</h2>
+            <h2 className="text-2xl font-black mb-1">Concours Officiels de l&apos;État du Sénégal &amp; Grandes Écoles</h2>
             <p className="text-purple-200 text-xs sm:text-sm">
-              Annales et préparation aux grands concours de recrutement de l&apos;Administration sénégalaise.
+              Annales, épreuves types et préparation d&apos;excellence aux grands concours d&apos;ingénieurs, de santé, militaires et de l&apos;Administration sénégalaise.
             </p>
           </div>
 

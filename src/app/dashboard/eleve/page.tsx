@@ -7,6 +7,113 @@ import { useRouter } from "next/navigation";
 import { getClientSessionAndRole, safeRedirect } from "@/lib/auth-helpers";
 import { supabase } from "@/lib/supabase";
 
+const LYCEE_CONCOURS = [
+  {
+    sigle: "EPT Thiès",
+    nom: "École Polytechnique de Thiès",
+    domaine: "Ingénieurs de Conception (DIC)",
+    series: "S1, S2, S3",
+    icon: "💻",
+    couleur: "bg-cyan-800",
+    badge: "Polytechnique",
+    desc: "Le concours d'ingénieurs le plus réputé d'Afrique de l'Ouest. Formation d'élite en Génie Civil, Électromécanique, Informatique et Télécoms.",
+    epreuves: "Mathématiques (4h), Physique-Chimie (3h), Français (2h)",
+    admissibilite: "Niveau Terminale S ou Bachelier récent. Forte sélectivité nationale.",
+    debouches: "Ingénieurs d'État, Directeurs techniques, BTP, Télécoms, Énergie"
+  },
+  {
+    sigle: "ESP Dakar",
+    nom: "École Supérieure Polytechnique (UCAD)",
+    domaine: "Ingénierie & Technologie",
+    series: "S1, S2, S3, T1, T2",
+    icon: "⚙️",
+    couleur: "bg-blue-800",
+    badge: "Ingénieurs & DUT",
+    desc: "Grande école technologique de l'UCAD. Concours direct post-Bac pour le cycle DUT et sélection sur concours d'ingénieurs.",
+    epreuves: "Mathématiques, Sciences Physiques, Logique & Culture Générale",
+    admissibilite: "Bacheliers scientifiques et techniques. Entrée sur épreuves écrites et dossier.",
+    debouches: "Informatique, Réseaux, Génie Chimique, Mécanique, Électrique"
+  },
+  {
+    sigle: "CPGE Thiès",
+    nom: "Classes Préparatoires aux Grandes Écoles",
+    domaine: "Prépas Scientifiques MPSI & PCSI",
+    series: "S1, S2 (Mention Bien/TB)",
+    icon: "🔬",
+    couleur: "bg-purple-800",
+    badge: "Filière d'Élite",
+    desc: "Prépare en 2 ans aux concours des plus prestigieuses écoles d'ingénieurs (Polytechnique Paris, Mines-Ponts, Centrale, EPT, ESP). 100% gratuit avec bourse d'excellence et hébergement assurés par l'État.",
+    epreuves: "Sélection d'excellence sur dossier de Première & Terminale (Maths, PC, Français)",
+    admissibilite: "Mention Bien ou Très Bien exigée au Bac S1 ou S2.",
+    debouches: "Polytechnique, Mines Paris, CentraleSupélec, EPT, ESP, ENSAE"
+  },
+  {
+    sigle: "CUGEM",
+    nom: "Grandes Écoles Militaires & Officiers",
+    domaine: "Armée de Terre, Air, Marine & Gendarmerie",
+    series: "S1, S2, S3, L (selon filière)",
+    icon: "🎖️",
+    couleur: "bg-red-800",
+    badge: "Officiers d'Élite",
+    desc: "Concours Unique des Grandes Écoles Militaires pour intégrer Saint-Cyr Coëtquidan, l'École de l'Air (France), l'École Navale ou l'Académie Militaire de Meknès.",
+    epreuves: "Mathématiques, Sciences Physiques, Culture Générale, Langues & Épreuves sportives",
+    admissibilite: "Baccalauréat requis, limite d'âge (18 à 22 ans), aptitude physique et médicale stricte.",
+    debouches: "Officiers des Forces Armées Sénégalaises et cadres supérieurs de Défense"
+  },
+  {
+    sigle: "EMS Dakar",
+    nom: "École Militaire de Santé (Camp Dial Diop)",
+    domaine: "Médecine, Pharmacie, Odontologie, Vétérinaire",
+    series: "S1, S2",
+    icon: "⚕️",
+    couleur: "bg-emerald-800",
+    badge: "Médecine Militaire",
+    desc: "Forme les médecins, chirurgiens-dentistes et pharmaciens des Armées et des hôpitaux militaires de l'État du Sénégal.",
+    epreuves: "Sciences de la Vie et de la Terre (SVT), Sciences Physiques, Mathématiques et Français",
+    admissibilite: "Excellence académique en Terminale scientifique, test psychotechnique et visite médicale militaire.",
+    debouches: "Médecins-Officiers, Praticiens hospitaliers, Santé publique"
+  },
+  {
+    sigle: "Concours Général",
+    nom: "Concours Général Sénégalais",
+    domaine: "Excellence Académique Nationale",
+    series: "Toutes séries (Terminale & 1ère)",
+    icon: "🏆",
+    couleur: "bg-amber-800",
+    badge: "Prestige National",
+    desc: "La plus haute distinction scolaire du Sénégal décernée par le Président de la République récompensant les meilleurs élèves de Terminale et Première du pays.",
+    epreuves: "Épreuves reines : Mathématiques, Sciences Physiques, SVT, Philosophie, Français, Histoire-Géo, Citoyenneté",
+    admissibilite: "Sélection des meilleurs élèves présentés officiellement par chaque lycée du Sénégal.",
+    debouches: "Bourses d'excellence du Chef de l'État, accès prioritaire aux meilleures universités mondiales"
+  },
+  {
+    sigle: "ENSAE Dakar",
+    nom: "École Nationale de la Statistique (ANSD)",
+    domaine: "Statistique, Données & Économie",
+    series: "S1, S2, S3, L2",
+    icon: "📊",
+    couleur: "bg-teal-800",
+    badge: "Data & Économie",
+    desc: "Forme les Ingénieurs Statisticiens Économistes (ISE) et Techniciens (ITS). École de renommée panafricaine rattachée à l'Agence Nationale de la Statistique et de la Démographie.",
+    epreuves: "Mathématiques approfondies (Analyse, Algèbre, Probabilités), Culture Générale & Français",
+    admissibilite: "Concours international très sélectif pour bacheliers et étudiants scientifiques.",
+    debouches: "Banques centrales (BCEAO), Institutions internationales (ONU, FMI, Banque Mondiale), Data Scientists"
+  },
+  {
+    sigle: "Concours Directs d'État",
+    nom: "Fonction Publique d'État (Post-BAC)",
+    domaine: "Administration, Douanes, Police & Finances",
+    series: "Toutes séries",
+    icon: "🏛️",
+    couleur: "bg-slate-800",
+    badge: "Fonction Publique",
+    desc: "Concours de recrutement direct de l'Administration sénégalaise accessibles aux titulaires du Bac : Douanes, Police, Impôts & Domaines, ENA Cycle B, Greffiers.",
+    epreuves: "Dissertation d'Ordre Général, Droit Public / Économie, Tests d'aptitude verbale et logique",
+    admissibilite: "Nationalité sénégalaise, titulaire du Baccalauréat, casier judiciaire vierge.",
+    debouches: "Fonctionnaires d'État titulaires avec titularisation immédiate"
+  }
+];
+
 export default function DashboardEleve() {
   const router = useRouter();
 
@@ -25,6 +132,9 @@ export default function DashboardEleve() {
   // Documents & Vidéos du cycle
   const [cycleAnnales, setCycleAnnales] = useState<any[]>([]);
   const [cycleVideos, setCycleVideos] = useState<any[]>([]);
+
+  // Modal Concours d'État & Grandes Écoles
+  const [selectedConcoursModal, setSelectedConcoursModal] = useState<any | null>(null);
 
   useEffect(() => {
     // Timeout de sécurité : garantit que le spinner ne tourne JAMAIS plus de 3.5 secondes
@@ -241,6 +351,14 @@ export default function DashboardEleve() {
             >
               <i className="fas fa-book-open"></i> Annales {studentCycle}
             </Link>
+            {studentCycle === "Lycée" && (
+              <Link
+                href="/examens?cycle=Concours"
+                className="bg-purple-900 hover:bg-purple-950 text-white font-bold px-5 py-3 rounded-2xl text-xs sm:text-sm transition flex items-center gap-2 shadow-sm border border-purple-400/30"
+              >
+                <i className="fas fa-landmark text-amber-300"></i> Concours &amp; Grandes Écoles
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -467,6 +585,114 @@ export default function DashboardEleve() {
         </div>
       </div>
 
+      {/* SECTION EXCLUSIVE LYCÉE : CONCOURS D'ÉTAT & GRANDES ÉCOLES DU SÉNÉGAL */}
+      {studentCycle === "Lycée" && (
+        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 rounded-3xl p-6 sm:p-8 text-white shadow-lg border border-purple-500/20 space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400 text-gray-900 text-xs font-black uppercase mb-2 shadow-sm">
+                <i className="fas fa-landmark"></i> Spécial Lycée • Préparation Post-BAC
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
+                <span>Concours d&apos;État &amp; Grandes Écoles du Sénégal</span>
+                <span className="text-amber-400 text-lg">⭐</span>
+              </h3>
+              <p className="text-xs sm:text-sm text-purple-200 mt-1 max-w-2xl leading-relaxed">
+                Anticipez votre admission post-BAC dans les filières d&apos;élite sénégalaises : Écoles d&apos;Ingénieurs (EPT, ESP), Classes Préparatoires (CPGE Thiès), Grandes Écoles Militaires (CUGEM, EMS), Écoles de Statistique et Concours d&apos;État.
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2.5 flex-shrink-0">
+              <Link
+                href="/examens?cycle=Concours"
+                className="bg-sama-orange hover:bg-amber-600 text-white font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-sm"
+              >
+                <i className="fas fa-file-signature"></i> Annales &amp; Sujets de Concours
+              </Link>
+              <Link
+                href="/orientation"
+                className="bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-2 border border-white/20 backdrop-blur-md"
+              >
+                <i className="fas fa-compass"></i> Guide Grandes Écoles
+              </Link>
+            </div>
+          </div>
+
+          {/* Grille des 8 Concours Clés pour Lycéens */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            {LYCEE_CONCOURS.map((concours, index) => (
+              <div
+                key={index}
+                className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-xl backdrop-blur-sm group"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl">{concours.icon}</span>
+                    <span className="bg-white/10 text-amber-300 text-[10px] font-black uppercase px-2 py-0.5 rounded-full border border-white/10">
+                      {concours.badge}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h4 className="text-base font-black text-white group-hover:text-amber-300 transition">
+                      {concours.sigle}
+                    </h4>
+                    <p className="text-[11px] font-bold text-purple-200">{concours.nom}</p>
+                    <p className="text-[10px] text-amber-400 font-extrabold uppercase tracking-wider mt-0.5">
+                      {concours.domaine}
+                    </p>
+                  </div>
+
+                  <p className="text-[11px] text-gray-300 line-clamp-3 leading-relaxed">
+                    {concours.desc}
+                  </p>
+
+                  <div className="bg-black/30 rounded-xl p-2.5 space-y-1 border border-white/5">
+                    <div className="text-[10px] text-gray-400 flex items-center gap-1">
+                      <i className="fas fa-user-graduate text-purple-300 text-[9px]"></i> Séries : <strong className="text-white">{concours.series}</strong>
+                    </div>
+                    <div className="text-[10px] text-gray-400 flex items-center gap-1 truncate">
+                      <i className="fas fa-pen text-amber-300 text-[9px]"></i> Épreuves : <span className="text-gray-200 truncate">{concours.epreuves}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-white/10 flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedConcoursModal(concours)}
+                    className="flex-1 bg-white text-gray-900 hover:bg-amber-300 font-extrabold text-[11px] py-2 px-3 rounded-xl transition text-center shadow-sm"
+                  >
+                    Détails &amp; Épreuves
+                  </button>
+                  <Link
+                    href="/examens?cycle=Concours"
+                    className="bg-white/10 hover:bg-white/20 text-white text-[11px] py-2 px-2.5 rounded-xl transition border border-white/10"
+                    title="Voir les annales"
+                  >
+                    <i className="fas fa-arrow-right"></i>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-purple-200">
+            <div className="flex items-center gap-2.5">
+              <i className="fas fa-info-circle text-amber-400 text-base"></i>
+              <span>
+                <strong>Conseil SAMA ACADÉMIE :</strong> Pour les séries S1, S2 et S3, commencez la préparation des concours d&apos;ingénieurs (EPT/ESP/CPGE) dès le premier trimestre de la Terminale.
+              </span>
+            </div>
+            <Link
+              href="/orientation"
+              className="text-amber-300 hover:underline font-bold whitespace-nowrap flex items-center gap-1 text-xs"
+            >
+              Voir le calendrier officiel des concours →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Vidéos de révision du cycle */}
       <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-4">
@@ -499,6 +725,102 @@ export default function DashboardEleve() {
           ))}
         </div>
       </div>
+
+      {/* MODAL DÉTAILS CONCOURS LYCÉE */}
+      {selectedConcoursModal && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setSelectedConcoursModal(null)}
+        >
+          <div
+            className="bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl space-y-6 relative border border-gray-100 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-4">
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">{selectedConcoursModal.icon}</span>
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-900 text-[10px] font-black uppercase mb-1">
+                    {selectedConcoursModal.badge}
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">
+                    {selectedConcoursModal.sigle}
+                  </h3>
+                  <p className="text-xs text-gray-500 font-bold">{selectedConcoursModal.nom}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedConcoursModal(null)}
+                className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-1">Présentation</h4>
+                <p className="text-gray-700 leading-relaxed bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
+                  {selectedConcoursModal.desc}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3.5 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-sama-primary flex items-center gap-1">
+                    <i className="fas fa-graduation-cap"></i> Séries Éligibles
+                  </span>
+                  <p className="font-bold text-gray-900 text-xs">{selectedConcoursModal.series}</p>
+                </div>
+
+                <div className="bg-purple-50 border border-purple-100 rounded-2xl p-3.5 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-purple-800 flex items-center gap-1">
+                    <i className="fas fa-award"></i> Domaine
+                  </span>
+                  <p className="font-bold text-gray-900 text-xs">{selectedConcoursModal.domaine}</p>
+                </div>
+              </div>
+
+              <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                  <i className="fas fa-pencil-alt"></i> Nature des Épreuves Écrites
+                </span>
+                <p className="font-extrabold text-gray-900 text-xs">{selectedConcoursModal.epreuves}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 flex items-center gap-1">
+                  <i className="fas fa-check-circle text-green-600"></i> Conditions &amp; Admissibilité
+                </span>
+                <p className="text-gray-700 leading-relaxed">{selectedConcoursModal.admissibilite}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 flex items-center gap-1">
+                  <i className="fas fa-briefcase text-blue-600"></i> Débouchés &amp; Métiers
+                </span>
+                <p className="text-gray-700 font-semibold">{selectedConcoursModal.debouches}</p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center gap-3">
+              <Link
+                href="/examens?cycle=Concours"
+                className="w-full sm:flex-1 bg-sama-primary hover:bg-blue-800 text-white font-extrabold text-xs py-3 px-4 rounded-xl text-center transition shadow-sm flex items-center justify-center gap-2"
+              >
+                <i className="fas fa-file-pdf"></i> Voir les Annales &amp; Sujets du Concours
+              </Link>
+              <Link
+                href="/orientation"
+                className="w-full sm:flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs py-3 px-4 rounded-xl text-center transition flex items-center justify-center gap-2"
+              >
+                <i className="fas fa-compass"></i> Fiche d&apos;Orientation Complète
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
