@@ -60,26 +60,33 @@ export default function DashboardParent() {
         return;
       }
 
-      if (!profile) {
-        setLoading(false);
-        safeRedirect("/login", router);
-        return;
-      }
+      const safeProfile = profile || {
+        id: user.id,
+        email: user.email,
+        first_name: user.user_metadata?.first_name || "Parent",
+        last_name: user.user_metadata?.last_name || "",
+        role: "parent",
+        phone: user.user_metadata?.phone || "",
+        region: user.user_metadata?.region || "Dakar",
+        bio: user.user_metadata?.bio || "",
+        level: user.user_metadata?.level || "Collège",
+        verified: true,
+      };
 
-      setCurrentUser(profile);
+      setCurrentUser(safeProfile);
 
     // Extraction des informations de l'enfant depuis la bio ou le profil
-    if (profile.bio && profile.bio.includes("Enfant :")) {
-      const parts = profile.bio.split("|");
+    if (safeProfile.bio && safeProfile.bio.includes("Enfant :")) {
+      const parts = safeProfile.bio.split("|");
       const name = parts[0]?.replace("Enfant :", "").trim() || "Mon Enfant";
       const cycle = parts[1]?.replace("Cycle :", "").trim() || "Lycée";
-      const level = parts[2]?.replace("Classe :", "").trim() || profile.level || "Terminale";
+      const level = parts[2]?.replace("Classe :", "").trim() || safeProfile.level || "Terminale";
       setChildInfo({ name, cycle, level });
     } else {
       setChildInfo({
-        name: profile.first_name ? `Enfant de ${profile.first_name}` : "Mon Enfant",
-        cycle: profile.level?.includes("Primaire") ? "Primaire" : profile.level?.includes("Collège") ? "Collège" : "Lycée",
-        level: profile.level || "Classe en cours"
+        name: safeProfile.first_name ? `Enfant de ${safeProfile.first_name}` : "Mon Enfant",
+        cycle: safeProfile.level?.includes("Primaire") ? "Primaire" : safeProfile.level?.includes("Collège") ? "Collège" : "Lycée",
+        level: safeProfile.level || "Classe en cours"
       });
     }
 

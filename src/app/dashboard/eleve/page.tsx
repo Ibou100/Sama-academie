@@ -61,26 +61,50 @@ export default function DashboardEleve() {
         return;
       }
 
-      if (!profile) {
-        setLoading(false);
-        safeRedirect("/login", router);
-        return;
-      }
+      const safeProfile = profile || {
+        id: user.id,
+        email: user.email,
+        first_name: user.user_metadata?.first_name || "Élève",
+        last_name: user.user_metadata?.last_name || "",
+        role: "eleve",
+        level: user.user_metadata?.level || "Lycée",
+        phone: user.user_metadata?.phone || "",
+        region: user.user_metadata?.region || "Dakar",
+        verified: true,
+      };
 
-      setCurrentUser(profile);
+      setCurrentUser(safeProfile);
 
     // Détermination du cycle de l'élève
-    const sc = studentCycleOf(profile.level);
+    const sc = studentCycleOf(safeProfile.level);
     const detectedCycle: "Primaire" | "Collège" | "Lycée" = sc === "Primaire" ? "Primaire" : sc === "College" ? "Collège" : "Lycée";
     setStudentCycle(detectedCycle);
 
     // 1. Récupérer l'enseignant assigné (validé par l'administration)
-    const { data: requests } = await supabase
-      .from("tutoring_requests")
-      .select(`*, teacher:profiles!teacher_id(id, first_name, last_name, email, phone, subject, region, avatar_url)`)
-      .eq("student_id", user.id)
-      .eq("status", "accepted")
-      .order("created_at", { ascending: false });
+    let requests = null;
+    try {
+      const { data: reqsWithProfiles, error: joinErr } = await supabase
+        .from("tutoring_requests")
+        .select(`*, teacher:profiles!teacher_id(id, first_name, last_name, email, phone, subject, region, avatar_url)`)
+        .eq("student_id", user.id)
+        .eq("status", "accepted")
+        .order("created_at", { ascending: false });
+      if (!joinErr && reqsWithProfiles) {
+        requests = reqsWithProfiles;
+      }
+    } catch (_) {}
+
+    if (!requests) {
+      try {
+        const { data: simpleReqs } = await supabase
+          .from("tutoring_requests")
+          .select("*")
+          .eq("student_id", user.id)
+          .eq("status", "accepted")
+          .order("created_at", { ascending: false });
+        requests = simpleReqs || [];
+      } catch (_) {}
+    }
 
     if (requests && requests.length > 0) {
       const activeReq = requests[0];

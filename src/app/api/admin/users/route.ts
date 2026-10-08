@@ -100,14 +100,24 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: updateErr.message }, { status: 400 });
     }
 
-    // Synchronisation métadonnées auth si le rôle a changé
-    if (updates.role) {
-      try {
+    // Synchronisation métadonnées auth (rôle, vérification, matières...)
+    try {
+      const metaUpdates: Record<string, any> = {};
+      if (typeof updates.role !== "undefined") metaUpdates.role = updates.role;
+      if (typeof updates.verified !== "undefined") metaUpdates.verified = updates.verified;
+      if (typeof updates.subject !== "undefined") metaUpdates.subject = updates.subject;
+      if (typeof updates.level !== "undefined") metaUpdates.level = updates.level;
+      if (typeof updates.price !== "undefined") metaUpdates.price = updates.price;
+      if (typeof updates.experience !== "undefined") metaUpdates.experience = updates.experience;
+      if (typeof updates.phone !== "undefined") metaUpdates.phone = updates.phone;
+      if (typeof updates.region !== "undefined") metaUpdates.region = updates.region;
+
+      if (Object.keys(metaUpdates).length > 0) {
         await admin.auth.admin.updateUserById(userId, {
-          user_metadata: { role: updates.role },
+          user_metadata: metaUpdates,
         });
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
 
     // Traçabilité serveur
     const { recordServerAudit } = await import("@/lib/serverAudit");

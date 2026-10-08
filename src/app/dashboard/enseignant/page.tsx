@@ -101,23 +101,49 @@ export default function DashboardEnseignant() {
         return;
       }
 
-      if (!profile) {
-        setLoading(false);
-        safeRedirect("/login", router);
-        return;
-      }
+      const safeProfile = profile || {
+        id: user.id,
+        email: user.email,
+        first_name: user.user_metadata?.first_name || "Enseignant",
+        last_name: user.user_metadata?.last_name || "",
+        role: "enseignant",
+        subject: user.user_metadata?.subject || "Mathématiques",
+        level: user.user_metadata?.level || "Lycée",
+        phone: user.user_metadata?.phone || "",
+        region: user.user_metadata?.region || "Dakar",
+        verified: true,
+      };
 
-      setCurrentUser(profile);
-      setVideoSubject(profile.subject || "Mathématiques");
-      setWebinarSubject(profile.subject || "Mathématiques");
+      setCurrentUser(safeProfile);
+      setVideoSubject(safeProfile.subject || "Mathématiques");
+      setWebinarSubject(safeProfile.subject || "Mathématiques");
 
       // 1. RÈGLE D'OR SAMA ACADÉMIE : Récupérer UNIQUEMENT les élèves assignés et validés par l'administration
-      const { data: requests } = await supabase
-        .from("tutoring_requests")
-        .select(`*, student:profiles!student_id(id, first_name, last_name, email, phone, region, level, avatar_url)`)
-        .eq("teacher_id", user.id)
-        .eq("status", "accepted")
-        .order("created_at", { ascending: false });
+      let requests = null;
+      try {
+        const { data: reqsWithProfiles, error: joinErr } = await supabase
+          .from("tutoring_requests")
+          .select(`*, student:profiles!student_id(id, first_name, last_name, email, phone, region, level, avatar_url)`)
+          .eq("teacher_id", user.id)
+          .eq("status", "accepted")
+          .order("created_at", { ascending: false });
+        
+        if (!joinErr && reqsWithProfiles) {
+          requests = reqsWithProfiles;
+        }
+      } catch (_) {}
+
+      if (!requests) {
+        try {
+          const { data: simpleReqs } = await supabase
+            .from("tutoring_requests")
+            .select("*")
+            .eq("teacher_id", user.id)
+            .eq("status", "accepted")
+            .order("created_at", { ascending: false });
+          requests = simpleReqs || [];
+        } catch (_) {}
+      }
 
       if (requests && requests.length > 0) {
         setAssignedStudents(requests);

@@ -41,7 +41,25 @@ export async function getClientSessionAndRole(timeoutMs = 3000): Promise<SafeAut
       (user.user_metadata?.role as "enseignant" | "eleve" | "parent" | "admin") ||
       "eleve";
 
-    return { user, role, profile };
+    // Profil résilient : si la base RLS bloque ou tarde, synthétiser immédiatement depuis les métadonnées de session
+    const finalProfile = profile || {
+      id: user.id,
+      email: user.email,
+      first_name: user.user_metadata?.first_name || (role === "enseignant" ? "Enseignant" : role === "parent" ? "Parent" : "Élève"),
+      last_name: user.user_metadata?.last_name || "",
+      role: role,
+      phone: user.user_metadata?.phone || "",
+      region: user.user_metadata?.region || "Dakar",
+      level: user.user_metadata?.level || "",
+      subject: user.user_metadata?.subject || (role === "enseignant" ? "Mathématiques" : ""),
+      experience: user.user_metadata?.experience || "",
+      price: user.user_metadata?.price || "",
+      bio: user.user_metadata?.bio || "",
+      verified: user.user_metadata?.verified ?? true,
+      created_at: user.created_at,
+    };
+
+    return { user, role, profile: finalProfile };
   } catch (err) {
     console.warn("getClientSessionAndRole warning:", err);
     return { user: null, role: null, profile: null };

@@ -47,36 +47,9 @@ function Login() {
       return;
     }
 
-    let userRole = signInData?.user?.user_metadata?.role || "eleve";
+    const userRole = (signInData?.user?.user_metadata?.role as string) || "eleve";
 
-    // Auto-synchronisation des métadonnées vers profiles si des données manquent
-    if (signInData?.user) {
-      try {
-        const meta = signInData.user.user_metadata || {};
-        const { data: p } = await supabase
-          .from("profiles")
-          .select("role, experience, price, bio, level, subject")
-          .eq("id", signInData.user.id)
-          .maybeSingle();
-
-        if (p?.role) userRole = p.role;
-
-        if (p && (!p.experience || !p.price || !p.bio || !p.level || !p.subject)) {
-          const updates: Record<string, any> = {};
-          if (!p.experience && meta.experience) updates.experience = meta.experience;
-          if (!p.price && meta.price) updates.price = meta.price;
-          if (!p.bio && meta.bio) updates.bio = meta.bio;
-          if (!p.level && meta.level) updates.level = meta.level;
-          if (!p.subject && meta.subject) updates.subject = meta.subject;
-
-          if (Object.keys(updates).length > 0) {
-            await supabase.from("profiles").update(updates).eq("id", signInData.user.id);
-          }
-        }
-      } catch (_) {}
-    }
-
-    // Redirection stricte et intelligente selon le rôle de l'utilisateur
+    // Détermination immédiate de l'URL de destination
     let destination = redirectTo;
     if (userRole === "enseignant") {
       destination = "/dashboard/enseignant";
@@ -86,6 +59,33 @@ function Login() {
       destination = "/admin";
     } else if (destination === "/dashboard" || destination.startsWith("/dashboard")) {
       destination = "/dashboard/eleve";
+    }
+
+    // Auto-synchronisation asynchrone en arrière-plan sans bloquer la navigation de l'utilisateur
+    if (signInData?.user) {
+      void (async () => {
+        try {
+          const meta = signInData.user.user_metadata || {};
+          const { data: p } = await supabase
+            .from("profiles")
+            .select("role, experience, price, bio, level, subject")
+            .eq("id", signInData.user.id)
+            .maybeSingle();
+
+          if (p && (!p.experience || !p.price || !p.bio || !p.level || !p.subject)) {
+            const updates: Record<string, any> = {};
+            if (!p.experience && meta.experience) updates.experience = meta.experience;
+            if (!p.price && meta.price) updates.price = meta.price;
+            if (!p.bio && meta.bio) updates.bio = meta.bio;
+            if (!p.level && meta.level) updates.level = meta.level;
+            if (!p.subject && meta.subject) updates.subject = meta.subject;
+
+            if (Object.keys(updates).length > 0) {
+              await supabase.from("profiles").update(updates).eq("id", signInData.user.id);
+            }
+          }
+        } catch (_) {}
+      })();
     }
 
     safeRedirect(destination, router);
