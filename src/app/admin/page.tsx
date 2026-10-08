@@ -59,6 +59,25 @@ export default function AdminDashboard() {
   const [teacherFilterStatus, setTeacherFilterStatus] = useState<"all" | "pending" | "verified">("all");
   const [teacherSearch, setTeacherSearch] = useState("");
 
+  // Création directe d'utilisateur (Enseignant / Élève / Parent / Admin) par l'Admin
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    role: "enseignant",
+    first_name: "",
+    last_name: "",
+    email: "",
+    password: "",
+    phone: "",
+    region: "Dakar",
+    level: "Collège (6e à 3e)",
+    subject: "Mathématiques",
+    experience: "5 ans d'expérience",
+    price: "6000 FCFA par élève",
+    bio: "",
+    verified: true,
+  });
+
   // Configuration Support & Annonce Globale
   const [supportPhone, setSupportPhone] = useState("+221 77 467 31 09");
   const [supportWelcomeMsg, setSupportWelcomeMsg] = useState("Bonjour SAMA ACADÉMIE, j'ai besoin d'une orientation pour mon enfant.");
@@ -876,6 +895,52 @@ export default function AdminDashboard() {
     setSavingTeacherDossier(false);
   };
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserForm.email || !newUserForm.password || !newUserForm.first_name || !newUserForm.last_name) {
+      showToast("Veuillez remplir le prénom, le nom, l'email et le mot de passe.", "error");
+      return;
+    }
+    setCreatingUser(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-passcode": adminPasscode || "sama2026",
+        },
+        body: JSON.stringify(newUserForm),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        showToast(data.error || "Erreur lors de la création de l'utilisateur.", "error");
+      } else {
+        showToast(`✅ Compte ${newUserForm.role} créé avec succès et immédiatement activé !`, "success");
+        setIsCreateUserModalOpen(false);
+        setNewUserForm({
+          role: "enseignant",
+          first_name: "",
+          last_name: "",
+          email: "",
+          password: "",
+          phone: "",
+          region: "Dakar",
+          level: "Collège (6e à 3e)",
+          subject: "Mathématiques",
+          experience: "5 ans d'expérience",
+          price: "6000 FCFA par élève",
+          bio: "",
+          verified: true,
+        });
+        fetchData();
+      }
+    } catch (err: any) {
+      showToast("Erreur de communication avec le serveur.", "error");
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
   /* ========================================================================= */
   /*  CLASSES VIRTUELLES (SUPERVISION DIRECT)                                  */
   /* ========================================================================= */
@@ -1578,7 +1643,30 @@ export default function AdminDashboard() {
                   <p className="text-xs text-slate-500">Recherchez, gérez les rôles, réinitialisez les mots de passe et contactez les membres directement.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-400">Actions rapides par compte disponibles ci-dessous</span>
+                  <button
+                    onClick={() => {
+                      setNewUserForm({
+                        role: "enseignant",
+                        first_name: "",
+                        last_name: "",
+                        email: "",
+                        password: "",
+                        phone: "",
+                        region: "Dakar",
+                        level: "Collège (6e à 3e)",
+                        subject: "Mathématiques",
+                        experience: "5 ans d'expérience",
+                        price: "6000 FCFA par élève",
+                        bio: "",
+                        verified: true,
+                      });
+                      setIsCreateUserModalOpen(true);
+                    }}
+                    className="bg-sama-primary hover:bg-blue-800 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
+                  >
+                    <i className="fas fa-user-plus"></i>
+                    <span>+ Créer un Utilisateur / Enseignant</span>
+                  </button>
                 </div>
               </div>
 
@@ -2056,6 +2144,31 @@ export default function AdminDashboard() {
                 >
                   <span>✅ Accrédités</span>
                   <span className="bg-white/80 px-1.5 py-0.2 rounded-full text-[10px] font-black">{stats.verifiedTeachersCount}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setNewUserForm({
+                      role: "enseignant",
+                      first_name: "",
+                      last_name: "",
+                      email: "",
+                      password: "",
+                      phone: "",
+                      region: "Dakar",
+                      level: "Collège (6e à 3e)",
+                      subject: "Mathématiques",
+                      experience: "5 ans d'expérience",
+                      price: "6000 FCFA par élève",
+                      bio: "",
+                      verified: true,
+                    });
+                    setIsCreateUserModalOpen(true);
+                  }}
+                  className="bg-sama-primary hover:bg-blue-800 text-white font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer ml-1"
+                >
+                  <i className="fas fa-plus-circle"></i>
+                  <span>+ Nouveau Professeur</span>
                 </button>
               </div>
             </div>
@@ -3054,6 +3167,277 @@ export default function AdminDashboard() {
                 >
                   Mettre à jour le mot de passe d&apos;accès
                 </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL : CRÉATION DIRECTE D'UN COMPTE PAR L'ADMIN */}
+        {isCreateUserModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+            <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-8 space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-100 text-sama-primary flex items-center justify-center text-lg">
+                    <i className="fas fa-user-plus"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900">Créer un Nouveau Compte</h3>
+                    <p className="text-[11px] text-slate-500">Email auto-confirmé et profil créé immédiatement sans passer par Supabase SQL.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateUserModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-700 p-2 text-lg cursor-pointer"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateUser} className="space-y-4 text-xs">
+                {/* Choix du rôle */}
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5">Rôle du Compte</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { id: "enseignant", label: "Professeur", icon: "chalkboard-teacher" },
+                      { id: "eleve", label: "Élève", icon: "graduation-cap" },
+                      { id: "parent", label: "Parent", icon: "child" },
+                      { id: "admin", label: "Admin", icon: "cog" },
+                    ].map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setNewUserForm({ ...newUserForm, role: r.id })}
+                        className={`p-2.5 rounded-xl border font-bold text-center flex flex-col items-center gap-1 transition cursor-pointer ${
+                          newUserForm.role === r.id
+                            ? "bg-sama-primary text-white border-sama-primary shadow-xs"
+                            : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        <i className={`fas fa-${r.icon} text-sm`}></i>
+                        <span className="text-[11px]">{r.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Prénom & Nom */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Prénom *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newUserForm.first_name}
+                      onChange={(e) => setNewUserForm({ ...newUserForm, first_name: e.target.value })}
+                      placeholder="Ex: Ibrahima"
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Nom *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newUserForm.last_name}
+                      onChange={(e) => setNewUserForm({ ...newUserForm, last_name: e.target.value })}
+                      placeholder="Ex: Ndiaye"
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                    />
+                  </div>
+                </div>
+
+                {/* Email & Mot de passe */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Adresse Email *</label>
+                    <input
+                      type="email"
+                      required
+                      value={newUserForm.email}
+                      onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                      placeholder="prof@sama-academie.sn"
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Mot de passe *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newUserForm.password}
+                      onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                      placeholder="Minimum 6 caractères"
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                    />
+                  </div>
+                </div>
+
+                {/* Téléphone & Région */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Téléphone (WhatsApp)</label>
+                    <input
+                      type="tel"
+                      value={newUserForm.phone}
+                      onChange={(e) => setNewUserForm({ ...newUserForm, phone: e.target.value })}
+                      placeholder="+221 77 000 00 00"
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Région</label>
+                    <input
+                      type="text"
+                      value={newUserForm.region}
+                      onChange={(e) => setNewUserForm({ ...newUserForm, region: e.target.value })}
+                      placeholder="Dakar, Thiès..."
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                    />
+                  </div>
+                </div>
+
+                {/* Champs spécifiques Enseignant */}
+                {newUserForm.role === "enseignant" && (
+                  <div className="space-y-3 pt-2 border-t border-slate-100">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Matière enseignée</label>
+                        <select
+                          value={newUserForm.subject}
+                          onChange={(e) => setNewUserForm({ ...newUserForm, subject: e.target.value })}
+                          className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary bg-white"
+                        >
+                          <option value="Mathématiques">Mathématiques</option>
+                          <option value="Physique-Chimie">Physique-Chimie</option>
+                          <option value="Français">Français</option>
+                          <option value="Anglais">Anglais</option>
+                          <option value="SVT">SVT</option>
+                          <option value="Philosophie">Philosophie</option>
+                          <option value="Histoire-Géographie">Histoire-Géographie</option>
+                          <option value="Arabe">Arabe</option>
+                          <option value="Toutes matières (Primaire)">Toutes matières (Primaire)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Cycle d&apos;enseignement</label>
+                        <select
+                          value={newUserForm.level}
+                          onChange={(e) => setNewUserForm({ ...newUserForm, level: e.target.value })}
+                          className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary bg-white"
+                        >
+                          <option value="Collège (6e à 3e)">Collège (6e à 3e)</option>
+                          <option value="Lycée (Seconde à Terminale)">Lycée (Seconde à Terminale)</option>
+                          <option value="Primaire (CI à CM2)">Primaire (CI à CM2)</option>
+                          <option value="Tous cycles">Tous cycles</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Tarif mensuel souhaité</label>
+                        <input
+                          type="text"
+                          value={newUserForm.price}
+                          onChange={(e) => setNewUserForm({ ...newUserForm, price: e.target.value })}
+                          placeholder="Ex: 6000 FCFA par élève"
+                          className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Diplôme &amp; Expérience</label>
+                        <input
+                          type="text"
+                          value={newUserForm.experience}
+                          onChange={(e) => setNewUserForm({ ...newUserForm, experience: e.target.value })}
+                          placeholder="Ex: 5 ans (FASTEF / UCAD)"
+                          className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Présentation / Bio</label>
+                      <textarea
+                        rows={2}
+                        value={newUserForm.bio}
+                        onChange={(e) => setNewUserForm({ ...newUserForm, bio: e.target.value })}
+                        placeholder="Courte description de l'enseignant..."
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                      />
+                    </div>
+
+                    <div className="bg-emerald-50/80 p-3 rounded-xl border border-emerald-200 flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-emerald-900 block text-xs">Accréditer immédiatement</span>
+                        <span className="text-[11px] text-emerald-700">Rend le professeur immédiatement visible dans l&apos;annuaire public.</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={newUserForm.verified}
+                        onChange={(e) => setNewUserForm({ ...newUserForm, verified: e.target.checked })}
+                        className="w-4 h-4 text-emerald-600 rounded cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Champ spécifique Élève ou Parent */}
+                {newUserForm.role === "eleve" && (
+                  <div className="pt-2 border-t border-slate-100">
+                    <label className="block font-bold text-slate-700 mb-1">Classe de l&apos;élève</label>
+                    <input
+                      type="text"
+                      value={newUserForm.level}
+                      onChange={(e) => setNewUserForm({ ...newUserForm, level: e.target.value })}
+                      placeholder="Ex: Lycée - Terminale S2 ou Collège - 3ème"
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                    />
+                  </div>
+                )}
+
+                {newUserForm.role === "parent" && (
+                  <div className="pt-2 border-t border-slate-100">
+                    <label className="block font-bold text-slate-700 mb-1">Enfant(s) suivi(s)</label>
+                    <input
+                      type="text"
+                      value={newUserForm.level}
+                      onChange={(e) => setNewUserForm({ ...newUserForm, level: e.target.value })}
+                      placeholder="Ex: Enfant : Modou (Terminale S2)"
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 outline-none focus:border-sama-primary"
+                    />
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateUserModalOpen(false)}
+                    className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-bold transition cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creatingUser}
+                    className="bg-sama-primary hover:bg-blue-800 text-white font-black px-5 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    {creatingUser ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin"></i>
+                        <span>Création en cours...</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-check-circle"></i>
+                        <span>Créer &amp; Activer le Compte</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </form>
             </div>
           </div>

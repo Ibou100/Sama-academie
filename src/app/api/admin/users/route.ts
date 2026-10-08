@@ -125,3 +125,117 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: e?.message || "Erreur serveur." }, { status: 500 });
   }
 }
+
+export async function POST(req: Request) {
+  try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!serviceKey || !url) {
+      return NextResponse.json(
+        { error: "La clé SUPABASE_SERVICE_ROLE_KEY est absente sur le serveur." },
+        { status: 500 }
+      );
+    }
+
+    const payload = await req.json().catch(() => ({}));
+    const {
+      email,
+      password,
+      first_name,
+      last_name,
+      role = "enseignant",
+      phone = "",
+      region = "Dakar",
+      level = "",
+      subject = "",
+      experience = "",
+      price = "",
+      bio = "",
+      verified = true,
+    } = payload;
+
+    if (!email || !password || !first_name || !last_name) {
+      return NextResponse.json(
+        { error: "Veuillez renseigner le prénom, le nom, l'email et le mot de passe." },
+        { status: 400 }
+      );
+    }
+
+    const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+
+    // 1. Vérification des droits administrateur (Session ou Passcode)
+    const authResult = await checkAdminAuthorization(req, admin);
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: authResult.reason || "Accès réservé aux administrateurs." }, { status: 403 });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // 2. Création de l'utilisateur dans Supabase Auth avec email_confirm: true (immédiatement actif)
+    const { data: authData, error: authErr } = await admin.auth.admin.createUser({
+      email: normalizedEmail,
+      password: password,
+      email_confirm: true,
+      user_metadata: {
+        first_name: first_name.trim(),
+        last_name: last_name.trim(),
+        role,
+        phone: phone.trim(),
+        region,
+        level,
+        subject: role === "enseignant" ? subject : null,
+        experience: role === "enseignant" ? experience : null,
+        price: role === "enseignant" ? price : null,
+        bio: bio.trim(),
+        verified: !!verified,
+      },
+    });
+
+    if (authErr) {
+      return NextResponse.json({ error: authErr.message }, { status: 400 });
+    }
+
+    const userId = authData.user.id;
+
+    // 3. Upsert direct dans public.profiles avec toutes les métadonnées
+    const profilePayload = {
+      id: userId,
+      email: normalizedEmail,
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      role,
+      phone: phone.trim(),
+      region,
+      level: level || null,
+      subject: role === "enseignant" ? (subject || null) : null,
+      experience: role === "enseignant" ? (experience || null) : null,
+      price: role === "enseignant" ? (price || null) : null,
+      bio: bio.trim() || null,
+      verified: !!verified,
+    };
+
+    const { error: profileErr } = await admin.from("profiles").upsert(profilePayload);
+    if (profileErr) {
+      console.warn("Profile upsert warning:", profileErr.message);
+    }
+
+    // Traçabilité serveur
+    const { recordServerAudit } = await import("@/lib/serverAudit");
+    await recordServerAudit(req, admin, {
+      adminId: authResult.adminId,
+      adminEmail: authResult.adminEmail,
+      action: "CREATION_UTILISATEUR_ADMIN",
+      targetUserId: userId,
+      details: `Création du compte ${role} (${normalizedEmail}) par ${authResult.adminEmail}`,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      user: profilePayload,
+      message: `Compte ${role} créé avec succès et immédiatement activé !`,
+    });
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message || "Erreur serveur." }, { status: 500 });
+  }
+}
+

@@ -82,33 +82,62 @@ export default function Header() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const user = sessionData?.session?.user;
+        if (!user) {
+          setUserProfile(null);
+          return;
+        }
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("first_name, last_name, avatar_url, is_premium, role, level")
-        .eq("id", user.id)
-        .single();
+        const { data } = await supabase
+          .from("profiles")
+          .select("first_name, last_name, avatar_url, is_premium, role, level")
+          .eq("id", user.id)
+          .maybeSingle();
 
-      if (data) setUserProfile(data);
+        if (data) {
+          setUserProfile(data);
+        } else if (user.user_metadata) {
+          setUserProfile({
+            first_name: user.user_metadata.first_name || "Utilisateur",
+            last_name: user.user_metadata.last_name || "",
+            role: user.user_metadata.role || "eleve",
+            level: user.user_metadata.level || "",
+            avatar_url: user.user_metadata.avatar_url || null,
+            is_premium: false,
+          });
+        }
+      } catch (e) {
+        console.warn("Header fetchUser error:", e);
+      }
     };
 
     fetchUser();
 
     // Écouter les changements de session (connexion/déconnexion)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetchUser();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) {
+        setUserProfile(null);
+      } else {
+        fetchUser();
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (_) {}
     setUserProfile(null);
     setIsDropdownOpen(false);
-    router.push("/");
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    } else {
+      router.push("/");
+    }
   };
 
   return (

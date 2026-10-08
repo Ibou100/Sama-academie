@@ -4,6 +4,7 @@ import { detectCycle, studentCycleOf } from "@/lib/cycle";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getClientSessionAndRole, safeRedirect } from "@/lib/auth-helpers";
 import { supabase } from "@/lib/supabase";
 
 export default function DashboardEleve() {
@@ -26,40 +27,43 @@ export default function DashboardEleve() {
   const [cycleVideos, setCycleVideos] = useState<any[]>([]);
 
   useEffect(() => {
+    // Timeout de sécurité : garantit que le spinner ne tourne JAMAIS plus de 3.5 secondes
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 3500);
+
     fetchStudentData();
+
+    return () => clearTimeout(safetyTimer);
   }, []);
 
   const fetchStudentData = async () => {
-    setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user, role, profile } = await getClientSessionAndRole(3000);
 
       if (!user) {
-        router.replace("/login?redirect=/dashboard/eleve");
+        setLoading(false);
+        safeRedirect("/login", router);
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const userRole = profile?.role || user.user_metadata?.role;
-
-      if (userRole === "enseignant") {
-        router.replace("/dashboard/enseignant");
+      if (role === "enseignant") {
+        setLoading(false);
+        safeRedirect("/dashboard/enseignant", router);
         return;
-      } else if (userRole === "parent") {
-        router.replace("/dashboard/parent");
+      } else if (role === "parent") {
+        setLoading(false);
+        safeRedirect("/dashboard/parent", router);
         return;
-      } else if (userRole === "admin") {
-        router.replace("/admin");
+      } else if (role === "admin") {
+        setLoading(false);
+        safeRedirect("/admin", router);
         return;
       }
 
       if (!profile) {
-        router.replace("/login");
+        setLoading(false);
+        safeRedirect("/login", router);
         return;
       }
 
@@ -91,8 +95,8 @@ export default function DashboardEleve() {
 
       if (messages) {
         const docs = messages
-          .filter((m) => m.content?.startsWith("[SAMA_DOC]"))
-          .map((m) => {
+          .filter((m: any) => m.content?.startsWith("[SAMA_DOC]"))
+          .map((m: any) => {
             const raw = m.content.replace("[SAMA_DOC]", "").trim();
             const parts = raw.split("|");
             return {
@@ -106,8 +110,8 @@ export default function DashboardEleve() {
         setHomeworkList(docs);
 
         const evals = messages
-          .filter((m) => m.content?.startsWith("[SAMA_PROGRES]"))
-          .map((m) => {
+          .filter((m: any) => m.content?.startsWith("[SAMA_PROGRES]"))
+          .map((m: any) => {
             const raw = m.content.replace("[SAMA_PROGRES]", "").trim();
             const parts = raw.split("|");
             return {
@@ -135,14 +139,14 @@ export default function DashboardEleve() {
     // 2. Récupérer les documents officiels STRICTEMENT du cycle de l'élève
     const { data: allAnnales } = await supabase.from("annales").select("*").order("created_at", { ascending: false });
     if (allAnnales) {
-      const filtered = allAnnales.filter((a) => detectCycle(a.level) === sc);
+      const filtered = allAnnales.filter((a: any) => detectCycle(a.level) === sc);
       setCycleAnnales(filtered.slice(0, 8));
     }
 
     // 3. Récupérer les vidéos STRICTEMENT du cycle de l'élève
     const { data: allVideos } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
     if (allVideos) {
-      const filteredVids = allVideos.filter((v) => detectCycle(v.level) === sc);
+      const filteredVids = allVideos.filter((v: any) => detectCycle(v.level) === sc);
       setCycleVideos(filteredVids.slice(0, 6));
     }
     } catch (err) {
@@ -157,6 +161,28 @@ export default function DashboardEleve() {
       <main className="flex-grow flex flex-col items-center justify-center py-24">
         <i className="fas fa-spinner fa-spin text-sama-primary text-4xl mb-3"></i>
         <p className="text-gray-500 font-semibold text-sm">Chargement de votre Espace Élève...</p>
+      </main>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <main className="flex-grow flex flex-col items-center justify-center py-20 px-4 text-center">
+        <div className="w-16 h-16 bg-blue-50 text-sama-primary rounded-full flex items-center justify-center text-3xl mb-4">
+          <i className="fas fa-graduation-cap"></i>
+        </div>
+        <h2 className="text-xl font-black text-gray-900 mb-2">Espace Élève SAMA ACADÉMIE</h2>
+        <p className="text-sm text-gray-500 max-w-sm mb-6">
+          Veuillez vous connecter avec vos identifiants élève pour consulter vos cours et devoirs.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link href="/login" className="btn-primary text-sm px-6 py-2.5">
+            Se connecter
+          </Link>
+          <Link href="/dashboard/enseignant" className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm px-5 py-2.5 rounded-xl transition">
+            Espace Enseignant
+          </Link>
+        </div>
       </main>
     );
   }

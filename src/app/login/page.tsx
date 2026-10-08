@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { safeRedirect } from "@/lib/auth-helpers";
 
 export default function LoginPage() {
   return (
@@ -36,7 +37,12 @@ function Login() {
     });
 
     if (signInError) {
-      setError("Email ou mot de passe incorrect.");
+      const msg = signInError.message || "";
+      if (msg.toLowerCase().includes("email not confirmed")) {
+        setError("Votre adresse email n'a pas encore été confirmée. Veuillez vérifier votre boîte mail ou contacter l'administration.");
+      } else {
+        setError("Email ou mot de passe incorrect.");
+      }
       setLoading(false);
       return;
     }
@@ -70,21 +76,19 @@ function Login() {
       } catch (_) {}
     }
 
-    // Redirection intelligente selon le rôle de l'utilisateur
+    // Redirection stricte et intelligente selon le rôle de l'utilisateur
     let destination = redirectTo;
-    if (destination === "/dashboard" || destination.startsWith("/dashboard")) {
-      if (userRole === "enseignant") {
-        destination = "/dashboard/enseignant";
-      } else if (userRole === "parent") {
-        destination = "/dashboard/parent";
-      } else if (userRole === "admin") {
-        destination = "/admin";
-      } else {
-        destination = "/dashboard/eleve";
-      }
+    if (userRole === "enseignant") {
+      destination = "/dashboard/enseignant";
+    } else if (userRole === "parent") {
+      destination = "/dashboard/parent";
+    } else if (userRole === "admin") {
+      destination = "/admin";
+    } else if (destination === "/dashboard" || destination.startsWith("/dashboard")) {
+      destination = "/dashboard/eleve";
     }
 
-    router.replace(destination);
+    safeRedirect(destination, router);
   };
 
   return (

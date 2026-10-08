@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getSupportConfig } from "@/lib/siteConfig";
+import { getClientSessionAndRole, safeRedirect } from "@/lib/auth-helpers";
 
 export default function DashboardParent() {
   const router = useRouter();
@@ -25,40 +26,43 @@ export default function DashboardParent() {
   const [homeworkList, setHomeworkList] = useState<any[]>([]);
 
   useEffect(() => {
+    // Timeout de sécurité : empêche tout blocage infini du spinner
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 3500);
+
     fetchParentData();
+
+    return () => clearTimeout(safetyTimer);
   }, []);
 
   const fetchParentData = async () => {
-    setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user, role, profile } = await getClientSessionAndRole(3000);
 
       if (!user) {
-        router.replace("/login?redirect=/dashboard/parent");
+        setLoading(false);
+        safeRedirect("/login", router);
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const userRole = profile?.role || user.user_metadata?.role;
-
-      if (userRole === "enseignant") {
-        router.replace("/dashboard/enseignant");
+      if (role === "enseignant") {
+        setLoading(false);
+        safeRedirect("/dashboard/enseignant", router);
         return;
-      } else if (userRole === "eleve") {
-        router.replace("/dashboard/eleve");
+      } else if (role === "eleve") {
+        setLoading(false);
+        safeRedirect("/dashboard/eleve", router);
         return;
-      } else if (userRole === "admin") {
-        router.replace("/admin");
+      } else if (role === "admin") {
+        setLoading(false);
+        safeRedirect("/admin", router);
         return;
       }
 
       if (!profile) {
-        router.replace("/login");
+        setLoading(false);
+        safeRedirect("/login", router);
         return;
       }
 
@@ -146,6 +150,28 @@ export default function DashboardParent() {
       <main className="flex-grow flex flex-col items-center justify-center py-24">
         <i className="fas fa-spinner fa-spin text-sama-primary text-4xl mb-3"></i>
         <p className="text-gray-500 font-semibold text-sm">Chargement de votre Espace Parent...</p>
+      </main>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <main className="flex-grow flex flex-col items-center justify-center py-20 px-4 text-center">
+        <div className="w-16 h-16 bg-purple-50 text-purple-700 rounded-full flex items-center justify-center text-3xl mb-4">
+          <i className="fas fa-child"></i>
+        </div>
+        <h2 className="text-xl font-black text-gray-900 mb-2">Espace Parent SAMA ACADÉMIE</h2>
+        <p className="text-sm text-gray-500 max-w-sm mb-6">
+          Veuillez vous connecter avec votre compte parent pour suivre la scolarité de vos enfants.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link href="/login" className="btn-primary text-sm px-6 py-2.5">
+            Se connecter
+          </Link>
+          <Link href="/dashboard/eleve" className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm px-5 py-2.5 rounded-xl transition">
+            Espace Élève
+          </Link>
+        </div>
       </main>
     );
   }

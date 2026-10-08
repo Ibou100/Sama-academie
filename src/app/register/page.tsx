@@ -130,80 +130,81 @@ export default function Register() {
 
       const normalizedEmail = email.trim().toLowerCase();
 
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      const registerPayload = {
         email: normalizedEmail,
         password,
-        options: {
-          data: {
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            role: role,
-            email: normalizedEmail,
-            phone: phone.trim(),
-            region: region,
-            level: userLevel,
-            subject: isTeacher ? subject : null,
-            experience: userExperience,
-            price: isTeacher ? (teacherPrice.trim() || null) : null,
-            bio: userBio,
-            verified: isVerified,
-          }
-        }
-      });
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        role: role,
+        phone: phone.trim(),
+        region: region,
+        level: userLevel,
+        subject: isTeacher ? subject : null,
+        experience: userExperience,
+        price: isTeacher ? (teacherPrice.trim() || null) : null,
+        bio: userBio,
+        verified: isVerified,
+      };
 
-      if (signUpError) {
-        const msg = signUpError.message || "";
-        if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("already in use") || msg.toLowerCase().includes("user already exists")) {
+      // 1. Priorité API serveur avec service-role : création auto-confirmée et profil complet
+      let apiSuccess = false;
+      try {
+        const apiRes = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(registerPayload),
+        });
+        const apiData = await apiRes.json();
+        if (apiRes.ok && apiData.ok) {
+          apiSuccess = true;
+        } else if (apiRes.status === 409 || apiData?.error?.includes("déjà enregistrée")) {
           setError("Cette adresse email est déjà enregistrée. Veuillez vous connecter directement.");
-        } else {
-          setError(signUpError.message);
+          setLoading(false);
+          return;
+        } else if (apiData?.error) {
+          console.warn("API register warning, trying fallback:", apiData.error);
         }
-        setLoading(false);
-        return;
+      } catch (apiErr) {
+        console.warn("API register fallback to supabase client:", apiErr);
       }
 
-      // Si Supabase renvoie un user avec identities vide (compte existant sans confirmation requise)
-      if (signUpData?.user && Array.isArray(signUpData.user.identities) && signUpData.user.identities.length === 0) {
-        setError("Cette adresse email est déjà enregistrée. Vous pouvez vous connecter directement avec votre mot de passe.");
-        setLoading(false);
-        return;
-      }
+      // 2. Fallback client Supabase si l'API serveur n'est pas disponible
+      if (!apiSuccess) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: normalizedEmail,
+          password,
+          options: {
+            data: registerPayload,
+          },
+        });
 
-      // Synchronisation directe avec profiles
-      if (signUpData?.user) {
-        try {
-          const profilePayload = {
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            role: role,
-            email: normalizedEmail,
-            phone: phone.trim(),
-            region: region,
-            level: userLevel,
-            subject: isTeacher ? subject : null,
-            experience: userExperience,
-            price: isTeacher ? (teacherPrice.trim() || null) : null,
-            bio: userBio,
-            verified: isVerified,
-          };
+        if (signUpError) {
+          const msg = signUpError.message || "";
+          if (
+            msg.toLowerCase().includes("already registered") ||
+            msg.toLowerCase().includes("already in use") ||
+            msg.toLowerCase().includes("user already exists")
+          ) {
+            setError("Cette adresse email est déjà enregistrée. Veuillez vous connecter directement.");
+          } else {
+            setError(signUpError.message);
+          }
+          setLoading(false);
+          return;
+        }
 
-          // Mise à jour directe sur l'enregistrement créé par le trigger d'authentification
-          const { error: updateErr } = await supabase
-            .from("profiles")
-            .update(profilePayload)
-            .eq("id", signUpData.user.id);
+        if (signUpData?.user && Array.isArray(signUpData.user.identities) && signUpData.user.identities.length === 0) {
+          setError("Cette adresse email est déjà enregistrée. Vous pouvez vous connecter directement avec votre mot de passe.");
+          setLoading(false);
+          return;
+        }
 
-          if (updateErr) {
-            console.warn("Premier update profiles:", updateErr.message);
-            // En cas de micro-délai du trigger PostgreSQL, retenter après 350ms
-            await new Promise((resolve) => setTimeout(resolve, 350));
+        if (signUpData?.user) {
+          try {
             await supabase
               .from("profiles")
-              .update(profilePayload)
-              .eq("id", signUpData.user.id);
-          }
-        } catch (err) {
-          console.error("Profile sync error:", err);
+              .upsert({ id: signUpData.user.id, ...registerPayload });
+          } catch (_) {}
         }
       }
 

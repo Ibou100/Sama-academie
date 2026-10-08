@@ -1,47 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getClientSessionAndRole, safeRedirect } from "@/lib/auth-helpers";
 
 export default function DashboardRedirect() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkRoleAndRedirect = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { user, role } = await getClientSessionAndRole(3000);
+
+        if (!isMounted) return;
 
         if (!user) {
-          router.replace("/login?redirect=/dashboard");
+          safeRedirect("/login", router);
           return;
         }
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        const role = profile?.role || user.user_metadata?.role;
-
         if (role === "enseignant") {
-          router.replace("/dashboard/enseignant");
+          safeRedirect("/dashboard/enseignant", router);
         } else if (role === "parent") {
-          router.replace("/dashboard/parent");
+          safeRedirect("/dashboard/parent", router);
         } else if (role === "admin") {
-          router.replace("/admin");
+          safeRedirect("/admin", router);
         } else {
-          router.replace("/dashboard/eleve");
+          safeRedirect("/dashboard/eleve", router);
         }
       } catch (err) {
         console.error("Dashboard redirect error:", err);
-        router.replace("/login");
+        if (isMounted) safeRedirect("/login", router);
       }
     };
 
     checkRoleAndRedirect();
+
+    return () => {
+      isMounted = false;
+    };
   }, [router]);
 
   return (
