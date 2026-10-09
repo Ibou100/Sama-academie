@@ -79,7 +79,13 @@ export default function DemandesCours() {
           .eq("status", "accepted")
           .order("created_at", { ascending: false });
         
-        if (received) setReceivedRequests(received);
+        if (received) {
+          const sanitizedReceived = received.map((r: any) => ({
+            ...r,
+            message: r.message ? r.message.replace(/\[SAMA_CONTRAT\][\s\S]*$/i, "").trim() : null,
+          }));
+          setReceivedRequests(sanitizedReceived);
+        }
 
         // 2. Récupérer les demandes ENVOYÉES (l'utilisateur est l'élève ou le parent)
         const { data: sent } = await supabase
@@ -88,7 +94,13 @@ export default function DemandesCours() {
           .eq("student_id", user.id)
           .order("created_at", { ascending: false });
         
-        if (sent) setSentRequests(sent);
+        if (sent) {
+          const sanitizedSent = sent.map((r: any) => ({
+            ...r,
+            message: r.message ? r.message.replace(/\[SAMA_CONTRAT\][\s\S]*$/i, "").trim() : null,
+          }));
+          setSentRequests(sanitizedSent);
+        }
       }
       setLoading(false);
     };
@@ -244,7 +256,10 @@ export default function DemandesCours() {
                   </p>
                   
                   <div className="mt-3 bg-gray-50 p-3 rounded-xl border border-gray-100 text-sm text-gray-700 italic">
-                    {req.message ? `"${req.message}"` : "Aucun message attaché à cette demande."}
+                    {(() => {
+                      const clean = req.message ? req.message.replace(/\[SAMA_CONTRAT\][\s\S]*$/i, "").trim() : "";
+                      return clean ? `"${clean}"` : "Aucun message particulier attaché à cette demande.";
+                    })()}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">
                     Demande envoyée le {new Date(req.created_at).toLocaleDateString("fr-FR")} à {new Date(req.created_at).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}

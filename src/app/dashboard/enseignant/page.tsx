@@ -146,10 +146,16 @@ export default function DashboardEnseignant() {
       }
 
       if (requests && requests.length > 0) {
-        setAssignedStudents(requests);
-        setDocStudentId(requests[0].id);
-        setEvalStudentId(requests[0].id);
-        setSelectedStudentForChat(requests[0]);
+        // CONFIDENTIALITÉ STRICTE SAMA ACADÉMIE :
+        // Le professeur ne doit JAMAIS voir les détails du contrat négocié ([SAMA_CONTRAT]), la marge ou les prix de la famille.
+        const sanitizedRequests = requests.map((r: any) => ({
+          ...r,
+          message: r.message ? r.message.replace(/\[SAMA_CONTRAT\][\s\S]*$/i, "").trim() : null,
+        }));
+        setAssignedStudents(sanitizedRequests);
+        setDocStudentId(sanitizedRequests[0].id);
+        setEvalStudentId(sanitizedRequests[0].id);
+        setSelectedStudentForChat(sanitizedRequests[0]);
       }
 
       // 2. Récupérer les classes virtuelles de cet enseignant
@@ -539,11 +545,15 @@ export default function DashboardEnseignant() {
                     </div>
                   </div>
 
-                  {req.message && (
-                    <div className="bg-gray-50 rounded-2xl p-3 text-xs text-gray-600 italic border border-gray-100">
-                      &quot;{req.message}&quot;
-                    </div>
-                  )}
+                  {(() => {
+                    const cleanMsg = req.message ? req.message.replace(/\[SAMA_CONTRAT\][\s\S]*$/i, "").trim() : "";
+                    if (!cleanMsg) return null;
+                    return (
+                      <div className="bg-gray-50 rounded-2xl p-3 text-xs text-gray-600 italic border border-gray-100">
+                        &quot;{cleanMsg}&quot;
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex gap-2 pt-2 border-t border-gray-100">
                     <button
