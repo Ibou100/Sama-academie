@@ -23,7 +23,11 @@ export default function DashboardEnseignant() {
   const [docTitle, setDocTitle] = useState("");
   const [docDueDate, setDocDueDate] = useState("");
   const [docDescription, setDocDescription] = useState("");
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [docResourceLink, setDocResourceLink] = useState("");
   const [sendingDoc, setSendingDoc] = useState(false);
+  const [chatAttachment, setChatAttachment] = useState<File | null>(null);
+  const [uploadingChatFile, setUploadingChatFile] = useState(false);
 
   // État Vidéo
   const [videoTitle, setVideoTitle] = useState("");
@@ -217,25 +221,60 @@ export default function DashboardEnseignant() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
-  // 1. Envoyer un cours / devoir
+  // 1. Envoyer un cours / devoir (avec support upload de document)
   const handleSendDoc = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!docTitle.trim() || !docStudentId) return;
+    if (!docStudentId) {
+      showToast("❌ Veuillez sélectionner un élève.");
+      return;
+    }
+    if (!docTitle.trim() && !docFile) {
+      showToast("❌ Veuillez renseigner un titre ou choisir un document à envoyer.");
+      return;
+    }
     setSendingDoc(true);
 
-    const docContent = `[SAMA_DOC] ${docType}: ${docTitle.trim()} | Date limite: ${docDueDate || "Non spécifiée"} | Consignes: ${docDescription.trim() || "Consultez les exercices ci-joints."}`;
+    let uploadedUrl = docResourceLink.trim();
+    let uploadedName = docFile ? docFile.name : "";
+
+    // Téléversement du document si un fichier a été sélectionné
+    if (docFile) {
+      try {
+        const formData = new FormData();
+        formData.append("file", docFile);
+        const res = await fetch("/api/upload-document", {
+          method: "POST",
+          body: formData,
+        });
+        const json = await res.json();
+        if (!res.ok || json.error) {
+          throw new Error(json.error || "Erreur de téléversement.");
+        }
+        uploadedUrl = json.fileUrl;
+        uploadedName = json.fileName || docFile.name;
+      } catch (uploadErr: any) {
+        showToast("⚠️ Échec d'envoi du fichier : " + (uploadErr?.message || "Erreur réseau."));
+        setSendingDoc(false);
+        return;
+      }
+    }
+
+    const finalTitle = docTitle.trim() || (uploadedName ? uploadedName.replace(/\.[^/.]+$/, "").replace(/_/g, " ") : "Document pédagogique");
+    const docContent = `[SAMA_DOC] ${docType}: ${finalTitle} | Date limite: ${docDueDate || "Non spécifiée"} | Consignes: ${docDescription.trim() || (uploadedUrl ? "Consultez le document joint ci-dessous." : "Consultez les exercices ci-joints.")}${uploadedUrl ? ` | Fichier: ${uploadedUrl} | Nom: ${uploadedName}` : ""}`;
 
     const { error } = await supabase.from("tutoring_messages").insert([{
       request_id: docStudentId,
-      sender_id: currentUser.id,
+      sender_id: currentUser?.id,
       content: docContent
     }]);
 
     if (!error) {
-      showToast("✅ Cours / Devoir transmis avec succès à l'élève !");
+      showToast("✅ Cours / Devoir et document transmis avec succès à l'élève !");
       setDocTitle("");
       setDocDueDate("");
       setDocDescription("");
+      setDocFile(null);
+      setDocResourceLink("");
       setActiveTab("chat");
     } else {
       showToast("❌ Erreur : " + error.message);
@@ -327,22 +366,53 @@ export default function DashboardEnseignant() {
     setSendingEval(false);
   };
 
-  // 5. Envoyer un message dans le chat
+  // 5. Envoyer un message dans le chat (supporte texte simple et pièces jointes)
   const handleSendChatMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newChatMessage.trim() || !selectedStudentForChat) return;
+    if ((!newChatMessage.trim() && !chatAttachment) || !selectedStudentForChat) return;
     setSendingChatMessage(true);
 
-    const { error } = await supabase.from("tutoring_messages").insert([{
-      request_id: selectedStudentForChat.id,
-      sender_id: currentUser.id,
-      content: newChatMessage.trim()
-    }]);
+    if (chatAttachment) {
+      setUploadingChatFile(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", chatAttachment);
+        const res = await fetch("/api/upload-document", { method: "POST", body: formData });
+        const json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || "Erreur téléversement.");
 
-    if (!error) {
-      setNewChatMessage("");
+        const cleanName = json.fileName || chatAttachment.name;
+        const formattedDoc = `[SAMA_DOC] Document partagé: ${cleanName} | Date limite: Prochaine séance | Consignes: ${newChatMessage.trim() || "Consultez le document ci-joint."} | Fichier: ${json.fileUrl} | Nom: ${cleanName}`;
+
+        const { error } = await supabase.from("tutoring_messages").insert([{
+          request_id: selectedStudentForChat.id,
+          sender_id: currentUser?.id,
+          content: formattedDoc
+        }]);
+
+        if (!error) {
+          setNewChatMessage("");
+          setChatAttachment(null);
+        } else {
+          showToast("❌ Erreur : " + error.message);
+        }
+      } catch (err: any) {
+        showToast("⚠️ Échec d'envoi du document : " + (err?.message || ""));
+      } finally {
+        setUploadingChatFile(false);
+      }
     } else {
-      showToast("❌ Erreur : " + error.message);
+      const { error } = await supabase.from("tutoring_messages").insert([{
+        request_id: selectedStudentForChat.id,
+        sender_id: currentUser?.id,
+        content: newChatMessage.trim()
+      }]);
+
+      if (!error) {
+        setNewChatMessage("");
+      } else {
+        showToast("❌ Erreur : " + error.message);
+      }
     }
     setSendingChatMessage(false);
   };
@@ -653,8 +723,75 @@ export default function DashboardEnseignant() {
                   </div>
                 </div>
 
+                {/* ZONE DE TÉLÉVERSEMENT DE DOCUMENT */}
+                <div className="bg-blue-50/50 border-2 border-dashed border-blue-200 rounded-2xl p-5 text-center transition hover:border-sama-primary hover:bg-blue-50">
+                  <input
+                    type="file"
+                    id="teacher-doc-upload"
+                    accept=".pdf,.doc,.docx,.odt,.jpg,.jpeg,.png,.webp,.txt"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setDocFile(file);
+                        if (!docTitle) {
+                          const base = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+                          setDocTitle(base);
+                        }
+                      }
+                    }}
+                    className="hidden"
+                  />
+
+                  {docFile ? (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-blue-100 shadow-xs">
+                      <div className="flex items-center gap-3 text-left">
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-sama-primary flex items-center justify-center text-lg font-bold">
+                          <i className={`fas ${docFile.name.endsWith(".pdf") ? "fa-file-pdf text-red-500" : docFile.name.match(/\.(jpg|jpeg|png)$/i) ? "fa-file-image text-emerald-500" : "fa-file-alt text-blue-500"}`}></i>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-900 truncate max-w-[240px] sm:max-w-[320px]">
+                            {docFile.name}
+                          </p>
+                          <p className="text-[11px] text-gray-400">
+                            {(docFile.size / 1024 / 1024).toFixed(2)} Mo • Prêt à être envoyé
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setDocFile(null)}
+                        className="text-xs text-red-500 hover:text-red-700 font-bold px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
+                      >
+                        <i className="fas fa-trash-alt mr-1"></i> Retirer
+                      </button>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="teacher-doc-upload"
+                      className="cursor-pointer block py-3 space-y-2"
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-white text-sama-primary border border-blue-100 shadow-xs flex items-center justify-center mx-auto text-xl">
+                        <i className="fas fa-cloud-upload-alt text-sama-orange"></i>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">
+                          Cliquez pour importer votre document ou sujet
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Évitez d&apos;écrire : importez directement votre PDF, Word ou photo de l&apos;exercice (jusqu&apos;à 25 Mo)
+                        </p>
+                      </div>
+                      <span className="inline-block bg-white text-sama-primary border border-blue-200 hover:bg-blue-50 text-xs font-bold px-4 py-1.5 rounded-xl shadow-xs transition">
+                        Parcourir les fichiers...
+                      </span>
+                    </label>
+                  )}
+                </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Titre de l&apos;activité</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Titre du devoir / document
+                  </label>
                   <input
                     type="text"
                     required
@@ -666,12 +803,29 @@ export default function DashboardEnseignant() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Consignes et exercices à faire</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                    <span>Consignes et remarques pour l&apos;élève</span>
+                    <span className="text-[11px] text-gray-400 font-normal">Optionnel si le document contient déjà le sujet</span>
+                  </label>
                   <textarea
-                    rows={4}
+                    rows={3}
                     value={docDescription}
                     onChange={(e) => setDocDescription(e.target.value)}
-                    placeholder="Détaillez les exercices à traiter (Ex: Traiter les exercices 1, 3 et 4 page 42, bien rédiger la démonstration pour la prochaine séance)..."
+                    placeholder="Optionnel : précisez les exercices à traiter (ou laissez vide si tout est dans le document)..."
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm bg-gray-50 outline-none focus:border-sama-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                    <span>Lien externe complémentaire</span>
+                    <span className="text-[11px] text-gray-400 font-normal">Optionnel (Drive, YouTube, etc.)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={docResourceLink}
+                    onChange={(e) => setDocResourceLink(e.target.value)}
+                    placeholder="https://drive.google.com/... (si vous préférez un lien)"
                     className="w-full border border-gray-200 rounded-xl p-3 text-sm bg-gray-50 outline-none focus:border-sama-primary"
                   />
                 </div>
@@ -681,7 +835,17 @@ export default function DashboardEnseignant() {
                   disabled={sendingDoc}
                   className="w-full bg-sama-primary hover:bg-blue-800 disabled:bg-blue-300 text-white font-bold py-3.5 px-4 rounded-2xl text-sm transition flex items-center justify-center gap-2 shadow-sm"
                 >
-                  {sendingDoc ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-paper-plane"></i> Transmettre le devoir à l&apos;élève</>}
+                  {sendingDoc ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i>
+                      <span>Téléversement et envoi du document en cours...</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-paper-plane"></i>
+                      <span>Transmettre le devoir et le document à l&apos;élève</span>
+                    </>
+                  )}
                 </button>
               </form>
             )}
@@ -1181,16 +1345,76 @@ export default function DashboardEnseignant() {
                       const isAnno = msg.content?.startsWith("[SAMA_ANNOUNCEMENT]");
 
                       if (isDoc) {
+                        // Extraction intelligente des données du document
+                        let dType = "Devoir / Support";
+                        let dTitle = "Document partagé";
+                        let dDueDate = "";
+                        let dInstructions = "";
+                        let dFileUrl = "";
+                        let dFileName = "";
+
+                        if (msg.content.includes(":::")) {
+                          const p = msg.content.split(":::");
+                          dType = p[1] || "Support";
+                          dTitle = p[2] || "Document";
+                          dInstructions = p[3] || "";
+                          dFileUrl = p[4] || "";
+                          dFileName = dTitle;
+                        } else {
+                          const raw = msg.content.replace("[SAMA_DOC]", "").trim();
+                          const parts = raw.split("|");
+                          const header = parts[0]?.trim() || "";
+                          if (header.includes(":")) {
+                            dType = header.split(":")[0]?.trim() || "Devoir";
+                            dTitle = header.split(":").slice(1).join(":").trim() || "Document";
+                          } else {
+                            dTitle = header;
+                          }
+                          const dueP = parts.find((p: string) => p.trim().startsWith("Date limite:"));
+                          if (dueP) dDueDate = dueP.replace("Date limite:", "").trim();
+                          const instP = parts.find((p: string) => p.trim().startsWith("Consignes:"));
+                          if (instP) dInstructions = instP.replace("Consignes:", "").trim();
+                          const fileP = parts.find((p: string) => p.trim().startsWith("Fichier:"));
+                          if (fileP) dFileUrl = fileP.replace("Fichier:", "").trim();
+                          const nameP = parts.find((p: string) => p.trim().startsWith("Nom:"));
+                          if (nameP) dFileName = nameP.replace("Nom:", "").trim();
+                          if (!dFileName && dFileUrl) dFileName = dTitle;
+                        }
+
                         return (
                           <div key={msg.id} className={`max-w-[85%] ${isMe ? "ml-auto" : "mr-auto"}`}>
-                            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 shadow-xs space-y-1.5">
-                              <p className="text-xs font-bold text-sama-primary flex items-center gap-1.5">
-                                <i className="fas fa-file-signature"></i> Devoir / Support Partagé
-                              </p>
-                              <p className="text-xs text-gray-800 font-medium">
-                                {msg.content.replace("[SAMA_DOC]", "").trim()}
-                              </p>
-                              <span className="text-[10px] text-gray-400 block text-right">
+                            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 shadow-xs space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="bg-sama-primary text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                                  {dType}
+                                </span>
+                                {dDueDate && dDueDate !== "Non spécifiée" && (
+                                  <span className="text-[11px] font-bold text-red-600 flex items-center gap-1">
+                                    <i className="fas fa-clock text-[10px]"></i> À rendre : {dDueDate}
+                                  </span>
+                                )}
+                              </div>
+                              <h5 className="font-extrabold text-sm text-gray-900 leading-snug">{dTitle}</h5>
+                              {dInstructions && dInstructions !== "Consultez les exercices ci-joints." && (
+                                <p className="text-xs text-gray-700 bg-white/80 p-2.5 rounded-xl border border-blue-100">
+                                  {dInstructions}
+                                </p>
+                              )}
+                              {dFileUrl && (
+                                <div className="pt-1">
+                                  <a
+                                    href={dFileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    download={dFileName}
+                                    className="inline-flex items-center gap-2 bg-sama-primary hover:bg-blue-800 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shadow-xs"
+                                  >
+                                    <i className="fas fa-file-download text-sama-orange"></i>
+                                    <span>Ouvrir / Télécharger ({dFileName})</span>
+                                  </a>
+                                </div>
+                              )}
+                              <span className="text-[10px] text-gray-400 block text-right pt-0.5">
                                 {new Date(msg.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                               </span>
                             </div>
@@ -1248,22 +1472,66 @@ export default function DashboardEnseignant() {
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Saisie message */}
-                <form onSubmit={handleSendChatMessage} className="p-3 bg-white border-t border-gray-100 flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={newChatMessage}
-                    onChange={(e) => setNewChatMessage(e.target.value)}
-                    placeholder="Écrivez un message à votre élève..."
-                    className="flex-grow bg-gray-100 border-none rounded-2xl px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-sama-primary"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newChatMessage.trim() || sendingChatMessage}
-                    className="bg-sama-primary hover:bg-blue-800 disabled:opacity-50 text-white rounded-2xl px-4 py-2.5 text-xs font-bold transition flex items-center gap-1.5"
-                  >
-                    <i className="fas fa-paper-plane"></i>
-                  </button>
+                {/* Saisie message & Pièce jointe */}
+                <form onSubmit={handleSendChatMessage} className="bg-white border-t border-gray-100 flex flex-col">
+                  {chatAttachment && (
+                    <div className="px-3 py-2 bg-blue-50 border-b border-blue-100 flex items-center justify-between text-xs text-sama-primary">
+                      <span className="font-bold flex items-center gap-2 truncate max-w-[320px]">
+                        <i className="fas fa-file-alt text-sama-orange"></i>
+                        <span className="truncate">{chatAttachment.name}</span>
+                        <span className="text-[10px] text-gray-500 font-normal">
+                          ({(chatAttachment.size / 1024 / 1024).toFixed(2)} Mo)
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setChatAttachment(null)}
+                        className="text-red-500 hover:text-red-700 font-bold px-2 py-0.5 rounded-md hover:bg-red-50 transition"
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="p-3 flex items-center gap-2">
+                    <input
+                      type="file"
+                      id="teacher-chat-attachment"
+                      accept=".pdf,.doc,.docx,.odt,.jpg,.jpeg,.png,.webp,.txt"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) setChatAttachment(file);
+                      }}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="teacher-chat-attachment"
+                      className="w-10 h-10 rounded-2xl bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-sama-primary flex items-center justify-center transition cursor-pointer flex-shrink-0"
+                      title="Joindre un document ou exercice (PDF, photo, Word)"
+                    >
+                      <i className="fas fa-paperclip text-sm"></i>
+                    </label>
+
+                    <input
+                      type="text"
+                      value={newChatMessage}
+                      onChange={(e) => setNewChatMessage(e.target.value)}
+                      placeholder={chatAttachment ? "Ajouter un commentaire sur le document..." : "Écrivez un message ou joignez un document..."}
+                      className="flex-grow bg-gray-100 border-none rounded-2xl px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-sama-primary"
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={(!newChatMessage.trim() && !chatAttachment) || sendingChatMessage || uploadingChatFile}
+                      className="bg-sama-primary hover:bg-blue-800 disabled:opacity-50 text-white rounded-2xl px-4 py-2.5 text-xs font-bold transition flex items-center gap-1.5 flex-shrink-0"
+                    >
+                      {uploadingChatFile || sendingChatMessage ? (
+                        <i className="fas fa-spinner fa-spin"></i>
+                      ) : (
+                        <i className="fas fa-paper-plane"></i>
+                      )}
+                    </button>
+                  </div>
                 </form>
               </>
             ) : (

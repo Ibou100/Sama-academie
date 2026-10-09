@@ -130,12 +130,39 @@ export default function DashboardParent() {
           .filter((m) => m.content?.startsWith("[SAMA_DOC]"))
           .map((m) => {
             const raw = m.content.replace("[SAMA_DOC]", "").trim();
+            if (raw.includes(":::")) {
+              const p = raw.split(":::");
+              return {
+                id: m.id,
+                type: p[1] || "Support de cours",
+                title: p[2] || "Document",
+                dueDate: "Prochain cours",
+                instructions: p[3] || "Consultez le document",
+                fileUrl: p[4] || null,
+                fileName: p[2] || "Document joint",
+                date: m.created_at,
+              };
+            }
             const parts = raw.split("|");
+            const header = parts[0]?.trim() || "";
+            const type = header.includes(":") ? header.split(":")[0]?.trim() : "Devoir";
+            const title = header.includes(":") ? header.split(":").slice(1).join(":").trim() : header;
+            const duePart = parts.find((p: string) => p.trim().startsWith("Date limite:"));
+            const instPart = parts.find((p: string) => p.trim().startsWith("Consignes:"));
+            const filePart = parts.find((p: string) => p.trim().startsWith("Fichier:"));
+            const namePart = parts.find((p: string) => p.trim().startsWith("Nom:"));
+
+            const fileUrl = filePart ? filePart.replace("Fichier:", "").trim() : null;
+            const fileName = namePart ? namePart.replace("Nom:", "").trim() : (title || "Document");
+
             return {
               id: m.id,
-              type: parts[0]?.trim() || "Devoir",
-              dueDate: parts[1]?.replace("Date limite:", "").trim() || "Prochain cours",
-              instructions: parts[2]?.replace("Consignes:", "").trim() || raw,
+              type: type || "Devoir",
+              title: title || "Devoir",
+              dueDate: duePart ? duePart.replace("Date limite:", "").trim() : "Prochain cours",
+              instructions: instPart ? instPart.replace("Consignes:", "").trim() : (fileUrl ? "Consultez le document joint." : raw),
+              fileUrl,
+              fileName,
               date: m.created_at
             };
           });
@@ -378,9 +405,28 @@ export default function DashboardParent() {
                         À rendre : {hw.dueDate}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-800 font-medium line-clamp-2">
+                    {hw.title && (
+                      <h5 className="font-extrabold text-xs text-gray-900 leading-snug">
+                        {hw.title}
+                      </h5>
+                    )}
+                    <p className="text-xs text-gray-800 font-medium">
                       {hw.instructions}
                     </p>
+                    {hw.fileUrl && (
+                      <div className="pt-1">
+                        <a
+                          href={hw.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={hw.fileName}
+                          className="inline-flex items-center gap-1.5 text-sama-primary hover:text-blue-800 font-bold text-xs underline"
+                        >
+                          <i className="fas fa-file-download text-sama-orange"></i>
+                          <span>Consulter le document joint ({hw.fileName})</span>
+                        </a>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -232,12 +232,39 @@ export default function DashboardEleve() {
           .filter((m: any) => m.content?.startsWith("[SAMA_DOC]"))
           .map((m: any) => {
             const raw = m.content.replace("[SAMA_DOC]", "").trim();
+            if (raw.includes(":::")) {
+              const p = raw.split(":::");
+              return {
+                id: m.id,
+                type: p[1] || "Support de cours",
+                title: p[2] || "Document",
+                dueDate: "Prochain cours",
+                instructions: p[3] || "Consultez le document",
+                fileUrl: p[4] || null,
+                fileName: p[2] || "Document joint",
+                date: m.created_at,
+              };
+            }
             const parts = raw.split("|");
+            const header = parts[0]?.trim() || "";
+            const type = header.includes(":") ? header.split(":")[0]?.trim() : "Devoir";
+            const title = header.includes(":") ? header.split(":").slice(1).join(":").trim() : header;
+            const duePart = parts.find((p: string) => p.trim().startsWith("Date limite:"));
+            const instPart = parts.find((p: string) => p.trim().startsWith("Consignes:"));
+            const filePart = parts.find((p: string) => p.trim().startsWith("Fichier:"));
+            const namePart = parts.find((p: string) => p.trim().startsWith("Nom:"));
+
+            const fileUrl = filePart ? filePart.replace("Fichier:", "").trim() : null;
+            const fileName = namePart ? namePart.replace("Nom:", "").trim() : (title || "Document");
+
             return {
               id: m.id,
-              type: parts[0]?.trim() || "Devoir",
-              dueDate: parts[1]?.replace("Date limite:", "").trim() || "Prochain cours",
-              instructions: parts[2]?.replace("Consignes:", "").trim() || raw,
+              type: type || "Devoir",
+              title: title || "Devoir",
+              dueDate: duePart ? duePart.replace("Date limite:", "").trim() : "Prochain cours",
+              instructions: instPart ? instPart.replace("Consignes:", "").trim() : (fileUrl ? "Consultez le document joint." : raw),
+              fileUrl,
+              fileName,
               date: m.created_at
             };
           });
@@ -491,7 +518,7 @@ export default function DashboardEleve() {
             ) : (
               <div className="space-y-3">
                 {homeworkList.map((hw) => (
-                  <div key={hw.id} className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 hover:shadow-xs transition space-y-2">
+                  <div key={hw.id} className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 hover:shadow-xs transition space-y-2.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="bg-sama-primary text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
                         {hw.type}
@@ -500,10 +527,33 @@ export default function DashboardEleve() {
                         <i className="fas fa-clock"></i> Date limite : {hw.dueDate}
                       </span>
                     </div>
+
+                    {hw.title && (
+                      <h4 className="font-extrabold text-sm text-gray-900 leading-snug">
+                        {hw.title}
+                      </h4>
+                    )}
+
                     <p className="text-xs text-gray-700 font-medium leading-relaxed">
                       {hw.instructions}
                     </p>
-                    <div className="flex justify-between items-center pt-1 text-[11px] text-gray-400 border-t border-blue-100/60">
+
+                    {hw.fileUrl && (
+                      <div className="pt-1">
+                        <a
+                          href={hw.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={hw.fileName}
+                          className="inline-flex items-center gap-2 bg-sama-primary hover:bg-blue-800 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shadow-xs"
+                        >
+                          <i className="fas fa-file-download text-sama-orange"></i>
+                          <span>Consulter / Télécharger le document ({hw.fileName})</span>
+                        </a>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-center pt-2 text-[11px] text-gray-400 border-t border-blue-100/60">
                       <span>Donné le {new Date(hw.date).toLocaleDateString("fr-FR")}</span>
                       <Link href="/messagerie" className="text-sama-primary font-bold hover:underline">
                         Répondre dans la messagerie →

@@ -35,13 +35,35 @@ export default function DemandesCours() {
   const [docTitle, setDocTitle] = useState("");
   const [docInstruction, setDocInstruction] = useState("");
   const [docResourceLink, setDocResourceLink] = useState("");
+  const [docFile, setDocFile] = useState<File | null>(null);
 
   const handleShareDocument = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!docTitle.trim() || !activeChat || !currentUser) return;
+    if ((!docTitle.trim() && !docFile) || !activeChat || !currentUser) return;
     setSendingMsg(true);
 
-    const formattedContent = `[SAMA_DOC]:::${docType}:::${docTitle.trim()}:::${docInstruction.trim() || "Aucune consigne spécifique"}:::${docResourceLink.trim()}`;
+    let finalLink = docResourceLink.trim();
+    let finalTitle = docTitle.trim();
+
+    if (docFile) {
+      try {
+        const formData = new FormData();
+        formData.append("file", docFile);
+        const res = await fetch("/api/upload-document", { method: "POST", body: formData });
+        const json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || "Erreur de téléversement.");
+        finalLink = json.fileUrl;
+        if (!finalTitle) finalTitle = json.fileName || docFile.name;
+      } catch (err: any) {
+        alert("Erreur lors de l'envoi du document : " + (err?.message || ""));
+        setSendingMsg(false);
+        return;
+      }
+    }
+
+    if (!finalTitle) finalTitle = "Document partagé";
+
+    const formattedContent = `[SAMA_DOC]:::${docType}:::${finalTitle}:::${docInstruction.trim() || (finalLink ? "Consultez le document joint." : "Aucune consigne spécifique")}:::${finalLink}`;
 
     const { error } = await supabase.from("tutoring_messages").insert([{
       request_id: activeChat.id,
@@ -54,6 +76,7 @@ export default function DemandesCours() {
       setDocTitle("");
       setDocInstruction("");
       setDocResourceLink("");
+      setDocFile(null);
     }
     setSendingMsg(false);
   };
@@ -351,11 +374,34 @@ export default function DemandesCours() {
                   const isDoc = msg.content?.startsWith("[SAMA_DOC]");
 
                   if (isDoc) {
-                    const parts = msg.content.split(":::");
-                    const docT = parts[1] || "Support";
-                    const title = parts[2] || "Document";
-                    const instructions = parts[3] || "";
-                    const link = parts[4] || "";
+                    let docT = "Support";
+                    let title = "Document";
+                    let instructions = "";
+                    let link = "";
+
+                    if (msg.content.includes(":::")) {
+                      const parts = msg.content.split(":::");
+                      docT = parts[1] || "Support";
+                      title = parts[2] || "Document";
+                      instructions = parts[3] || "";
+                      link = parts[4] || "";
+                    } else {
+                      const raw = msg.content.replace("[SAMA_DOC]", "").trim();
+                      const parts = raw.split("|");
+                      const header = parts[0]?.trim() || "";
+                      if (header.includes(":")) {
+                        docT = header.split(":")[0]?.trim() || "Devoir";
+                        title = header.split(":").slice(1).join(":").trim() || "Document";
+                      } else {
+                        title = header;
+                      }
+                      const instPart = parts.find((p: string) => p.trim().startsWith("Consignes:"));
+                      if (instPart) instructions = instPart.replace("Consignes:", "").trim();
+                      const filePart = parts.find((p: string) => p.trim().startsWith("Fichier:"));
+                      if (filePart) link = filePart.replace("Fichier:", "").trim();
+                      const namePart = parts.find((p: string) => p.trim().startsWith("Nom:"));
+                      if (namePart && !title) title = namePart.replace("Nom:", "").trim();
+                    }
 
                     return (
                       <div key={msg.id} className={`flex flex-col max-w-[85%] ${isMe ? "self-end items-end" : "self-start items-start"}`}>
@@ -378,7 +424,7 @@ export default function DemandesCours() {
                             </div>
                           </div>
 
-                          {instructions && instructions !== "Aucune consigne spécifique" && (
+                          {instructions && instructions !== "Aucune consigne spécifique" && instructions !== "Consultez les exercices ci-joints." && (
                             <p className={`text-xs p-2.5 rounded-xl mb-3 ${isMe ? "bg-white/10 text-blue-100" : "bg-gray-50 text-gray-700 border border-gray-100"}`}>
                               <strong>Consignes :</strong> {instructions}
                             </p>
@@ -386,14 +432,15 @@ export default function DemandesCours() {
 
                           {link && link.trim() !== "" ? (
                             <a
-                              href={link.startsWith("http") ? link : `https://${link}`}
+                              href={link.startsWith("http") || link.startsWith("data:") ? link : `https://${link}`}
                               target="_blank"
                               rel="noopener noreferrer"
+                              download={title}
                               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition ${
                                 isMe ? "bg-sama-orange text-sama-blue hover:bg-amber-400" : "bg-sama-primary text-white hover:bg-blue-800"
                               }`}
                             >
-                              <i className="fas fa-external-link-alt text-xs"></i> Consulter le document
+                              <i className="fas fa-file-download text-xs"></i> Consulter / Télécharger le document
                             </a>
                           ) : (
                             <span className={`text-[11px] italic ${isMe ? "text-blue-200" : "text-gray-400"}`}>
@@ -437,6 +484,54 @@ export default function DemandesCours() {
                   </div>
 
                   <form onSubmit={handleShareDocument} className="space-y-3">
+                    {/* ZONE UPLOAD DOCUMENT */}
+                    <div className="bg-blue-50/60 border-2 border-dashed border-blue-200 rounded-2xl p-3 text-center">
+                      <input
+                        type="file"
+                        id="demandes-doc-file"
+                        accept=".pdf,.doc,.docx,.odt,.jpg,.jpeg,.png,.webp,.txt"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setDocFile(file);
+                            if (!docTitle) {
+                              setDocTitle(file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " "));
+                            }
+                          }
+                        }}
+                        className="hidden"
+                      />
+
+                      {docFile ? (
+                        <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-blue-100 text-left">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <i className="fas fa-file-alt text-sama-orange text-lg flex-shrink-0"></i>
+                            <div className="overflow-hidden">
+                              <p className="text-xs font-bold text-gray-900 truncate max-w-[170px]">{docFile.name}</p>
+                              <p className="text-[10px] text-gray-400">{(docFile.size / 1024 / 1024).toFixed(2)} Mo</p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setDocFile(null)}
+                            className="text-red-500 hover:text-red-700 font-bold text-xs p-1"
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </div>
+                      ) : (
+                        <label htmlFor="demandes-doc-file" className="cursor-pointer block py-1.5 space-y-1">
+                          <i className="fas fa-cloud-upload-alt text-sama-orange text-xl"></i>
+                          <p className="text-xs font-bold text-gray-800">
+                            Importer un document (PDF, Word, Photo)
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            Cliquez ici pour choisir votre fichier sur votre appareil
+                          </p>
+                        </label>
+                      )}
+                    </div>
+
                     <div>
                       <label className="block text-[11px] font-bold text-gray-700 mb-1">Type de document</label>
                       <select
@@ -464,7 +559,7 @@ export default function DemandesCours() {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Consignes pour l&apos;élève</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Consignes pour l&apos;élève (Optionnel)</label>
                       <textarea
                         rows={2}
                         placeholder="Ex: Exercices 1 et 3 à rédiger pour la séance du samedi..."
@@ -475,10 +570,10 @@ export default function DemandesCours() {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Lien de la ressource (Optionnel)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Lien externe (Optionnel si fichier importé)</label>
                       <input
                         type="text"
-                        placeholder="https://drive.google.com/... ou lien PDF"
+                        placeholder="https://drive.google.com/... ou lien vidéo"
                         value={docResourceLink}
                         onChange={(e) => setDocResourceLink(e.target.value)}
                         className="w-full border border-gray-300 rounded-xl p-2.5 text-xs bg-gray-50 outline-none focus:bg-white"
@@ -495,10 +590,16 @@ export default function DemandesCours() {
                       </button>
                       <button
                         type="submit"
-                        disabled={!docTitle.trim() || sendingMsg}
+                        disabled={(!docTitle.trim() && !docFile) || sendingMsg}
                         className="flex-1 bg-sama-primary hover:bg-blue-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm"
                       >
-                        {sendingMsg ? <i className="fas fa-spinner fa-spin"></i> : "Partager"}
+                        {sendingMsg ? (
+                          <span className="flex items-center justify-center gap-1.5">
+                            <i className="fas fa-spinner fa-spin"></i> Envoi...
+                          </span>
+                        ) : (
+                          "Partager"
+                        )}
                       </button>
                     </div>
                   </form>
