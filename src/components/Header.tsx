@@ -204,6 +204,11 @@ export default function Header() {
                   {/* Menu déroulant du profil */}
                   {isDropdownOpen && (
                     <div className="absolute right-0 top-14 w-60 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50">
+                      {pathname.startsWith("/admin") && (
+                        <div className="px-4 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-900 font-bold flex items-center gap-2">
+                          <i className="fas fa-shield-alt text-amber-600"></i> Console Direction active
+                        </div>
+                      )}
                       {/* Tableau de bord selon le rôle */}
                       {userProfile.role === "enseignant" && (
                         <Link

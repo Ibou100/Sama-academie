@@ -27,6 +27,16 @@ export default function AdminDashboard() {
   const [auditActionFilter, setAuditActionFilter] = useState("all");
   const [auditTableMissing, setAuditTableMissing] = useState(false);
   const [currentAdminProfile, setCurrentAdminProfile] = useState<any>(null);
+  const [connectedNonAdmin, setConnectedNonAdmin] = useState<any>(null);
+
+  // Modal Récupération Mot de Passe Admin Oublié
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotMethod, setForgotMethod] = useState<"passcode" | "email">("passcode");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotPasscode, setForgotPasscode] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   // Sécurité & Verrouillage d'Accès Multi-Admins
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -138,20 +148,48 @@ export default function AdminDashboard() {
           .eq("id", user.id)
           .maybeSingle()
           .then(({ data: profile }) => {
-            if (profile) setCurrentAdminProfile(profile);
-            if (profile?.role === "admin" || sessionUnlocked) {
+            if (profile?.role === "admin") {
+              // C'est un administrateur officiel
+              setCurrentAdminProfile(profile);
+              setConnectedNonAdmin(null);
               setIsUnlocked(true);
-              if (profile?.role === "admin") {
-                sessionStorage.setItem("sama_admin_unlocked", "true");
-              }
+              sessionStorage.setItem("sama_admin_unlocked", "true");
               fetchData();
               fetchAuditLogs();
+            } else {
+              // C'est un profil enseignant, élève ou parent connecté sur le site !
+              // On ne le définit JAMAIS comme currentAdminProfile !
+              setConnectedNonAdmin(profile || { id: user.id, email: user.email, role: "enseignant", first_name: "Utilisateur" });
+              if (sessionUnlocked) {
+                // Déverrouillé par le Code Maître Direction
+                setCurrentAdminProfile({
+                  id: "direction-master",
+                  first_name: "Direction",
+                  last_name: "Générale",
+                  email: "direction@sama-academie.sn",
+                  role: "admin",
+                  isMaster: true,
+                });
+                setIsUnlocked(true);
+                fetchData();
+                fetchAuditLogs();
+              } else {
+                setIsUnlocked(false);
+              }
             }
             setCheckingAuth(false);
             setLoading(false);
           });
       } else {
         if (sessionUnlocked) {
+          setCurrentAdminProfile({
+            id: "direction-master",
+            first_name: "Direction",
+            last_name: "Générale",
+            email: "direction@sama-academie.sn",
+            role: "admin",
+            isMaster: true,
+          });
           setIsUnlocked(true);
           fetchData();
           fetchAuditLogs();
@@ -478,12 +516,13 @@ export default function AdminDashboard() {
 
       if (profile?.role !== "admin") {
         await supabase.auth.signOut();
-        setAccessError("⛔ Accès refusé : ce compte utilisateur n'a pas les droits Administrateur.");
+        setAccessError(`⛔ Accès refusé : Le compte "${loginEmail}" a le rôle ${profile?.role?.toUpperCase() || "STANDARD"} et n'a pas les droits Administrateur.`);
         setLoginLoading(false);
         return;
       }
 
       setCurrentAdminProfile(profile);
+      setConnectedNonAdmin(null);
       setIsUnlocked(true);
       if (typeof window !== "undefined") sessionStorage.setItem("sama_admin_unlocked", "true");
       showToast(`Bienvenue ${profile.first_name || ""} ! Console d'administration déverrouillée.`, "success");
@@ -514,18 +553,111 @@ export default function AdminDashboard() {
     const entered = accessCodeInput.trim();
 
     if (entered === currentCode || entered === "sama2026" || entered === "SamaAdmin2024!") {
+      setCurrentAdminProfile({
+        id: "direction-master",
+        first_name: "Direction",
+        last_name: "Générale",
+        email: "direction@sama-academie.sn",
+        role: "admin",
+        isMaster: true,
+      });
       setIsUnlocked(true);
       if (typeof window !== "undefined") sessionStorage.setItem("sama_admin_unlocked", "true");
       setAccessCodeInput("");
-      showToast("Console déverrouillée via code secret d'accès.", "success");
+      showToast("Console déverrouillée avec succès (Poste Direction Générale).", "success");
       logAdminAction({
         action: "DEVERROUILLAGE_CODE",
-        details: "Déverrouillage d'urgence de la console via Master Passcode",
+        details: "Déverrouillage d'urgence de la console via Master Passcode Direction",
       });
       fetchData();
       fetchAuditLogs();
     } else {
-      setAccessError("Mot de passe incorrect. Veuillez vérifier et réessayer.");
+      setAccessError("Code incorrect. Veuillez vérifier et réessayer.");
+    }
+  };
+
+  const handleDisconnectNonAdmin = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (_) {}
+    setConnectedNonAdmin(null);
+    setCurrentAdminProfile(null);
+    setIsUnlocked(false);
+    if (typeof window !== "undefined") sessionStorage.removeItem("sama_admin_unlocked");
+    showToast("Session déconnectée. Vous pouvez vous connecter en tant qu'Administrateur.", "info");
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  };
+
+  const handleAdminResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotMessage(null);
+    if (!forgotEmail.trim()) {
+      setForgotMessage({ text: "Veuillez renseigner votre email administrateur.", type: "error" });
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      if (forgotMethod === "passcode") {
+        if (!forgotPasscode.trim()) {
+          setForgotMessage({ text: "Veuillez entrer le Code Maître Direction (ex: sama2026).", type: "error" });
+          setForgotLoading(false);
+          return;
+        }
+        if (!forgotNewPassword || forgotNewPassword.length < 6) {
+          setForgotMessage({ text: "Le nouveau mot de passe doit comporter au moins 6 caractères.", type: "error" });
+          setForgotLoading(false);
+          return;
+        }
+
+        const res = await fetch("/api/admin/reset-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-passcode": forgotPasscode.trim(),
+          },
+          body: JSON.stringify({
+            email: forgotEmail.trim(),
+            newPassword: forgotNewPassword,
+          }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          setForgotMessage({
+            text: "✅ Mot de passe administrateur réinitialisé avec succès ! Vous pouvez maintenant vous connecter.",
+            type: "success",
+          });
+          setLoginEmail(forgotEmail.trim());
+          setLoginPassword(forgotNewPassword);
+          setTimeout(() => {
+            setShowForgotModal(false);
+            setForgotMessage(null);
+            setAuthMode("account");
+          }, 2500);
+        } else {
+          setForgotMessage({ text: data.error || "Échec de la réinitialisation.", type: "error" });
+        }
+      } else {
+        // Envoi par email
+        const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined,
+        });
+        if (error) {
+          setForgotMessage({ text: error.message, type: "error" });
+        } else {
+          setForgotMessage({
+            text: "✅ Un lien sécurisé a été envoyé à votre adresse email pour réinitialiser votre mot de passe.",
+            type: "success",
+          });
+        }
+      }
+    } catch (err: any) {
+      setForgotMessage({ text: err?.message || "Erreur lors de l'opération.", type: "error" });
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -1163,6 +1295,35 @@ export default function AdminDashboard() {
             </button>
           </div>
 
+          {/* AVERTISSEMENT SI UN COMPTE NON-ADMIN EST CONNECTÉ */}
+          {connectedNonAdmin && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-200 space-y-2.5">
+              <div className="flex items-start gap-2.5">
+                <i className="fas fa-user-circle text-amber-400 text-base mt-0.5"></i>
+                <div>
+                  <p className="font-extrabold text-amber-300 text-sm">
+                    Session active : {connectedNonAdmin.first_name} {connectedNonAdmin.last_name}
+                  </p>
+                  <p className="text-[11px] text-amber-200/80 mt-0.5 leading-relaxed">
+                    Vous êtes actuellement connecté sur le site avec le compte <strong>{connectedNonAdmin.role?.toUpperCase() || "ENSEIGNANT"}</strong> ({connectedNonAdmin.email}).
+                    Ce compte n&apos;a pas les droits d&apos;administration.
+                  </p>
+                </div>
+              </div>
+              <div className="pt-1 flex items-center justify-between border-t border-amber-500/20">
+                <span className="text-[10px] text-amber-300/70">Pour entrer proprement en Admin :</span>
+                <button
+                  type="button"
+                  onClick={handleDisconnectNonAdmin}
+                  className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-extrabold px-3 py-1.5 rounded-lg text-[11px] transition cursor-pointer flex items-center gap-1.5 border border-amber-500/40"
+                >
+                  <i className="fas fa-sign-out-alt"></i>
+                  <span>Se déconnecter de ce compte</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {accessError && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-3.5 rounded-xl text-center font-bold">
               {accessError}
@@ -1209,6 +1370,20 @@ export default function AdminDashboard() {
                     <i className="fas fa-lock text-xs"></i>
                   </span>
                 </div>
+              </div>
+
+              <div className="flex justify-end pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotModal(true);
+                    setForgotEmail(loginEmail || "");
+                    setForgotMessage(null);
+                  }}
+                  className="text-amber-400 hover:text-amber-300 text-xs font-bold underline transition cursor-pointer"
+                >
+                  Mot de passe administrateur oublié ?
+                </button>
               </div>
 
               <button
@@ -1260,6 +1435,134 @@ export default function AdminDashboard() {
                 <span>Déverrouiller avec le Code</span>
               </button>
             </form>
+          )}
+
+          {/* MODAL RÉCUPÉRATION MOT DE PASSE ADMIN */}
+          {showForgotModal && (
+            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 text-white space-y-4 shadow-2xl relative">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2 text-amber-400 font-extrabold text-sm">
+                    <i className="fas fa-key"></i>
+                    <span>Récupération d&apos;Accès Admin</span>
+                  </div>
+                  <button
+                    onClick={() => setShowForgotModal(false)}
+                    className="text-slate-400 hover:text-white text-sm"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <p className="text-xs text-slate-300">
+                  Choisissez la méthode de récupération pour définir un nouveau mot de passe administrateur :
+                </p>
+
+                <div className="flex rounded-xl bg-slate-800/80 p-1 border border-slate-700/80 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => { setForgotMethod("passcode"); setForgotMessage(null); }}
+                    className={`flex-1 py-1.5 rounded-lg font-bold transition text-center cursor-pointer ${
+                      forgotMethod === "passcode"
+                        ? "bg-sama-orange text-slate-950 shadow-sm"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Code Maître Direction
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setForgotMethod("email"); setForgotMessage(null); }}
+                    className={`flex-1 py-1.5 rounded-lg font-bold transition text-center cursor-pointer ${
+                      forgotMethod === "email"
+                        ? "bg-slate-700 text-white shadow-sm"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Lien par Email
+                  </button>
+                </div>
+
+                {forgotMessage && (
+                  <div
+                    className={`text-xs p-3 rounded-xl font-bold text-center ${
+                      forgotMessage.type === "success"
+                        ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-300"
+                        : "bg-red-500/20 border border-red-500/40 text-red-300"
+                    }`}
+                  >
+                    {forgotMessage.text}
+                  </div>
+                )}
+
+                <form onSubmit={handleAdminResetPasswordSubmit} className="space-y-3 text-xs">
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Email du compte Administrateur</label>
+                    <input
+                      type="email"
+                      required
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="admin@sama-academie.sn"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-sama-orange"
+                    />
+                  </div>
+
+                  {forgotMethod === "passcode" && (
+                    <>
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Code Maître Direction (Master Passcode)</label>
+                        <input
+                          type="password"
+                          required
+                          value={forgotPasscode}
+                          onChange={(e) => setForgotPasscode(e.target.value)}
+                          placeholder="Code secret Direction..."
+                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-sama-orange"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Nouveau mot de passe administrateur</label>
+                        <input
+                          type="password"
+                          required
+                          value={forgotNewPassword}
+                          onChange={(e) => setForgotNewPassword(e.target.value)}
+                          placeholder="Min. 6 caractères..."
+                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-sama-orange"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="pt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotModal(false)}
+                      className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl transition"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={forgotLoading}
+                      className="flex-1 bg-sama-orange hover:bg-amber-400 text-slate-950 font-black py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 disabled:opacity-60 cursor-pointer"
+                    >
+                      {forgotLoading ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin"></i>
+                          <span>Traitement...</span>
+                        </>
+                      ) : forgotMethod === "passcode" ? (
+                        "Mettre à jour"
+                      ) : (
+                        "Envoyer le lien"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
 
           <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-slate-400">
@@ -1335,22 +1638,38 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-end md:self-auto">
+          <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
+            {/* Notification si un compte enseignant/élève est resté connecté */}
+            {connectedNonAdmin && (
+              <div className="hidden lg:flex items-center gap-2 bg-amber-950/70 border border-amber-800/80 px-3 py-1.5 rounded-xl text-xs text-amber-200">
+                <i className="fas fa-user-circle text-amber-400"></i>
+                <span>Compte site : <strong>{connectedNonAdmin.first_name} {connectedNonAdmin.last_name}</strong> ({connectedNonAdmin.role})</span>
+                <button
+                  onClick={handleDisconnectNonAdmin}
+                  className="text-amber-400 hover:text-white underline text-[11px] font-bold ml-1 cursor-pointer"
+                  title="Déconnecter ce compte du navigateur"
+                >
+                  Déconnecter
+                </button>
+              </div>
+            )}
+
             {currentAdminProfile && (
-              <div className="hidden sm:flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 px-3 py-1.5 rounded-xl text-xs">
+              <div className="flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 px-3 py-1.5 rounded-xl text-xs">
                 <div className="w-6 h-6 rounded-full bg-sama-orange text-slate-950 font-black text-[11px] flex items-center justify-center shadow-xs">
-                  {currentAdminProfile.first_name?.[0]?.toUpperCase() || "A"}
+                  {currentAdminProfile.isMaster ? "👑" : (currentAdminProfile.first_name?.[0]?.toUpperCase() || "A")}
                 </div>
                 <div className="text-left">
                   <span className="font-bold text-slate-200 block text-[11px] leading-tight">
-                    {currentAdminProfile.first_name} {currentAdminProfile.last_name}
+                    {currentAdminProfile.isMaster ? "Direction Générale" : `${currentAdminProfile.first_name} ${currentAdminProfile.last_name}`}
                   </span>
                   <span className="text-[10px] text-slate-400 block font-mono">
-                    {currentAdminProfile.email}
+                    {currentAdminProfile.isMaster ? "direction@sama-academie.sn (Master Key)" : `${currentAdminProfile.email} (Admin)`}
                   </span>
                 </div>
               </div>
             )}
+
             <Link
               href="/"
               target="_blank"
@@ -1373,6 +1692,14 @@ export default function AdminDashboard() {
             >
               <i className="fas fa-lock text-xs"></i>
               <span>Verrouiller</span>
+            </button>
+            <button
+              onClick={handleDisconnectNonAdmin}
+              className="text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+              title="Fermer la console et déconnecter tout compte"
+            >
+              <i className="fas fa-sign-out-alt text-xs"></i>
+              <span>Quitter</span>
             </button>
           </div>
         </div>
