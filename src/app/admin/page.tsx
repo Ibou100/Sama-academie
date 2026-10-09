@@ -208,30 +208,46 @@ export default function AdminDashboard() {
       const { data: profs } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
       if (profs) setProfiles(profs);
 
-      // 2. Demandes d'encadrement
-      const { data: reqs } = await supabase
-        .from("tutoring_requests")
-        .select(`*, student:profiles!student_id(first_name, last_name, phone, email, region, level), teacher:profiles!teacher_id(first_name, last_name, phone, subject, price)`)
-        .order("created_at", { ascending: false });
-      if (reqs) {
-        setTutoringRequests(reqs);
-        // Extraire les données de tarification enregistrées dans le message
-        const pricingMap: Record<string, any> = {};
-        reqs.forEach((r) => {
-          if (r.message && r.message.includes("[SAMA_CONTRAT]")) {
-            const raw = r.message.split("[SAMA_CONTRAT]")[1] || "";
-            const famMatch = raw.match(/Famille:\s*([^|]+)/i);
-            const profMatch = raw.match(/Prof:\s*([^|]+)/i);
-            const noteMatch = raw.match(/Note:\s*([^$]+)/i);
-            pricingMap[r.id] = {
-              familyPrice: famMatch ? famMatch[1].trim() : "",
-              teacherPayout: profMatch ? profMatch[1].trim() : "",
-              notes: noteMatch ? noteMatch[1].trim() : "",
-            };
-          }
-        });
-        setContractPricing(pricingMap);
+      // 2. Demandes d'encadrement (Bypass RLS via API serveur sécurisée avec Service Role)
+      let reqs: any[] = [];
+      try {
+        const headers = await getAdminHeaders();
+        const res = await fetch("/api/admin/requests", { headers });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && Array.isArray(data.requests)) {
+          reqs = data.requests;
+        }
+      } catch (_) {}
+
+      // Fallback client Supabase si l'API serveur n'a pas répondu
+      if (reqs.length === 0) {
+        try {
+          const { data: clientReqs } = await supabase
+            .from("tutoring_requests")
+            .select(`*, student:profiles!student_id(first_name, last_name, phone, email, region, level), teacher:profiles!teacher_id(first_name, last_name, phone, subject, price)`)
+            .order("created_at", { ascending: false });
+          if (clientReqs && clientReqs.length > 0) reqs = clientReqs;
+        } catch (_) {}
       }
+
+      setTutoringRequests(reqs);
+
+      // Extraire les données de tarification enregistrées dans le message
+      const pricingMap: Record<string, any> = {};
+      reqs.forEach((r) => {
+        if (r.message && r.message.includes("[SAMA_CONTRAT]")) {
+          const raw = r.message.split("[SAMA_CONTRAT]")[1] || "";
+          const famMatch = raw.match(/Famille:\s*([^|]+)/i);
+          const profMatch = raw.match(/Prof:\s*([^|]+)/i);
+          const noteMatch = raw.match(/Note:\s*([^$]+)/i);
+          pricingMap[r.id] = {
+            familyPrice: famMatch ? famMatch[1].trim() : "",
+            teacherPayout: profMatch ? profMatch[1].trim() : "",
+            notes: noteMatch ? noteMatch[1].trim() : "",
+          };
+        }
+      });
+      setContractPricing(pricingMap);
 
       // 3. Classes virtuelles
       const { data: vClasses } = await supabase
@@ -837,12 +853,30 @@ export default function AdminDashboard() {
     const contractTag = `[SAMA_CONTRAT] Famille: ${pricing.familyPrice || "À convenir"} | Prof: ${pricing.teacherPayout || "À convenir"} | Note: ${pricing.notes || "Négociation en cours"}`;
     const newMsg = originalMsg ? `${originalMsg}\n\n${contractTag}` : contractTag;
 
-    const { error } = await supabase
-      .from("tutoring_requests")
-      .update({ message: newMsg, updated_at: new Date().toISOString() })
-      .eq("id", requestId);
+    let updateOk = false;
+    try {
+      const headers = await getAdminHeaders();
+      const res = await fetch("/api/admin/requests", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          requestId,
+          updates: { message: newMsg },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) updateOk = true;
+    } catch (_) {}
 
-    if (!error) {
+    if (!updateOk) {
+      const { error } = await supabase
+        .from("tutoring_requests")
+        .update({ message: newMsg, updated_at: new Date().toISOString() })
+        .eq("id", requestId);
+      if (!error) updateOk = true;
+    }
+
+    if (updateOk) {
       showToast("Accord financier enregistré avec succès !", "success");
       setTutoringRequests((prev) => prev.map((r) => (r.id === requestId ? { ...r, message: newMsg } : r)));
       logAdminAction({
@@ -870,12 +904,30 @@ export default function AdminDashboard() {
       updatePayload.teacher_id = assignedTeacher;
     }
 
-    const { error } = await supabase
-      .from("tutoring_requests")
-      .update(updatePayload)
-      .eq("id", requestId);
+    let approveOk = false;
+    try {
+      const headers = await getAdminHeaders();
+      const res = await fetch("/api/admin/requests", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          requestId,
+          updates: updatePayload,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) approveOk = true;
+    } catch (_) {}
 
-    if (!error) {
+    if (!approveOk) {
+      const { error } = await supabase
+        .from("tutoring_requests")
+        .update(updatePayload)
+        .eq("id", requestId);
+      if (!error) approveOk = true;
+    }
+
+    if (approveOk) {
       showToast("Contrat validé et activé ! La salle et le chat sont maintenant ouverts.", "success");
       setTutoringRequests((prev) =>
         prev.map((r) => (r.id === requestId ? { ...r, ...updatePayload } : r))
@@ -886,19 +938,37 @@ export default function AdminDashboard() {
       });
       fetchAuditLogs();
     } else {
-      showToast("Erreur : " + error.message, "error");
+      showToast("Erreur lors de la validation du contrat.", "error");
     }
     setActionLoadingId(null);
   };
 
   const handleRejectRequest = async (requestId: string) => {
     setActionLoadingId(requestId);
-    const { error } = await supabase
-      .from("tutoring_requests")
-      .update({ status: "declined", updated_at: new Date().toISOString() })
-      .eq("id", requestId);
+    let rejectOk = false;
+    try {
+      const headers = await getAdminHeaders();
+      const res = await fetch("/api/admin/requests", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          requestId,
+          updates: { status: "declined" },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) rejectOk = true;
+    } catch (_) {}
 
-    if (!error) {
+    if (!rejectOk) {
+      const { error } = await supabase
+        .from("tutoring_requests")
+        .update({ status: "declined", updated_at: new Date().toISOString() })
+        .eq("id", requestId);
+      if (!error) rejectOk = true;
+    }
+
+    if (rejectOk) {
       showToast("Demande archivée / clôturée.", "info");
       setTutoringRequests((prev) =>
         prev.map((r) => (r.id === requestId ? { ...r, status: "declined" } : r))
@@ -908,6 +978,8 @@ export default function AdminDashboard() {
         details: `Clôture / archivage de la demande de tutorat ID: ${requestId}`,
       });
       fetchAuditLogs();
+    } else {
+      showToast("Erreur lors de la clôture de la demande.", "error");
     }
     setActionLoadingId(null);
   };

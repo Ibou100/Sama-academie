@@ -92,17 +92,41 @@ export default function Enseignants() {
     if (!currentUser || !contactTeacher) return;
     setSubmittingRequest(true);
 
-    const { error } = await supabase.from("tutoring_requests").insert([{
-      student_id: currentUser.id,
-      teacher_id: contactTeacher.id,
-      message: requestMessage.trim() || null,
-      status: "pending"
-    }]);
+    let success = false;
+    // 1. Priorité API serveur sécurisée (Service Role, garanti sans blocage RLS)
+    try {
+      const res = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: currentUser.id,
+          teacherId: contactTeacher.id,
+          message: requestMessage.trim() || null,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        success = true;
+      }
+    } catch (_) {}
 
-    if (!error) {
+    // 2. Fallback client Supabase
+    if (!success) {
+      const { error } = await supabase.from("tutoring_requests").insert([{
+        student_id: currentUser.id,
+        teacher_id: contactTeacher.id,
+        message: requestMessage.trim() || null,
+        status: "pending"
+      }]);
+      if (!error) {
+        success = true;
+      }
+    }
+
+    if (success) {
       setBookedSuccess(true);
     } else {
-      alert("Erreur lors de l'envoi : " + error.message);
+      alert("Erreur lors de l'envoi de votre demande d'encadrement. Veuillez réessayer.");
     }
     setSubmittingRequest(false);
   };
