@@ -53,14 +53,29 @@ export default function Videos() {
     setActiveVideoId(activeVideoId === videoId ? null : videoId);
   };
 
-  // Détection élève et cycle
+  // Détection profil, élève et enseignant
   const isStudent = userProfile?.role === "eleve";
   const studentLevel = (userProfile?.level || "").toLowerCase();
   const studentCycle: "Primaire" | "College" | "Lycee" | null = isStudent ? studentCycleOf(studentLevel) : null;
 
-  const effectiveCycle = isStudent && studentCycle ? studentCycle : selectedCycle;
+  const isTeacher = userProfile?.role === "enseignant";
+  const teacherCycle: "Primaire" | "College" | "Lycee" | null = isTeacher ? detectCycle(userProfile?.level) : null;
+  const teacherSubject = isTeacher ? userProfile?.subject : null;
+
+  const effectiveCycle = isStudent && studentCycle 
+    ? studentCycle 
+    : (isTeacher && teacherCycle ? teacherCycle : selectedCycle);
 
   const filteredVideos = videosList.filter((vid) => {
+    if (isTeacher && teacherSubject) {
+      // RÈGLE SAMA ACADÉMIE : Le professeur ne voit que les vidéos de son domaine
+      const subNorm = (s: string) => s?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "") || "";
+      const vs = subNorm(vid.subject);
+      const ts = subNorm(teacherSubject);
+      const matchSubject = vs === ts || vs.includes(ts) || ts.includes(vs) || (vs.startsWith("math") && ts.startsWith("math"));
+      if (!matchSubject) return false;
+    }
+
     if (effectiveCycle === "TOUS") return true;
     const vc = detectCycle(vid.level);
     if (effectiveCycle === "Primaire" || effectiveCycle === "College" || effectiveCycle === "Lycee") return vc === effectiveCycle;
@@ -113,6 +128,30 @@ export default function Videos() {
               <div className="text-right flex-shrink-0">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-sama-primary text-xs font-bold border border-blue-200 shadow-xs">
                   <i className="fas fa-check-circle text-green-500"></i> Cycle Actif : {studentCycle}
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : isTeacher && teacherSubject ? (
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                  <i className="fas fa-chalkboard-teacher"></i>
+                </span>
+                <div>
+                  <p className="font-extrabold text-amber-900 text-sm flex items-center gap-2">
+                    <span>Espace Enseignant • Matière : {teacherSubject}</span>
+                    <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Spécialité</span>
+                  </p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Connecté en tant que professeur ({userProfile?.first_name} • {teacherSubject} • {userProfile?.level}). Seules les vidéos de votre discipline et de votre niveau vous sont présentées.
+                  </p>
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-amber-900 text-xs font-bold border border-amber-200 shadow-xs">
+                  <i className="fas fa-check-circle text-amber-600"></i> Cycle : {teacherCycle || "Lycée"}
                 </span>
               </div>
             </div>

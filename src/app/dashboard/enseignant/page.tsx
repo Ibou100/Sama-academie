@@ -5,6 +5,51 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getClientSessionAndRole, safeRedirect } from "@/lib/auth-helpers";
+import { detectCycle } from "@/lib/cycle";
+
+// RÈGLE STRICTE SAMA ACADÉMIE : Filtrage des vidéos par matière et niveau de l'enseignant
+function isVideoMatchingTeacherSubject(videoSubject?: string | null, teacherSubject?: string | null): boolean {
+  if (!teacherSubject || !teacherSubject.trim()) return true;
+  if (!videoSubject || !videoSubject.trim()) return false;
+
+  const normalize = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+
+  const v = normalize(videoSubject);
+  const t = normalize(teacherSubject);
+
+  if (v === t || v.includes(t) || t.includes(v)) return true;
+
+  if (v.startsWith("math") && t.startsWith("math")) return true;
+  if (v.includes("physique") && t.includes("physique")) return true;
+  if ((v.includes("svt") || v.includes("science")) && (t.includes("svt") || t.includes("science"))) return true;
+  if (v.includes("francais") && t.includes("francais")) return true;
+  if (v.includes("anglais") && t.includes("anglais")) return true;
+  if (v.includes("philo") && t.includes("philo")) return true;
+  if (v.includes("histoire") && t.includes("histoire")) return true;
+
+  return false;
+}
+
+function isVideoMatchingTeacherLevel(videoLevel?: string | null, teacherLevel?: string | null): boolean {
+  if (!teacherLevel || !teacherLevel.trim()) return true;
+  if (!videoLevel || !videoLevel.trim()) return false;
+
+  const teacherCycle = detectCycle(teacherLevel);
+  const videoCycle = detectCycle(videoLevel);
+
+  // Si les deux cycles sont identifiés (Primaire, College, Lycee), ils doivent être strictement identiques
+  if (teacherCycle && videoCycle) {
+    return teacherCycle === videoCycle;
+  }
+
+  const clean = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  return clean(teacherLevel).includes(clean(videoLevel)) || clean(videoLevel).includes(clean(teacherLevel));
+}
 
 export default function DashboardEnseignant() {
   const router = useRouter();
@@ -119,8 +164,12 @@ export default function DashboardEnseignant() {
       };
 
       setCurrentUser(safeProfile);
+      const teacherCycle = detectCycle(safeProfile.level) || "Lycee";
+      const defaultLvl = teacherCycle === "Lycee" ? "Terminale S2" : teacherCycle === "College" ? "3ème (BFEM)" : "CM2 (CFEE)";
       setVideoSubject(safeProfile.subject || "Mathématiques");
+      setVideoLevel(defaultLvl);
       setWebinarSubject(safeProfile.subject || "Mathématiques");
+      setWebinarLevel(defaultLvl);
 
       // 1. RÈGLE D'OR SAMA ACADÉMIE : Récupérer UNIQUEMENT les élèves assignés et validés par l'administration
       let requests = null;
@@ -171,14 +220,19 @@ export default function DashboardEnseignant() {
 
       if (webinars) setMyWebinars(webinars);
 
-      // 3. Récupérer les vidéos récentes
+      // 3. Récupérer STRICTEMENT les vidéos du domaine (matière) et du niveau de cet enseignant
       const { data: vids } = await supabase
         .from("videos")
         .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10);
+        .order("created_at", { ascending: false });
 
-      if (vids) setMyVideos(vids);
+      if (vids) {
+        const filteredVids = vids.filter((v: any) =>
+          isVideoMatchingTeacherSubject(v.subject, safeProfile.subject) &&
+          isVideoMatchingTeacherLevel(v.level, safeProfile.level)
+        );
+        setMyVideos(filteredVids);
+      }
     } catch (err) {
       console.error("Erreur chargement Espace Enseignant:", err);
     } finally {
@@ -912,15 +966,49 @@ export default function DashboardEnseignant() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Niveau / Classe</label>
-                  <input
-                    type="text"
-                    required
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Niveau / Classe ({detectCycle(currentUser?.level) || "Cycle"})</label>
+                  <select
                     value={videoLevel}
                     onChange={(e) => setVideoLevel(e.target.value)}
-                    placeholder="Ex: 3ème ou Terminale"
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm bg-gray-50 outline-none focus:border-sama-primary"
-                  />
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm bg-gray-50 outline-none focus:border-sama-primary font-medium"
+                  >
+                    {(() => {
+                      const c = detectCycle(currentUser?.level) || "Lycee";
+                      if (c === "Primaire") {
+                        return (
+                          <>
+                            <option value="CM2 (CFEE)">CM2 (CFEE)</option>
+                            <option value="CM1">CM1</option>
+                            <option value="CE2">CE2</option>
+                            <option value="CE1">CE1</option>
+                            <option value="CP">CP</option>
+                            <option value="CI">CI</option>
+                          </>
+                        );
+                      }
+                      if (c === "College") {
+                        return (
+                          <>
+                            <option value="3ème (BFEM)">3ème (BFEM)</option>
+                            <option value="4ème">4ème</option>
+                            <option value="5ème">5ème</option>
+                            <option value="6ème">6ème</option>
+                          </>
+                        );
+                      }
+                      return (
+                        <>
+                          <option value="Terminale S2">Terminale S2</option>
+                          <option value="Terminale S1">Terminale S1</option>
+                          <option value="Terminale L">Terminale L</option>
+                          <option value="1ère S">1ère S</option>
+                          <option value="1ère L">1ère L</option>
+                          <option value="2nde S">2nde S</option>
+                          <option value="2nde L">2nde L</option>
+                        </>
+                      );
+                    })()}
+                  </select>
                 </div>
               </div>
 
@@ -958,24 +1046,61 @@ export default function DashboardEnseignant() {
           </div>
 
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="text-lg font-black text-gray-900">Vidéos pédagogiques disponibles sur la plateforme</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {myVideos.map((v) => (
-                <div key={v.id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition space-y-2">
-                  <div className="h-32 bg-gray-900 rounded-xl flex items-center justify-center text-white relative overflow-hidden group">
-                    <i className="fas fa-play-circle text-4xl text-sama-orange opacity-90 group-hover:scale-110 transition"></i>
-                    <span className="absolute bottom-2 right-2 bg-black/70 px-2 py-0.5 rounded text-[10px] font-bold">
-                      {v.duration || "20 min"}
-                    </span>
-                  </div>
-                  <h4 className="font-bold text-gray-900 text-sm line-clamp-1">{v.title}</h4>
-                  <div className="flex justify-between items-center text-xs text-gray-500">
-                    <span>{v.subject}</span>
-                    <span className="font-bold text-sama-primary">{v.level}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <i className="fas fa-film text-sama-primary"></i>
+                  Vidéos dans votre discipline &amp; niveau
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Filtre actif : <strong className="text-sama-primary">{currentUser?.subject || "Votre matière"}</strong> • <strong className="text-sama-orange">{detectCycle(currentUser?.level) || currentUser?.level || "Lycée"}</strong>
+                </p>
+              </div>
+              <span className="text-xs bg-blue-50 text-sama-primary font-bold px-3 py-1 rounded-full border border-blue-100 self-start sm:self-auto">
+                {myVideos.length} vidéo{myVideos.length > 1 ? "s" : ""} correspondante{myVideos.length > 1 ? "s" : ""}
+              </span>
             </div>
+
+            {myVideos.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-gray-100 p-8 text-center space-y-3">
+                <div className="w-14 h-14 bg-blue-50 text-sama-primary rounded-2xl flex items-center justify-center mx-auto text-2xl">
+                  <i className="fas fa-video-slash"></i>
+                </div>
+                <h4 className="font-bold text-gray-900 text-sm">
+                  Aucune vidéo disponible pour le moment en {currentUser?.subject} ({detectCycle(currentUser?.level) || currentUser?.level})
+                </h4>
+                <p className="text-xs text-gray-500 max-w-md mx-auto">
+                  En tant qu&apos;enseignant certifié SAMA ACADÉMIE, publiez la première vidéo de cours pour vos élèves via le formulaire ci-contre !
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {myVideos.map((v) => (
+                  <a
+                    key={v.id}
+                    href={v.video_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition space-y-2 block group"
+                    title="Cliquer pour visionner la vidéo"
+                  >
+                    <div className="h-32 bg-gray-900 rounded-xl flex items-center justify-center text-white relative overflow-hidden">
+                      <i className="fas fa-play-circle text-4xl text-sama-orange opacity-90 group-hover:scale-110 transition"></i>
+                      <span className="absolute bottom-2 right-2 bg-black/70 px-2 py-0.5 rounded text-[10px] font-bold">
+                        {v.duration || "20 min"}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-gray-900 text-sm line-clamp-1 group-hover:text-sama-primary transition">
+                      {v.title}
+                    </h4>
+                    <div className="flex justify-between items-center text-xs text-gray-500">
+                      <span className="font-medium">{v.subject}</span>
+                      <span className="font-bold text-sama-primary">{v.level}</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
