@@ -4,212 +4,9 @@ import { detectCycle, studentCycleOf } from "@/lib/cycle";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { ALL_OFFICIAL_EXAMS, EXAMS_BY_KEY, OfficialExamDocument } from "@/data/officialExamsData";
 
-const DEFAULT_DOCUMENTS = [
-  // Primaire
-  { 
-    id: "prim-1", 
-    level: "Primaire (CM2/CFEE)", 
-    cycle: "Primaire",
-    title: "Épreuve CFEE & Entrée en 6e - Mathématiques & Résolution de Problèmes", 
-    subject: "Mathématiques", 
-    color: "bg-sama-blue", 
-    downloads: "3 420", 
-    pages_info: "Sujet officiel Ministère + Barème", 
-    file_url: "#",
-    exercices: [
-      { num: "Épreuve 1 (Ressources - 40 pts)", desc: "Numération décimale, calcul de fractions, pourcentages et conversion d'unités de mesures métriques." },
-      { num: "Épreuve 2 (Compétence - 60 pts)", desc: "Résolution de problème de la vie courante : Calcul du budget d'achat familial, dépenses et bénéfice commercial." }
-    ],
-    sample_corrige: "Solution du problème : 1) Calcul de la longueur totale du grillage nécessaire : Périmètre = (Longueur + Largeur) × 2 = (45m + 25m) × 2 = 140 m. 2) Dépense totale pour l'achat du grillage : 140 m × 1 500 FCFA = 210 000 FCFA..."
-  },
-  { 
-    id: "prim-2", 
-    level: "Primaire (CM2/CFEE)", 
-    cycle: "Primaire",
-    title: "Épreuve CFEE & Entrée en 6e - Français (Texte suivi de questions & Dictée)", 
-    subject: "Français", 
-    color: "bg-sama-blue", 
-    downloads: "2 890", 
-    pages_info: "Sujet officiel Ministère + Grille de correction", 
-    file_url: "#",
-    exercices: [
-      { num: "Compréhension & Vocabulaire", desc: "Explication de texte, recherche de synonymes, contraires et formation de mots dérivés." },
-      { num: "Grammaire & Conjugaison", desc: "Analyse logique de propositions, accords du participe passé et conjugaison au plus-que-parfait et futur simple." },
-      { num: "Production d'Écrits", desc: "Rédaction d'une lettre amicale décrivant une fête traditionnelle de votre village ou quartier." }
-    ],
-    sample_corrige: "Barème officiel de notation : Respect du thème (4 points), cohérence du récit et connecteurs temporels (3 points), correction de la langue et accords grammaticaux (3 points)..."
-  },
-  { 
-    id: "prim-3", 
-    level: "Primaire (CE1/CE2)", 
-    cycle: "Primaire",
-    title: "Évaluation Trimestrielle CE1/CE2 - Opérations, Géométrie et Vocabulaire", 
-    subject: "Maths & Français", 
-    color: "bg-sama-blue", 
-    downloads: "2 150", 
-    pages_info: "Fiche d'évaluation nationale", 
-    file_url: "#",
-    exercices: [
-      { num: "Activités numériques", desc: "Addition et soustraction avec retenue, tables de multiplication de 2 à 5 et ordre croissant." },
-      { num: "Activités géométriques", desc: "Reconnaissance du carré, du rectangle et du triangle à l'aide de la règle graduée et de l'équerre." }
-    ],
-    sample_corrige: "Corrigé CE1/CE2 : Vérifier que l'enfant utilise correctement les alignements de chiffres en colonnes (unités sous unités, dizaines sous dizaines) et n'omet pas la retenue..."
-  },
-  { 
-    id: "prim-4", 
-    level: "Primaire (CI - CM2)", 
-    cycle: "Primaire",
-    title: "Fiche d'Éveil & Sciences d'Observation - Milieu Physique & Vivant", 
-    subject: "Sciences & Éveil", 
-    color: "bg-sama-blue", 
-    downloads: "1 940", 
-    pages_info: "Programme officiel sénégalais", 
-    file_url: "#",
-    exercices: [
-      { num: "Le corps humain & l'hygiène", desc: "Les organes des sens, le rôle des dents et les règles d'hygiène alimentaire au Sénégal." },
-      { num: "L'environnement", desc: "Le cycle de l'eau, la protection des arbres et la gestion des ordures ménagères." }
-    ],
-    sample_corrige: "Les 5 organes des sens : les yeux (la vue), les oreilles (l'ouïe), le nez (l'odorat), la langue (le goût), la peau (le toucher). Règle d'or : se laver les mains avant et après chaque repas..."
-  },
-
-  // Collège
-  { 
-    id: "col-1", 
-    level: "Collège (3e/BFEM)", 
-    cycle: "College",
-    title: "Épreuve BFEM Mathématiques - Exercices & Problème de synthèse", 
-    subject: "Mathématiques", 
-    color: "bg-sama-blue", 
-    downloads: "3 840", 
-    pages_info: "Sujet officiel Brevet + Corrigé", 
-    file_url: "#",
-    exercices: [
-      { num: "Exercice 1 (5 points)", desc: "Calcul littéral, factorisation par identités remarquables et équations produits-nuls." },
-      { num: "Exercice 2 (5 points)", desc: "Géométrie dans l'espace : Cône de révolution, calcul de volume et section par un plan parallèle à la base." },
-      { num: "Problème (10 points)", desc: "Théorème de Thalès, trigonométrie et fonctions affines appliquées à une facture de carburant." }
-    ],
-    sample_corrige: "Exercice 1 : A(x) = (2x - 3)² - (x + 1)². En appliquant a² - b² = (a - b)(a + b), on obtient A(x) = (2x - 3 - x - 1)(2x - 3 + x + 1) = (x - 4)(3x - 2). Les solutions de A(x) = 0 sont x = 4 et x = 2/3..."
-  },
-  { 
-    id: "col-2", 
-    level: "Collège (3e/BFEM)", 
-    cycle: "College",
-    title: "Épreuves de SVT et Sciences Physiques (BFEM Récent)", 
-    subject: "SVT / Physique-Chimie", 
-    color: "bg-sama-blue", 
-    downloads: "2 760", 
-    pages_info: "Sujets officiels brevet", 
-    file_url: "#",
-    exercices: [
-      { num: "Partie 1 (8 points)", desc: "Maîtrise des connaissances : Reproduction chez les mammifères et immunologie." },
-      { num: "Partie 2 (12 points)", desc: "Compétences méthodologiques : Analyse de graphiques sur la glycémie et la digestion." }
-    ],
-    sample_corrige: "Partie 1 : L'immunité non spécifique fait intervenir les barrières naturelles (peau, muqueuses) ainsi que la phagocytose assurée par les polynucléaires..."
-  },
-
-  // Lycée
-  { 
-    id: "lyc-1", 
-    level: "BAC S2", 
-    cycle: "Lycee",
-    title: "Annales de Mathématiques 2015-2025 - Séries S1/S2", 
-    subject: "Mathématiques", 
-    color: "bg-sama-blue", 
-    downloads: "4 140", 
-    pages_info: "Sujet officiel + Barème", 
-    file_url: "#",
-    exercices: [
-      { num: "Exercice 1 (4 points)", desc: "Nombres complexes, transformations géométriques du plan et similitudes directes." },
-      { num: "Exercice 2 (5 points)", desc: "Probabilités conditionnelles, variables aléatoires discrètes et loi binomiale." },
-      { num: "Problème (11 points)", desc: "Étude d'une fonction exponentielle, tracé de la courbe (C) et calcul d'intégrales/aires." }
-    ],
-    sample_corrige: "Pour la question 1.a : Résolution dans C de l'équation z² - 2(√3)z + 4 = 0. Le discriminant Δ' = 3 - 4 = -1 = i². Donc z1 = √3 - i et z2 = √3 + i. Module |z1| = 2, argument θ = -π/6..."
-  },
-  { 
-    id: "lyc-2", 
-    level: "BAC L", 
-    cycle: "Lycee",
-    title: "Dissertations & Commentaires de Philosophie (Séries L & S)", 
-    subject: "Philosophie", 
-    color: "bg-sama-blue", 
-    downloads: "2 450", 
-    pages_info: "Sujets & plans détaillés", 
-    file_url: "#",
-    exercices: [
-      { num: "Sujet 1", desc: "L'État est-il nécessairement un obstacle à la liberté des citoyens ?" },
-      { num: "Sujet 2", desc: "L'art doit-il chercher à imiter la nature ou à la réinventer ?" },
-      { num: "Sujet 3", desc: "Commentaire de texte : Extrait de Kant, Idée d'une histoire universelle." }
-    ],
-    sample_corrige: "Plan détaillé Sujet 1 : I. L'État perçu comme contrainte et appareil coercitif (thèse anarchiste et marxiste). II. Mais sans État, la liberté dégénère en loi du plus fort (Hobbes). III. L'État de droit comme garant effectif de la liberté citoyenne (Rousseau)..."
-  },
-
-  // Concours d'État & Grandes Écoles (Spécial Lycée & Post-BAC)
-  {
-    id: "conc-1",
-    level: "Concours (EPT / ESP)",
-    cycle: "Concours",
-    title: "Concours d'Ingénieurs EPT Thiès / ESP Dakar — Mathématiques & Sciences Physiques",
-    subject: "Mathématiques & Physique",
-    color: "bg-purple-900",
-    downloads: "5 320",
-    pages_info: "Sujets Officiels d'Admissibilité + Corrigé Type",
-    file_url: "#",
-    exercices: [
-      { num: "Épreuve de Mathématiques (4h)", desc: "Algèbre linéaire, calcul matriciel, suites récurrentes, intégrales impropres et équations différentielles de niveau Terminale S1/S3." },
-      { num: "Épreuve de Physique-Chimie (3h)", desc: "Mécanique du point, circuits RLC en régime transitoire, interférences lumineuses et cinétique chimique." }
-    ],
-    sample_corrige: "Corrigé EPT Mathématiques : Résolution de l'équation différentielle y'' + 2y' + 5y = e^(-x). Équation caractéristique r² + 2r + 5 = 0, racines r = -1 ± 2i. Solution générale de l'équation homogène : yh(x) = e^(-x) [A cos(2x) + B sin(2x)]..."
-  },
-  {
-    id: "conc-2",
-    level: "Concours (CPGE Thiès)",
-    cycle: "Concours",
-    title: "Classes Préparatoires aux Grandes Écoles (CPGE) — Épreuves types MPSI & PCSI",
-    subject: "Sciences de l'Ingénieur",
-    color: "bg-indigo-900",
-    downloads: "3 890",
-    pages_info: "Sujets Nationaux d'Excellence",
-    file_url: "#",
-    exercices: [
-      { num: "Mathématiques Approfondies", desc: "Arithmétique avancée, polynômes de Tchebychev, espaces vectoriels et géométrie euclidienne." },
-      { num: "Physique & Modélisation", desc: "Thermodynamique appliquée aux moteurs thermiques, induction électromagnétique et optique ondulatoire." }
-    ],
-    sample_corrige: "Méthodologie CPGE Thiès : Rigueur de rédaction, précision du vocabulaire mathématique et soin des schémas mécaniques valorisés au barème national d'excellence..."
-  },
-  {
-    id: "conc-3",
-    level: "Concours Général Sénégalais",
-    cycle: "Concours",
-    title: "Concours Général Sénégalais — Mathématiques & Sciences Physiques (Terminale)",
-    subject: "Épreuves d'Excellence",
-    color: "bg-amber-800",
-    downloads: "6 120",
-    pages_info: "Annales Officielles Ministère de l'Éducation",
-    file_url: "#",
-    exercices: [
-      { num: "Problème 1 (Mathématiques)", desc: "Étude d'une famille de fonctions spéciales, inégalités intégrales et convergence de séries numériques." },
-      { num: "Problème 2 (Sciences Physiques)", desc: "Effet Doppler relativiste, mouvement de particules chargées dans des champs croisés et diffraction." }
-    ],
-    sample_corrige: "Rapport du jury du Concours Général : Les meilleures copies se distinguent par l'élégance de la démonstration et la concision du raisonnement scientifique..."
-  },
-  {
-    id: "conc-4",
-    level: "Concours (CUGEM / EMS)",
-    cycle: "Concours",
-    title: "Grandes Écoles Militaires & École Militaire de Santé (EMS) — Sciences & Culture Générale",
-    subject: "Santé & Militaire",
-    color: "bg-red-900",
-    downloads: "4 780",
-    pages_info: "Épreuves d'Officier & Médecine Militaire",
-    file_url: "#",
-    exercices: [
-      { num: "SVT & Physiologie Humaine", desc: "Génétique mendélienne et moléculaire, neurophysiologie, régulation de la pression artérielle." },
-      { num: "Dissertation de Culture Générale", desc: "La géopolitique sahélienne, la souveraineté alimentaire en Afrique et l'éthique de la recherche biomédicale." }
-    ],
-    sample_corrige: "Critères de notation EMS / CUGEM : Esprit de synthèse, clarté de l'argumentation, justesse scientifique et maîtrise irréprochable de la langue française..."
-  }
-];
+const DEFAULT_DOCUMENTS: any[] = ALL_OFFICIAL_EXAMS;
 
 const CYCLES = [
   { id: "TOUS", label: "Tous les cycles", icon: "fas fa-layer-group" },
@@ -251,7 +48,7 @@ export default function Examens() {
 
   // Visionneuse Sécurisée In-App
   const [viewerDoc, setViewerDoc] = useState<any | null>(null);
-  const [viewerTab, setViewerTab] = useState<"sujet" | "corrige">("sujet");
+  const [viewerTab, setViewerTab] = useState<"sujet" | "corrige" | "bareme" | "pdf">("sujet");
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -290,25 +87,24 @@ export default function Examens() {
       });
 
       if (validDbAnnales.length > 0) {
-        // Classifier chaque annale de façon précise
-        const mapped = validDbAnnales.map((doc, idx) => {
+        // Classifier chaque annale et l'enrichir avec les données officielles
+        const mapped = validDbAnnales.map((doc) => {
           const isDocConcours = doc.level && (doc.level.toLowerCase().includes("concours") || doc.level.toLowerCase().includes("ept") || doc.level.toLowerCase().includes("esp") || doc.level.toLowerCase().includes("cpge"));
           const cycle = isDocConcours ? "Concours" : (detectCycle(doc.level) || "Lycee");
+          const rich = EXAMS_BY_KEY[doc.id] || EXAMS_BY_KEY[doc.title] || EXAMS_BY_KEY[doc.level];
 
           return {
             ...doc,
-            cycle,
-            exercices: doc.exercices || DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length]?.exercices || DEFAULT_DOCUMENTS[0].exercices,
-            sample_corrige: doc.sample_corrige || DEFAULT_DOCUMENTS[idx % DEFAULT_DOCUMENTS.length]?.sample_corrige || DEFAULT_DOCUMENTS[0].sample_corrige
+            ...(rich || {}),
+            cycle: doc.cycle || (rich as any)?.cycle || cycle
           };
         });
 
-        // Garantir la présence des épreuves de Concours d'État & Grandes Écoles
-        const hasConcoursDocs = mapped.some((d: any) => d.cycle === "Concours");
-        const finalDocs = hasConcoursDocs ? mapped : [...mapped, ...DEFAULT_DOCUMENTS.filter(d => d.cycle === "Concours")];
-        setDocuments(finalDocs);
+        const existingIds = new Set(mapped.map((d: any) => d.id));
+        const combined = [...mapped, ...ALL_OFFICIAL_EXAMS.filter(e => !existingIds.has(e.id))];
+        setDocuments(combined);
       } else {
-        setDocuments(DEFAULT_DOCUMENTS);
+        setDocuments(ALL_OFFICIAL_EXAMS);
       }
       setLoading(false);
     };
@@ -321,7 +117,14 @@ export default function Examens() {
     if (!isLoggedIn) {
       setShowAuthModal(true);
     } else {
-      setViewerDoc(doc);
+      const match = EXAMS_BY_KEY[doc.id] 
+        || EXAMS_BY_KEY[doc.name] 
+        || EXAMS_BY_KEY[doc.title] 
+        || EXAMS_BY_KEY[doc.level]
+        || ALL_OFFICIAL_EXAMS.find(e => e.id === doc.id || (doc.title && e.title.toLowerCase().includes(doc.title.toLowerCase().substring(0, 15))))
+        || doc;
+
+      setViewerDoc(match);
       setViewerTab("sujet");
     }
   };
@@ -399,23 +202,32 @@ export default function Examens() {
       {/* ===== VISIONNEUSE SÉCURISÉE IN-APP (DOCUMENT VIEWER) ===== */}
       {viewerDoc && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in fade-in" onContextMenu={(e) => e.preventDefault()}>
-          <div className="bg-white rounded-3xl max-w-4xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden relative">
+          <div className="bg-white rounded-3xl max-w-4xl w-full h-[92vh] flex flex-col shadow-2xl overflow-hidden relative">
 
             {/* Header Visionneuse */}
             <div className="bg-sama-blue text-white p-4 sm:p-5 flex items-center justify-between gap-4 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <span className="bg-sama-orange text-sama-blue font-black text-xs px-2.5 py-1 rounded-full uppercase">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="bg-sama-orange text-sama-blue font-black text-xs px-2.5 py-1 rounded-full uppercase flex-shrink-0">
                   {viewerDoc.level}
                 </span>
-                <div>
-                  <h3 className="font-black text-sm sm:text-base leading-tight line-clamp-1">{viewerDoc.title}</h3>
-                  <p className="text-xs text-blue-200 mt-0.5">{viewerDoc.subject} • Consultation en Ligne Protégée</p>
+                <div className="min-w-0">
+                  <h3 className="font-black text-sm sm:text-base leading-tight truncate">{viewerDoc.title}</h3>
+                  <p className="text-xs text-blue-200 mt-0.5 truncate">
+                    {viewerDoc.institution || "Ministère de l'Éducation Nationale — DEXCO"} • {viewerDoc.session || "Session Officielle"}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-bold">
-                  <i className="fas fa-shield-alt text-sama-orange"></i> Anti-Fuite Activé
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => window.print()}
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold transition"
+                  title="Imprimer cette épreuve pour vos révisions"
+                >
+                  <i className="fas fa-print"></i> Imprimer
+                </button>
+                <div className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-bold">
+                  <i className="fas fa-shield-alt text-sama-orange"></i> Anti-Fuite
                 </div>
                 <button
                   onClick={() => setViewerDoc(null)}
@@ -427,11 +239,11 @@ export default function Examens() {
               </div>
             </div>
 
-            {/* Onglets Sujet vs Corrigé */}
-            <div className="bg-gray-100 px-6 py-2 flex items-center gap-2 border-b border-gray-200 flex-shrink-0">
+            {/* Barre de Navigation des Onglets */}
+            <div className="bg-gray-100 px-4 sm:px-6 py-2 flex items-center gap-2 border-b border-gray-200 flex-shrink-0 overflow-x-auto">
               <button
                 onClick={() => setViewerTab("sujet")}
-                className={`py-2 px-4 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap ${
                   viewerTab === "sujet" ? "bg-white text-sama-primary shadow-sm" : "text-gray-600 hover:text-gray-900"
                 }`}
               >
@@ -440,124 +252,316 @@ export default function Examens() {
 
               <button
                 onClick={() => setViewerTab("corrige")}
-                className={`py-2 px-4 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap ${
                   viewerTab === "corrige" ? "bg-white text-sama-primary shadow-sm" : "text-gray-600 hover:text-gray-900"
                 }`}
               >
-                <i className="fas fa-check-circle text-sama-orange"></i> Corrigé Pédagogique {isPremium ? "⭐" : "🔒"}
+                <i className="fas fa-check-circle text-sama-orange"></i> Corrigé Détaillé {isPremium ? "⭐" : "🔒"}
               </button>
 
-              <div className="ml-auto text-[11px] text-gray-400 hidden md:block">
-                Téléchargement bloqué • Document sous licence exclusive SAMA ACADÉMIE
+              <button
+                onClick={() => setViewerTab("bareme")}
+                className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap ${
+                  viewerTab === "bareme" ? "bg-white text-sama-primary shadow-sm" : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <i className="fas fa-tasks text-blue-600"></i> Barème DEXCO
+              </button>
+
+              {viewerDoc.file_url && viewerDoc.file_url !== "#" && (
+                <button
+                  onClick={() => setViewerTab("pdf")}
+                  className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap ${
+                    viewerTab === "pdf" ? "bg-white text-sama-primary shadow-sm" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <i className="fas fa-file-pdf text-red-600"></i> PDF Numérisé
+                </button>
+              )}
+
+              <div className="ml-auto text-[11px] text-gray-400 hidden lg:block whitespace-nowrap">
+                Document certifié • SAMA ACADÉMIE
               </div>
             </div>
 
             {/* Corps du Document avec Filigrane de Sécurité */}
             <div 
-              className="flex-grow overflow-y-auto p-6 sm:p-10 bg-slate-50 relative select-none"
+              className="flex-grow overflow-y-auto p-4 sm:p-8 md:p-10 bg-slate-50 relative select-none"
               style={{ userSelect: "none", WebkitUserSelect: "none" }}
             >
               {/* Filigrane discret en fond */}
               <div className="absolute inset-0 pointer-events-none flex flex-col justify-around items-center opacity-[0.03] select-none text-2xl sm:text-4xl font-black rotate-[-25deg] uppercase">
-                <span>SAMA ACADÉMIE - DOCUMENT OFFICIEL PROTÉGÉ</span>
-                <span>CONSULTATION STRICTEMENT PERSONNELLE</span>
+                <span>SAMA ACADÉMIE - DOCUMENT OFFICIEL DU SÉNÉGAL</span>
+                <span>CONSULTATION STRICTEMENT PÉDAGOGIQUE</span>
                 <span>REPRODUCTION & DIFFUSION INTERDITES</span>
               </div>
 
-              {viewerTab === "sujet" ? (
-                /* === ONGLET SUJET === */
-                <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-200 space-y-6">
-                  {/* En-tête République du Sénégal */}
-                  <div className="border-b-2 border-gray-900 pb-4 text-center space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-600">RÉPUBLIQUE DU SÉNÉGAL</p>
-                    <p className="text-[10px] font-bold text-gray-500">Ministère de l&apos;Éducation Nationale — DEXCO</p>
-                    <h4 className="text-base sm:text-lg font-black text-gray-900 pt-2 uppercase tracking-wide">
+              {viewerTab === "sujet" && (
+                /* === ONGLET SUJET OFFICIEL === */
+                <div className="max-w-3xl mx-auto bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-gray-200 space-y-6">
+                  {/* En-tête solennel République du Sénégal */}
+                  <div className="border-b-2 border-gray-900 pb-5 text-center space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-gray-700">
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-600"></span>
+                        RÉPUBLIQUE DU SÉNÉGAL
+                      </span>
+                      <span className="italic text-gray-500 font-serif lowercase tracking-normal">Un Peuple - Un But - Une Foi</span>
+                    </div>
+
+                    <p className="text-xs font-black uppercase text-sama-primary tracking-wide">
+                      {viewerDoc.institution || "Ministère de l'Éducation Nationale — DEXCO"}
+                    </p>
+
+                    <div className="inline-block bg-sama-blue text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                      {viewerDoc.session || "Session Officielle Nationale"}
+                    </div>
+
+                    <h4 className="text-lg sm:text-xl font-black text-gray-950 pt-1 tracking-tight">
                       {viewerDoc.title}
                     </h4>
-                    <div className="flex justify-between text-xs font-bold text-gray-700 pt-2 border-t border-gray-200">
-                      <span>Niveau : {viewerDoc.level}</span>
-                      <span>Matière : {viewerDoc.subject}</span>
-                      <span>Durée officielle</span>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-bold text-gray-800 pt-3 border-t border-gray-200 mt-2 text-center bg-gray-50 p-2.5 rounded-xl">
+                      <div><span className="text-gray-400 block text-[10px] uppercase">Niveau</span>{viewerDoc.level}</div>
+                      <div><span className="text-gray-400 block text-[10px] uppercase">Matière</span>{viewerDoc.subject}</div>
+                      <div><span className="text-gray-400 block text-[10px] uppercase">Durée</span>{viewerDoc.duration || "Durée officielle"}</div>
+                      <div><span className="text-gray-400 block text-[10px] uppercase">Coefficient</span>Coeff. {viewerDoc.coefficient || 3}</div>
                     </div>
                   </div>
 
-                  {/* Exercices & Énoncés */}
-                  <div className="space-y-6 text-gray-800 text-sm leading-relaxed">
-                    {(viewerDoc.exercices || DEFAULT_DOCUMENTS[0].exercices).map((ex: any, i: number) => (
-                      <div key={i} className="space-y-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <h5 className="font-black text-sama-primary text-sm flex items-center justify-between">
-                          <span>{ex.num}</span>
-                          <span className="text-[10px] bg-white px-2 py-0.5 rounded border text-gray-500 uppercase font-bold">Session Officielle</span>
-                        </h5>
-                        <p className="text-gray-700 text-xs sm:text-sm">
-                          {ex.desc}
-                        </p>
-                      </div>
-                    ))}
-
-                    <div className="pt-4 border-t border-gray-200 text-xs text-gray-500 text-center italic">
-                      Fin du sujet officiel. Retrouvez la résolution étape par étape dans l&apos;onglet &quot;Corrigé Pédagogique&quot;.
+                  {/* Instructions officielles aux candidats */}
+                  {viewerDoc.instructions && viewerDoc.instructions.length > 0 && (
+                    <div className="bg-amber-50/70 border-l-4 border-amber-500 p-4 rounded-r-xl text-xs text-amber-950 space-y-1.5">
+                      <p className="font-black flex items-center gap-1.5 uppercase text-[11px] tracking-wider text-amber-900">
+                        <i className="fas fa-exclamation-triangle text-amber-600"></i> Instructions Officielles aux Candidats
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-gray-700 pl-1">
+                        {viewerDoc.instructions.map((inst: string, idx: number) => (
+                          <li key={idx} className="leading-relaxed">{inst}</li>
+                        ))}
+                      </ul>
                     </div>
+                  )}
+
+                  {/* Sections de l'épreuve */}
+                  {viewerDoc.sections && viewerDoc.sections.length > 0 ? (
+                    <div className="space-y-8 pt-2">
+                      {viewerDoc.sections.map((section: any, sIdx: number) => (
+                        <div key={sIdx} className="space-y-4 pt-6 border-t border-gray-200 first:border-0 first:pt-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-100 p-3.5 rounded-xl border border-slate-200">
+                            <h5 className="font-black text-gray-900 text-xs sm:text-sm tracking-wide flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-lg bg-sama-primary text-white flex items-center justify-center text-xs font-black">
+                                {sIdx + 1}
+                              </span>
+                              {section.title}
+                            </h5>
+                            {section.points && (
+                              <span className="bg-white text-sama-primary font-black text-xs px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs self-start sm:self-auto">
+                                {section.points}
+                              </span>
+                            )}
+                          </div>
+
+                          {section.instructions && (
+                            <p className="text-xs font-semibold text-gray-600 italic bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                              {section.instructions}
+                            </p>
+                          )}
+
+                          {section.textExcerpt && (
+                            <div className="bg-amber-50/40 border-l-4 border-sama-orange p-5 rounded-r-2xl space-y-2 font-serif text-gray-800 text-xs sm:text-sm leading-relaxed italic shadow-2xs">
+                              <div className="flex justify-between items-center text-xs font-sans not-italic text-gray-500 font-bold border-b border-amber-200/60 pb-1.5 mb-2">
+                                <span>Texte d&apos;Étude Officiel</span>
+                                <span>{section.textExcerpt.author} — <em className="text-gray-700">{section.textExcerpt.work}</em></span>
+                              </div>
+                              <p className="whitespace-pre-line leading-relaxed">{section.textExcerpt.content}</p>
+                            </div>
+                          )}
+
+                          <div className="space-y-4">
+                            {section.questions.map((q: any, qIdx: number) => (
+                              <div key={qIdx} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs space-y-2.5">
+                                <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2">
+                                  <span className="font-black text-sama-primary text-xs sm:text-sm">
+                                    {q.num}
+                                  </span>
+                                  {q.points && (
+                                    <span className="text-[11px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-full">
+                                      {q.points}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="font-bold text-gray-900 text-xs sm:text-sm leading-relaxed">
+                                  {q.question}
+                                </p>
+                                {q.details && q.details.length > 0 && (
+                                  <div className="space-y-1.5 pl-2 text-xs sm:text-sm text-gray-700 leading-relaxed bg-gray-50/70 p-3.5 rounded-xl border border-gray-100">
+                                    {q.details.map((d: string, dIdx: number) => (
+                                      <p key={dIdx} className="leading-relaxed">{d}</p>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    /* Fallback anciens exercices */
+                    <div className="space-y-4">
+                      {(viewerDoc.exercices || []).map((ex: any, i: number) => (
+                        <div key={i} className="space-y-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                          <h5 className="font-black text-sama-primary text-sm flex items-center justify-between">
+                            <span>{ex.num}</span>
+                            <span className="text-[10px] bg-white px-2 py-0.5 rounded border text-gray-500 uppercase font-bold">Session Officielle</span>
+                          </h5>
+                          <p className="text-gray-700 text-xs sm:text-sm">
+                            {ex.desc}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="pt-6 border-t border-gray-200 text-xs text-gray-500 text-center italic space-y-1">
+                    <p>Fin du sujet officiel du Sénégal • SAMA ACADÉMIE — Bibliothèque Pédagogique d&apos;Excellence</p>
+                    <p className="text-[11px] text-gray-400">Consultez l&apos;onglet &quot;Corrigé Détaillé&quot; pour la résolution intégrale et les astuces du jury.</p>
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {viewerTab === "corrige" && (
                 /* === ONGLET CORRIGÉ === */
-                <div className="max-w-2xl mx-auto space-y-6">
+                <div className="max-w-3xl mx-auto space-y-6">
                   {isPremium ? (
-                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 space-y-6">
+                    <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-gray-200 space-y-6">
                       <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
                         <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center font-bold text-lg">
                           <i className="fas fa-check-double"></i>
                         </div>
                         <div>
-                          <h4 className="text-base font-black text-gray-900">Corrigé Détaillé & Méthodologie</h4>
-                          <p className="text-xs text-gray-500">Rédigé par le corps professoral de SAMA ACADÉMIE</p>
+                          <h4 className="text-base font-black text-gray-900">Corrigé Détaillé & Méthodologie Pédagogique</h4>
+                          <p className="text-xs text-gray-500">Rédigé et certifié par le corps professoral de SAMA ACADÉMIE</p>
                         </div>
                       </div>
 
-                      <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed font-sans">
-                        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-2">
-                          <p className="font-bold text-emerald-900 flex items-center gap-1.5">
-                            <i className="fas fa-lightbulb"></i> Conseils de rédaction de l&apos;inspecteur
+                      {viewerDoc.corrige?.methodologie && (
+                        <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl space-y-1 text-xs text-blue-950">
+                          <p className="font-black flex items-center gap-1.5 text-sama-primary">
+                            <i className="fas fa-lightbulb"></i> Méthodologie Recommandée
                           </p>
-                          <p className="text-emerald-800 text-xs">
-                            Toujours préciser le domaine de définition et expliciter chaque théorème avant d&apos;appliquer la formule.
-                          </p>
+                          <p className="leading-relaxed text-blue-900">{viewerDoc.corrige.methodologie}</p>
                         </div>
+                      )}
 
-                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 font-mono text-xs text-gray-800 leading-normal">
-                          {viewerDoc.sample_corrige || DEFAULT_DOCUMENTS[0].sample_corrige}
+                      {viewerDoc.corrige?.conseilsJury && (
+                        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-1 text-xs text-emerald-950">
+                          <p className="font-black flex items-center gap-1.5 text-emerald-800">
+                            <i className="fas fa-award"></i> Recommandations du Jury d&apos;Admission
+                          </p>
+                          <p className="leading-relaxed text-emerald-900">{viewerDoc.corrige.conseilsJury}</p>
                         </div>
-                      </div>
+                      )}
+
+                      {viewerDoc.corrige?.sections && viewerDoc.corrige.sections.length > 0 ? (
+                        <div className="space-y-6">
+                          {viewerDoc.corrige.sections.map((cSec: any, cIdx: number) => (
+                            <div key={cIdx} className="space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                              <h5 className="font-black text-gray-900 text-xs sm:text-sm flex items-center justify-between">
+                                <span>{cSec.title}</span>
+                                {cSec.points && (
+                                  <span className="text-[11px] bg-green-100 text-green-800 font-bold px-2.5 py-0.5 rounded-full">
+                                    {cSec.points}
+                                  </span>
+                                )}
+                              </h5>
+                              <div className="text-xs sm:text-sm text-gray-800 font-sans leading-relaxed whitespace-pre-line bg-white p-4 rounded-xl border border-gray-100 shadow-2xs font-mono">
+                                {cSec.solution}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 font-mono text-xs text-gray-800 leading-normal whitespace-pre-line">
+                          {viewerDoc.sample_corrige || viewerDoc.corrige || "Corrigé en cours de numérisation par l'équipe pédagogique."}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     /* Verrou Premium */
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-amber-200 text-center space-y-5">
+                    <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-amber-200 text-center space-y-5">
                       <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-3xl">
                         <i className="fas fa-crown"></i>
                       </div>
-                      <h4 className="text-xl font-extrabold text-gray-900">
-                        Corrigé Détaillé Réservé aux Abonnés Premium
+                      <h4 className="text-xl sm:text-2xl font-black text-gray-900">
+                        Corrigé Intégral Réservé aux Abonnés Premium
                       </h4>
-                      <p className="text-gray-600 text-xs sm:text-sm max-w-md mx-auto">
-                        Les explications rédigées pas à pas, les barèmes officiels et les astuces méthodologiques de nos enseignants certifiés sont réservés aux membres Premium.
+                      <p className="text-gray-600 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
+                        Les explications rédigées pas à pas, les barèmes officiels détaillés et les conseils méthodologiques de nos inspecteurs et professeurs certifiés sont réservés aux membres Premium.
                       </p>
                       <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
                           href="/tarifs"
-                          className="w-full sm:w-auto bg-sama-primary hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-xl transition text-xs shadow-sm"
+                          className="w-full sm:w-auto bg-sama-primary hover:bg-blue-800 text-white font-bold py-3.5 px-6 rounded-xl transition text-xs shadow-sm"
                         >
                           Passer en mode Premium ⭐
                         </Link>
                         <button
                           onClick={() => setViewerTab("sujet")}
-                          className="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl transition text-xs"
+                          className="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 px-6 rounded-xl transition text-xs"
                         >
-                          Revenir au sujet
+                          Revenir au sujet officiel
                         </button>
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {viewerTab === "bareme" && (
+                /* === ONGLET BARÈME OFFICIEL === */
+                <div className="max-w-3xl mx-auto bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-gray-200 space-y-6">
+                  <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-sama-primary flex items-center justify-center font-bold text-lg">
+                      <i className="fas fa-tasks"></i>
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black text-gray-900">Grille Officielle de Notation & Barème DEXCO</h4>
+                      <p className="text-xs text-gray-500">Critères d&apos;évaluation appliqués par les inspecteurs et correcteurs nationaux</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(viewerDoc.bareme || [
+                      { critere: "Maîtrise du programme officiel", points: "8 pts", description: "Justesse des connaissances et des définitions." },
+                      { critere: "Démarche et rigueur du raisonnement", points: "8 pts", description: "Clarté de la démonstration ou du plan de rédaction." },
+                      { critere: "Qualité de l'expression et présentation", points: "4 pts", description: "Orthographe, propreté et soin de la copie." }
+                    ]).map((item: any, bIdx: number) => (
+                      <div key={bIdx} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <h5 className="font-extrabold text-gray-900 text-xs sm:text-sm">{item.critere}</h5>
+                          <p className="text-xs text-gray-600 leading-relaxed">{item.description}</p>
+                        </div>
+                        <span className="bg-sama-primary text-white font-black text-xs px-3 py-1 rounded-lg flex-shrink-0">
+                          {item.points}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {viewerTab === "pdf" && viewerDoc.file_url && viewerDoc.file_url !== "#" && (
+                /* === ONGLET PDF NUMÉRISÉ === */
+                <div className="w-full h-full min-h-[550px] flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-200">
+                  <iframe
+                    src={viewerDoc.file_url}
+                    className="w-full h-full flex-grow border-0 min-h-[550px]"
+                    title="PDF Officiel"
+                  />
                 </div>
               )}
             </div>
@@ -785,21 +789,72 @@ export default function Examens() {
                     <p className="text-xs text-gray-600 mb-4">{concours.desc}</p>
                   </div>
                   <button
-                    onClick={() => openDocumentViewer({
-                      id: `concours-${index}`,
-                      level: "CONCOURS",
-                      title: `Concours ${concours.name} — ${concours.full}`,
-                      subject: "Culture Générale & Spécialité",
-                      pages_info: "Sujets d'admissibilité",
-                      exercices: [
-                        { num: "Épreuve 1 (Admissibilité)", desc: `Dissertation de culture générale / Épreuve de spécialité propre au concours ${concours.name}.` },
-                        { num: "Épreuve 2 (Tests psychotechniques)", desc: "Logique, raisonnement verbal, numérique et aptitudes professionnelles." }
-                      ],
-                      sample_corrige: `Méthodologie spécifique au concours ${concours.name} : Structure type, critères de notation du jury d'État et références bibliographiques officielles recommandées...`
-                    })}
+                    onClick={() => {
+                      const fullExam = EXAMS_BY_KEY[concours.name] 
+                        || EXAMS_BY_KEY[concours.name.split("/")[0].trim()] 
+                        || EXAMS_BY_KEY[concours.name.split(" ")[0].trim()]
+                        || ALL_OFFICIAL_EXAMS.find(e => e.title.toLowerCase().includes(concours.name.toLowerCase()));
+                      if (fullExam) {
+                        openDocumentViewer(fullExam);
+                      } else {
+                        openDocumentViewer({
+                          id: `concours-${index}`,
+                          level: "CONCOURS",
+                          title: `Concours ${concours.name} — ${concours.full}`,
+                          subject: "Culture Générale & Spécialité",
+                          institution: "Ministère de la Fonction Publique — DEXCO",
+                          session: "Session Officielle 2024 / 2025",
+                          duration: "3 heures",
+                          coefficient: 3,
+                          instructions: [
+                            "L'usage du dictionnaire et des téléphones portables est formellement interdit sous peine d'élimination.",
+                            "Le candidat doit développer une réflexion ordonnée et rigoureuse avec introduction, développement et conclusion."
+                          ],
+                          sections: [
+                            {
+                              title: `ÉPREUVE MAJEURE : DISSERTATION DE CULTURE GÉNÉRALE & SPÉCIALITÉ (${concours.name})`,
+                              points: "20 points (Coeff. 3)",
+                              questions: [
+                                {
+                                  num: "Sujet 1 (Dissertation de Concours)",
+                                  points: "20 points",
+                                  question: `En vous appuyant sur les grands défis de développement du Sénégal, analysez le rôle stratégique de l'institution (${concours.full}) dans la modernisation des services de l'État et la protection de l'intérêt général.`,
+                                  details: [
+                                    "1. Montrez comment les missions de ce corps de métier s'inscrivent dans la souveraineté nationale et le pacte républicain.",
+                                    "2. Analysez les compétences éthiques, managériales et techniques requises pour répondre aux attentes citoyennes."
+                                  ]
+                                }
+                              ]
+                            }
+                          ],
+                          corrige: {
+                            methodologie: `Méthodologie pour le concours ${concours.name} : Structure académique rigoureuse, style administratif mesuré et maîtrise des textes réglementaires sénégalais.`,
+                            conseilsJury: "Le jury valorise l'esprit de synthèse, la pertinence des propositions concrètes et l'orthographe irréprochable.",
+                            sections: [
+                              {
+                                title: "Pistes de Rédaction & Arguments Clés",
+                                points: "20 points",
+                                solution: `I. Le rôle fondamental dans l'architecture institutionnelle sénégalaise :
+- Préservation de l'intérêt général et application des politiques publiques.
+- Contribution à l'émergence économique et à la stabilité démocratique.
+
+II. Les réformes et perspectives d'avenir :
+- Transition numérique, transparence et gouvernance vertueuse.
+- Renforcement des compétences professionnelles au service de la nation.`
+                              }
+                            ]
+                          },
+                          bareme: [
+                            { critere: "Compréhension du rôle institutionnel", points: "6 pts", description: "Maîtrise des missions du corps de métier." },
+                            { critere: "Rigueur du raisonnement et illustrations", points: "8 pts", description: "Pertinence des arguments ancrés dans les réalités du Sénégal." },
+                            { critere: "Correction de la langue et style", points: "6 pts", description: "Qualité rédactionnelle et clarté de la pensée." }
+                          ]
+                        });
+                      }
+                    }}
                     className="flex items-center justify-center gap-1.5 font-bold text-xs bg-purple-50 text-purple-800 hover:bg-purple-800 hover:text-white py-2 px-3 rounded-xl transition shadow-sm w-full"
                   >
-                    <i className="fas fa-eye text-xs"></i> Consulter les sujets
+                    <i className="fas fa-eye text-xs"></i> Consulter l&apos;épreuve officielle
                   </button>
                 </div>
               </div>
