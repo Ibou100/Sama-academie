@@ -17,49 +17,28 @@ interface PlanDetails {
   badgeColor: string;
 }
 
+const ALL_IN_ONE_PLAN: PlanDetails = {
+  name: "SAMA Premium (Tout Inclus)",
+  price: "3 500 FCFA",
+  period: "par mois",
+  desc: "L'offre complète débloquant l'intégralité des fonctionnalités et contenus de la plateforme sans restriction.",
+  features: [
+    "Tous les corrigés détaillés officiels (BAC, BFEM, CFEE)",
+    "Accès intégral à toutes les leçons vidéos explicatives",
+    "Annales et préparation aux Concours d'État & Grandes Écoles (EPT, ESP, CPGE, CREM...)",
+    "Classes virtuelles et visioconférences interactives",
+    "Bibliothèque complète et fiches de synthèse téléchargeables",
+    "Conseils méthodologiques des inspecteurs et jurys d'examen",
+    "Tableau de bord de progression et suivi personnalisé"
+  ],
+  badgeColor: "bg-sama-primary text-white"
+};
+
 const PLANS: Record<string, PlanDetails> = {
-  eleve: {
-    name: "Premium Élève",
-    price: "3 500 FCFA",
-    period: "par mois",
-    desc: "Idéal pour réviser et réussir ses examens avec tous les corrigés officiels.",
-    features: [
-      "Tous les corrigés détaillés des épreuves (BAC, BFEM, CFEE)",
-      "Accès aux vidéos pédagogiques complètes",
-      "Bibliothèque officielle et fiches de synthèse",
-      "Conseils méthodologiques des inspecteurs",
-      "Classes virtuelles et suivi de progression"
-    ],
-    badgeColor: "bg-sama-primary text-white"
-  },
-  famille: {
-    name: "Premium Famille",
-    price: "6 000 FCFA",
-    period: "par mois (jusqu'à 3 enfants)",
-    desc: "L'offre complète pour suivre et accompagner la scolarité de toute la fratrie.",
-    features: [
-      "Tout le contenu Premium pour 3 enfants",
-      "Tableau de bord parent avec suivi des progrès",
-      "Notification des devoirs et révisions",
-      "Enseignants certifiés vérifiés en priorité",
-      "Assistance pédagogique prioritaire"
-    ],
-    badgeColor: "bg-emerald-700 text-white"
-  },
-  concours: {
-    name: "Pack Concours",
-    price: "9 000 FCFA",
-    period: "paiement unique (accès 12 mois)",
-    desc: "Préparation intensive aux grands concours de l'État et Grandes Écoles.",
-    features: [
-      "Annales intégrales (CREM, FASTEF, ENA, CFJ, EPT, EMS)",
-      "Corrigés méthodologiques rédigés pas à pas",
-      "Tests psychotechniques et raisonnement logique",
-      "Critères officiels des jurys d'admission",
-      "Accès illimité garanti pendant 1 an"
-    ],
-    badgeColor: "bg-purple-900 text-white"
-  }
+  premium: ALL_IN_ONE_PLAN,
+  eleve: ALL_IN_ONE_PLAN,
+  famille: ALL_IN_ONE_PLAN,
+  concours: ALL_IN_ONE_PLAN
 };
 
 export default function CheckoutPage() {
@@ -73,8 +52,8 @@ export default function CheckoutPage() {
 function Checkout() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const planKey = searchParams.get("plan") || "eleve";
-  const plan = PLANS[planKey] || PLANS.eleve;
+  const planKey = searchParams.get("plan") || "premium";
+  const plan = PLANS[planKey] || ALL_IN_ONE_PLAN;
 
   const [method, setMethod] = useState<PaymentMethod>("wave");
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -204,7 +183,7 @@ function Checkout() {
 
           <div className="pt-2 text-center">
             <Link href="/tarifs" className="text-xs text-gray-400 hover:text-sama-primary font-bold transition">
-              ← Changer de forfait
+              ← Revoir les détails des offres
             </Link>
           </div>
         </div>
