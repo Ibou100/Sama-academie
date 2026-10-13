@@ -1735,135 +1735,125 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* HEADER DE DIRECTION / TOPBAR COMMAND */}
-      <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-sama-primary flex items-center justify-center text-white font-black text-lg shadow-md">
-              SA
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black tracking-tight text-white">SAMA ACADÉMIE</h1>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-sama-orange text-slate-900 px-2 py-0.5 rounded-full">
-                  Control Tower
+      {/* HEADER DE DIRECTION / TOPBAR COMMAND — DESIGN MINIMALISTE & LUXE */}
+      <header className="bg-slate-900/95 backdrop-blur-xl border-b border-slate-800 sticky top-0 z-40 text-white shadow-xl shadow-black/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* LIGNE PRINCIPALE : LOGO + CONTRÔLES DIRECTEURS */}
+          <div className="flex items-center justify-between h-16 gap-4">
+            
+            {/* GAUCHE : LOGO OFFICIEL SAMA ACADÉMIE & STATUT */}
+            <div className="flex items-center gap-3 min-w-0">
+              <Link href="/" target="_blank" className="p-1 px-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 transition shadow-sm shrink-0" title="Voir le site public">
+                <img src="/assets/logo.png" alt="SAMA ACADÉMIE" className="h-8 object-contain brightness-105" />
+              </Link>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm font-black tracking-tight text-white hidden sm:inline truncate">
+                  SAMA <span className="text-amber-400">ACADÉMIE</span>
                 </span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                  Live
+                <span className="text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full shrink-0">
+                  Direction
                 </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] shrink-0" title="Console opérationnelle en direct"></span>
               </div>
-              <p className="text-xs text-slate-400">Poste de commandement & Administration opérationnelle</p>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
-            {/* Notification si un compte enseignant/élève est resté connecté */}
-            {connectedNonAdmin && (
-              <div className="hidden lg:flex items-center gap-2 bg-amber-950/70 border border-amber-800/80 px-3 py-1.5 rounded-xl text-xs text-amber-200">
-                <i className="fas fa-user-circle text-amber-400"></i>
-                <span>Compte site : <strong>{connectedNonAdmin.first_name} {connectedNonAdmin.last_name}</strong> ({connectedNonAdmin.role})</span>
-                <button
-                  onClick={handleDisconnectNonAdmin}
-                  className="text-amber-400 hover:text-white underline text-[11px] font-bold ml-1 cursor-pointer"
-                  title="Déconnecter ce compte du navigateur"
-                >
-                  Déconnecter
-                </button>
-              </div>
-            )}
-
-            {currentAdminProfile && (
-              <div className="flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 px-3 py-1.5 rounded-xl text-xs">
-                <div className="w-6 h-6 rounded-full bg-sama-orange text-slate-950 font-black text-[11px] flex items-center justify-center shadow-xs">
-                  {currentAdminProfile.isMaster ? "👑" : (currentAdminProfile.first_name?.[0]?.toUpperCase() || "A")}
-                </div>
-                <div className="text-left">
-                  <span className="font-bold text-slate-200 block text-[11px] leading-tight">
-                    {currentAdminProfile.isMaster ? "Direction Générale" : `${currentAdminProfile.first_name} ${currentAdminProfile.last_name}`}
-                  </span>
-                  <span className="text-[10px] text-slate-400 block font-mono">
-                    {currentAdminProfile.isMaster ? "direction@sama-academie.sn (Master Key)" : `${currentAdminProfile.email} (Admin)`}
+            {/* DROITE : ACTIONS & PROFIL ÉPURÉS */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Profil direction compact */}
+              {currentAdminProfile && (
+                <div className="flex items-center gap-1.5 bg-slate-800/80 border border-slate-700/80 px-2.5 py-1.5 rounded-xl text-xs">
+                  <span className="text-xs">👑</span>
+                  <span className="font-bold text-slate-200 text-xs hidden md:inline truncate max-w-[140px]">
+                    {currentAdminProfile.isMaster ? "Direction Générale" : `${currentAdminProfile.first_name || ""} ${currentAdminProfile.last_name || ""}`.trim() || "Administrateur"}
                   </span>
                 </div>
-              </div>
-            )}
+              )}
 
-            <Link
-              href="/"
-              target="_blank"
-              className="text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700"
-            >
-              <span>Voir le site</span>
-              <i className="fas fa-external-link-alt text-[10px]"></i>
-            </Link>
-            <button
-              onClick={() => { fetchData(); fetchAuditLogs(); }}
-              className="text-xs font-bold bg-sama-primary hover:bg-blue-600 text-white px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-            >
-              <i className="fas fa-sync-alt text-xs"></i>
-              <span>Actualiser</span>
-            </button>
-            <button
-              onClick={handleLock}
-              className="text-xs font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
-              title="Verrouiller la console"
-            >
-              <i className="fas fa-lock text-xs"></i>
-              <span>Verrouiller</span>
-            </button>
-            <button
-              onClick={handleDisconnectNonAdmin}
-              className="text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
-              title="Fermer la console et déconnecter tout compte"
-            >
-              <i className="fas fa-sign-out-alt text-xs"></i>
-              <span>Quitter</span>
-            </button>
-          </div>
-        </div>
-
-        {/* NAVIGATION DES ONGLETS */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-x-auto scrollbar-none flex gap-1 border-t border-slate-800/80 pt-1">
-          {[
-            { id: "overview", label: "Vue d'ensemble", icon: "fa-chart-pie", badge: null },
-            { id: "users", label: "Utilisateurs", icon: "fa-users", badge: profiles.length },
-            { id: "requests", label: "Contrats & Négociations", icon: "fa-handshake", badge: stats.pendingRequestsCount, badgeAlert: stats.pendingRequestsCount > 0 },
-            { id: "teachers", label: "Corps Professoral", icon: "fa-chalkboard-teacher", badge: stats.pendingTeachersCount, badgeAlert: stats.pendingTeachersCount > 0 },
-            { id: "classes", label: "Classes Virtuelles", icon: "fa-video", badge: stats.liveClassesCount > 0 ? "LIVE" : virtualClasses.length, badgeLive: stats.liveClassesCount > 0 },
-            { id: "content", label: "Bibliothèque & Contenus", icon: "fa-folder-open", badge: videos.length + annales.length },
-            { id: "audit", label: "Traçabilité & Audit", icon: "fa-shield-halved", badge: auditLogs.length },
-            { id: "settings", label: "Paramètres & Support", icon: "fa-sliders-h", badge: null },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
+              {/* Bouton Actualiser */}
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabKey)}
-                className={`py-3 px-3.5 text-xs font-bold whitespace-nowrap border-b-2 flex items-center gap-2 transition ${
-                  isActive
-                    ? "border-sama-orange text-sama-orange bg-slate-800/50"
-                    : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700"
-                }`}
+                onClick={() => { fetchData(); fetchAuditLogs(); }}
+                className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                title="Actualiser les données"
               >
-                <i className={`fas ${tab.icon} text-sm`}></i>
-                <span>{tab.label}</span>
-                {tab.badge !== null && (
-                  <span
-                    className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
-                      tab.badgeLive
-                        ? "bg-red-500 text-white animate-pulse"
-                        : tab.badgeAlert
-                        ? "bg-amber-500 text-slate-900 font-extrabold"
-                        : "bg-slate-800 text-slate-300 border border-slate-700"
-                    }`}
-                  >
-                    {tab.badge}
-                  </span>
-                )}
+                <i className="fas fa-rotate text-xs"></i>
+                <span className="hidden lg:inline">Actualiser</span>
               </button>
-            );
-          })}
+
+              {/* Bouton Voir le site */}
+              <Link
+                href="/"
+                target="_blank"
+                className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5"
+                title="Ouvrir le site public"
+              >
+                <i className="fas fa-arrow-up-right-from-square text-xs text-slate-400"></i>
+                <span className="hidden lg:inline">Site Public</span>
+              </Link>
+
+              {/* Bouton Verrouiller */}
+              <button
+                onClick={handleLock}
+                className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                title="Verrouiller la console"
+              >
+                <i className="fas fa-lock text-xs text-amber-400"></i>
+                <span className="hidden md:inline">Verrouiller</span>
+              </button>
+
+              {/* Bouton Quitter */}
+              <button
+                onClick={handleDisconnectNonAdmin}
+                className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                title="Fermer la console et quitter"
+              >
+                <i className="fas fa-power-off text-xs text-red-400"></i>
+                <span className="hidden md:inline">Quitter</span>
+              </button>
+            </div>
+          </div>
+
+          {/* LIGNE SECONDAIRE : NAVIGATION PAR ONGLETS ÉPURÉE */}
+          <div className="overflow-x-auto scrollbar-none flex gap-1 border-t border-slate-800/80 py-1.5">
+            {[
+              { id: "overview", label: "Vue d'ensemble", icon: "fa-chart-pie", badge: null },
+              { id: "users", label: "Utilisateurs", icon: "fa-users", badge: profiles.length },
+              { id: "requests", label: "Contrats & Négociations", icon: "fa-handshake", badge: stats.pendingRequestsCount, badgeAlert: stats.pendingRequestsCount > 0 },
+              { id: "teachers", label: "Corps Professoral", icon: "fa-chalkboard-teacher", badge: stats.pendingTeachersCount, badgeAlert: stats.pendingTeachersCount > 0 },
+              { id: "classes", label: "Classes Virtuelles", icon: "fa-video", badge: stats.liveClassesCount > 0 ? "LIVE" : virtualClasses.length, badgeLive: stats.liveClassesCount > 0 },
+              { id: "content", label: "Bibliothèque", icon: "fa-folder-open", badge: videos.length + annales.length },
+              { id: "audit", label: "Audit & Sécurité", icon: "fa-shield-halved", badge: auditLogs.length },
+              { id: "settings", label: "Paramètres & Support", icon: "fa-sliders", badge: null },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as TabKey)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-2 transition cursor-pointer ${
+                    isActive
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                  }`}
+                >
+                  <i className={`fas ${tab.icon} text-xs ${isActive ? "text-amber-400" : "text-slate-500"}`}></i>
+                  <span>{tab.label}</span>
+                  {tab.badge !== null && (
+                    <span
+                      className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                        tab.badgeLive
+                          ? "bg-rose-500 text-white animate-pulse"
+                          : tab.badgeAlert
+                          ? "bg-amber-500 text-slate-950 font-extrabold"
+                          : "bg-slate-800 text-slate-400 border border-slate-700/80"
+                      }`}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </header>
 

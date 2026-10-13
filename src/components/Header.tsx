@@ -140,6 +140,10 @@ export default function Header() {
     }
   };
 
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-50 bg-gradient-to-r from-[#00173D] via-[#002868] to-[#0A192F] backdrop-blur-xl bg-opacity-95 border-b border-amber-500/20 shadow-2xl shadow-black/40">
       {/* Barre d'accent luxueuse or/ambre au sommet */}
