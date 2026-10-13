@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { getSupportConfig } from "@/lib/siteConfig";
 
 export default function WhatsAppSupport() {
+  const pathname = usePathname();
   const [whatsappUrl, setWhatsappUrl] = useState("https://wa.me/221774673109?text=Bonjour%20SAMA%20ACAD%C3%89MIE%2C%20j'ai%20besoin%20d'aide.");
   const [supportPhone, setSupportPhone] = useState("+221 77 467 31 09");
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +16,8 @@ export default function WhatsAppSupport() {
       setSupportPhone(config.phone);
     });
   }, []);
+
+  if (pathname?.startsWith("/admin")) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
