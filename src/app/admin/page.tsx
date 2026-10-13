@@ -1281,9 +1281,31 @@ export default function AdminDashboard() {
     if (!confirm("Voulez-vous vraiment supprimer cet élément définitivement ?")) return;
     setActionLoadingId(id);
 
-    const { error } = await supabase.from(table).delete().eq("id", id);
-    if (!error) {
-      showToast("Élément supprimé de la base.", "info");
+    let deleteSuccess = false;
+    try {
+      const res = await fetch("/api/admin/content", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-passcode": "sama2026",
+        },
+        body: JSON.stringify({ table, id }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        deleteSuccess = true;
+      }
+    } catch {
+      // Fallback
+    }
+
+    if (!deleteSuccess) {
+      const { error } = await supabase.from(table).delete().eq("id", id);
+      deleteSuccess = !error;
+    }
+
+    if (deleteSuccess) {
+      showToast("Élément supprimé définitivement de la base.", "info");
       if (table === "videos") setVideos((prev) => prev.filter((v) => v.id !== id));
       else setAnnales((prev) => prev.filter((a) => a.id !== id));
       logAdminAction({
@@ -1292,7 +1314,7 @@ export default function AdminDashboard() {
       });
       fetchAuditLogs();
     } else {
-      showToast("Erreur de suppression : " + error.message, "error");
+      showToast("Erreur lors de la suppression de l'élément.", "error");
     }
     setActionLoadingId(null);
   };

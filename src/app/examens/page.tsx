@@ -44,7 +44,7 @@ export default function Examens() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCycle, setSelectedCycle] = useState("TOUS");
+  const [selectedCycle, setSelectedCycle] = useState("Lycee");
 
   // Visionneuse Sécurisée In-App
   const [viewerDoc, setViewerDoc] = useState<any | null>(null);
@@ -138,7 +138,6 @@ export default function Examens() {
   let effectiveCycle = selectedCycle;
   if (isStudent && studentCycle) {
     if (studentCycle === "Lycee") {
-      // Un lycéen peut consulter le Lycée (BAC), les Concours Grandes Écoles, ou Tout
       effectiveCycle = (selectedCycle === "Concours" || selectedCycle === "TOUS") ? selectedCycle : "Lycee";
     } else {
       effectiveCycle = studentCycle;
@@ -146,13 +145,45 @@ export default function Examens() {
   }
 
   const filteredDocuments = documents.filter((doc) => {
-    if (effectiveCycle === "TOUS") return true;
-    const isDocConcours = doc.level && (doc.level.toLowerCase().includes("concours") || doc.level.toLowerCase().includes("ept") || doc.level.toLowerCase().includes("esp") || doc.level.toLowerCase().includes("cpge"));
+    const isDocConcours = doc.level && (
+      doc.level.toLowerCase().includes("concours") || 
+      doc.level.toLowerCase().includes("ept") || 
+      doc.level.toLowerCase().includes("esp") || 
+      doc.level.toLowerCase().includes("cpge") ||
+      doc.level.toLowerCase().includes("grandes")
+    );
     const dc = doc.cycle || (isDocConcours ? "Concours" : detectCycle(doc.level));
-    if (effectiveCycle === "Primaire" || effectiveCycle === "College" || effectiveCycle === "Lycee" || effectiveCycle === "Concours") {
-      return dc === effectiveCycle;
+
+    // RÈGLE SAMA ACADÉMIE : Cloisonnement strict des élèves par cycle scolaire
+    if (isStudent && studentCycle) {
+      if (studentCycle === "Primaire") {
+        return dc === "Primaire";
+      }
+      if (studentCycle === "College") {
+        return dc === "College";
+      }
+      if (studentCycle === "Lycee") {
+        // RÈGLE ABSOLUE : Un lycéen (comme Karim en Terminale S2) ne doit JAMAIS voir Primaire (CFEE) ou Collège (BFEM)
+        if (dc === "Primaire" || dc === "College") {
+          return false;
+        }
+
+        // Si l'onglet BAC est choisi, afficher uniquement les épreuves du Lycée
+        if (selectedCycle === "Lycee") {
+          return dc === "Lycee";
+        }
+        // Si l'onglet Concours est choisi, afficher les concours Grandes Écoles
+        if (selectedCycle === "Concours") {
+          return dc === "Concours";
+        }
+        // Si "TOUS" : afficher uniquement Lycée et Concours Grandes Écoles
+        return dc === "Lycee" || dc === "Concours";
+      }
     }
-    return true;
+
+    // Visiteur ou utilisateur non-élève (enseignant, parent, visiteur)
+    if (effectiveCycle === "TOUS") return true;
+    return dc === effectiveCycle;
   });
 
   return (
@@ -724,7 +755,11 @@ export default function Examens() {
         <div className="space-y-4 mb-12">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">
-              {filteredDocuments.length} épreuve(s) disponible(s) {effectiveCycle === "Concours" ? "pour les Concours d'État & Grandes Écoles" : "pour ce cycle"}
+              {filteredDocuments.length} épreuve(s) disponible(s) {
+                isStudent && studentCycle === "Lycee" 
+                  ? (selectedCycle === "Concours" ? "pour les Concours & Grandes Écoles" : (selectedCycle === "Lycee" ? "pour le Lycée (BAC Séries S & L)" : "pour le Lycée (BAC + Concours)"))
+                  : (effectiveCycle === "Concours" ? "pour les Concours d'État & Grandes Écoles" : `pour le cycle ${studentCycle || effectiveCycle}`)
+              }
             </h2>
             <span className="text-xs text-gray-400">Lecture protégée anti-téléchargement</span>
           </div>
