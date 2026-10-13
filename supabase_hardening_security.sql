@@ -1,8 +1,8 @@
 -- ==============================================================================
--- SAMA ACADÉMIE — VERROUILLAGE & BLINDAGE DE SÉCURITÉ DE LA BASE DE DONNÉES (RLS)
+-- SAMA ACADÉMIE — SCRIPT DE SÉCURITÉ INTÉGRAL & AUTO-RÉPARATEUR (RLS)
 -- ==============================================================================
--- À exécuter dans votre Console Supabase : SQL Editor > New Query > Coller > Run
--- Ce script est idempotent (peut être réexécuté sans risque).
+-- À exécuter dans votre Console Supabase : SQL Editor > New Query > Coller TOUT > Run
+-- Ce script est 100% autonome et peut être réexécuté sans risque.
 
 -- 1. FONCTIONS DE CONTRÔLE DE SÉCURITÉ (SECURITY DEFINER)
 CREATE OR REPLACE FUNCTION public.sama_is_admin()
@@ -22,7 +22,7 @@ GRANT EXECUTE ON FUNCTION public.sama_is_admin() TO authenticated, anon;
 CREATE OR REPLACE FUNCTION public.protect_profile_privileges()
 RETURNS trigger AS $$
 BEGIN
-  -- Si l'utilisateur n'est pas admin, il ne peut pas modifier role ou is_premium
+  -- Si l'utilisateur n'est pas admin, il ne peut pas modifier son propre role ou is_premium
   IF auth.uid() IS NOT NULL AND NOT public.sama_is_admin() THEN
     NEW.role := OLD.role;
     NEW.is_premium := OLD.is_premium;
@@ -48,12 +48,12 @@ BEGIN
   END LOOP;
 END $$;
 
--- Tout le monde peut consulter les profils publics (annuaire des professeurs certifiés, etc.)
+-- Tout le monde peut consulter les profils publics (annuaire des professeurs certifiés)
 CREATE POLICY "profiles_select_public" ON public.profiles
   FOR SELECT TO public
   USING (true);
 
--- L'utilisateur connecté peut modifier son propre profil
+-- L'utilisateur connecté peut modifier son propre profil (coordonnées, bio, etc.)
 CREATE POLICY "profiles_update_own" ON public.profiles
   FOR UPDATE TO authenticated
   USING (auth.uid() = id)
@@ -118,7 +118,7 @@ CREATE POLICY "videos_admin_delete" ON public.videos
   FOR DELETE TO authenticated
   USING (public.sama_is_admin());
 
--- 5. VERROUILLAGE DE LA TABLE "ADMIN_AUDIT_LOGS"
+-- 5. CRÉATION ET VERROUILLAGE DE LA TABLE "ADMIN_AUDIT_LOGS"
 CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ DEFAULT now(),
@@ -151,6 +151,20 @@ CREATE POLICY "audit_admin_only" ON public.admin_audit_logs
   USING (public.sama_is_admin())
   WITH CHECK (public.sama_is_admin());
 
--- 6. RESTRICTION DES FONCTIONS RPC PRIVILÉGIÉES
+-- 6. FONCTION D'ACCRÉDITATION ENSEIGNANT SÉCURISÉE
+CREATE OR REPLACE FUNCTION public.set_teacher_verification(p_teacher_id UUID, p_verified BOOLEAN)
+RETURNS BOOLEAN AS $$
+BEGIN
+  IF NOT public.sama_is_admin() THEN
+    RAISE EXCEPTION 'Action réservée aux administrateurs.';
+  END IF;
+
+  UPDATE public.profiles
+  SET verified = p_verified
+  WHERE id = p_teacher_id;
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 REVOKE ALL ON FUNCTION public.set_teacher_verification(UUID, BOOLEAN) FROM anon;
 GRANT EXECUTE ON FUNCTION public.set_teacher_verification(UUID, BOOLEAN) TO authenticated;
