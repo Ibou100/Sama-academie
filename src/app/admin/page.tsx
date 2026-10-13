@@ -49,6 +49,8 @@ export default function AdminDashboard() {
   const [adminPasscode, setAdminPasscode] = useState("sama2026");
   const [newPasscodeInput, setNewPasscodeInput] = useState("");
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasscode, setShowPasscode] = useState(false);
 
   // Filtres & Recherche Utilisateurs
   const [userSearch, setUserSearch] = useState("");
@@ -577,6 +579,7 @@ export default function AdminDashboard() {
         role: "admin",
         isMaster: true,
       });
+      setConnectedNonAdmin(null);
       setIsUnlocked(true);
       if (typeof window !== "undefined") sessionStorage.setItem("sama_admin_unlocked", "true");
       setAccessCodeInput("");
@@ -1324,92 +1327,119 @@ export default function AdminDashboard() {
 
   if (!isUnlocked) {
     return (
-      <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl text-white space-y-6">
+      <main className="min-h-screen bg-slate-950 relative flex items-center justify-center p-4 selection:bg-amber-500 selection:text-slate-950 overflow-hidden">
+        {/* Lueur d'ambiance luxueuse en arrière-plan */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[340px] bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-72 h-72 bg-blue-600/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-md w-full bg-slate-900/90 border border-slate-800/90 backdrop-blur-xl rounded-3xl p-8 shadow-2xl shadow-black/80 text-white space-y-6 relative z-10">
+          {/* EN-TÊTE OFFICIEL SAMA ACADÉMIE */}
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-sama-orange text-slate-950 flex items-center justify-center text-2xl mx-auto shadow-lg shadow-amber-500/20">
-              <i className="fas fa-shield-alt"></i>
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 flex items-center justify-center text-2xl mx-auto shadow-lg shadow-amber-500/20">
+              <i className="fas fa-shield-halved"></i>
             </div>
-            <div className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-wider mt-2">
-              Zone Sécurisée • Haute Surveillance
+            
+            <div className="pt-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-300 text-[11px] font-medium mb-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>Console de Direction Sécurisée</span>
+              </div>
+              <h1 className="text-2xl font-black text-white tracking-tight">
+                SAMA <span className="text-amber-400">ACADÉMIE</span>
+              </h1>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Portail officiel d&apos;administration et de supervision
+              </p>
             </div>
-            <h2 className="text-2xl font-black text-white">Espace d&apos;Administration</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Console de direction SAMA ACADÉMIE. Chaque accès et opération est tracé (date, heure, IP et lieu).
-            </p>
           </div>
 
           {/* SÉLECTEUR DE MODE DE CONNEXION */}
-          <div className="flex rounded-xl bg-slate-800/80 p-1 border border-slate-700/80 text-xs">
+          <div className="grid grid-cols-2 p-1 bg-slate-950/70 rounded-xl border border-slate-800 text-xs font-semibold">
             <button
               type="button"
               onClick={() => { setAuthMode("account"); setAccessError(""); }}
-              className={`flex-1 py-2 rounded-lg font-extrabold transition text-center cursor-pointer ${
+              className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 authMode === "account"
-                  ? "bg-sama-orange text-slate-950 shadow-sm"
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-md shadow-amber-500/15"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <i className="fas fa-user-lock mr-1.5"></i>
-              <span>Accès Nominatif</span>
+              <i className="fas fa-id-badge text-[11px]"></i>
+              <span>Compte Nominatif</span>
             </button>
             <button
               type="button"
               onClick={() => { setAuthMode("passcode"); setAccessError(""); }}
-              className={`flex-1 py-2 rounded-lg font-extrabold transition text-center cursor-pointer ${
+              className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 authMode === "passcode"
-                  ? "bg-slate-700 text-white shadow-sm"
+                  ? "bg-slate-800 text-white font-bold border border-slate-700 shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <i className="fas fa-key mr-1.5"></i>
-              <span>Code de Secours</span>
+              <i className="fas fa-key text-[11px]"></i>
+              <span>Code Direction</span>
             </button>
           </div>
 
-          {/* AVERTISSEMENT SI UN COMPTE NON-ADMIN EST CONNECTÉ */}
+          {/* BANNIÈRE PROPRE & ÉLÉGANTE SI UN COMPTE STANDARD EST ACTIF SUR LE NAVIGATEUR */}
           {connectedNonAdmin && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-200 space-y-2.5">
-              <div className="flex items-start gap-2.5">
-                <i className="fas fa-user-circle text-amber-400 text-base mt-0.5"></i>
-                <div>
-                  <p className="font-extrabold text-amber-300 text-sm">
-                    Session active : {connectedNonAdmin.first_name} {connectedNonAdmin.last_name}
-                  </p>
-                  <p className="text-[11px] text-amber-200/80 mt-0.5 leading-relaxed">
-                    Vous êtes actuellement connecté sur le site avec le compte <strong>{connectedNonAdmin.role?.toUpperCase() || "ENSEIGNANT"}</strong> ({connectedNonAdmin.email}).
-                    Ce compte n&apos;a pas les droits d&apos;administration.
-                  </p>
+            <div className="bg-slate-800/60 border border-slate-700/70 rounded-2xl p-3.5 space-y-2.5 transition">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-300 font-bold text-sm shrink-0">
+                    {connectedNonAdmin.first_name ? connectedNonAdmin.first_name.charAt(0).toUpperCase() : "U"}
+                    {connectedNonAdmin.last_name ? connectedNonAdmin.last_name.charAt(0).toUpperCase() : ""}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-white truncate">
+                        {connectedNonAdmin.first_name} {connectedNonAdmin.last_name}
+                      </p>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-700 text-slate-300 capitalize shrink-0">
+                        {connectedNonAdmin.role === "eleve" ? "Élève" : connectedNonAdmin.role === "enseignant" ? "Professeur" : connectedNonAdmin.role || "Utilisateur"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 truncate">{connectedNonAdmin.email}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="pt-1 flex items-center justify-between border-t border-amber-500/20">
-                <span className="text-[10px] text-amber-300/70">Pour entrer proprement en Admin :</span>
+
                 <button
                   type="button"
                   onClick={handleDisconnectNonAdmin}
-                  className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-extrabold px-3 py-1.5 rounded-lg text-[11px] transition cursor-pointer flex items-center gap-1.5 border border-amber-500/40"
+                  title="Se déconnecter pour changer de compte"
+                  className="shrink-0 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-xs text-slate-300 hover:text-white font-medium transition cursor-pointer flex items-center gap-1.5"
                 >
-                  <i className="fas fa-sign-out-alt"></i>
-                  <span>Se déconnecter de ce compte</span>
+                  <i className="fas fa-arrow-right-from-bracket text-[11px] text-slate-400"></i>
+                  <span>Changer</span>
                 </button>
+              </div>
+
+              <div className="pt-2 border-t border-slate-800 flex items-center gap-2 text-[11px] text-slate-400">
+                <i className="fas fa-circle-info text-amber-400 text-xs shrink-0"></i>
+                <span>Compte standard actif. Connectez vos accès de direction ci-dessous :</span>
               </div>
             </div>
           )}
 
+          {/* MESSAGE D'ERREUR */}
           {accessError && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-3.5 rounded-xl text-center font-bold">
-              {accessError}
+            <div className="flex items-start gap-2.5 bg-red-500/10 border border-red-500/25 text-red-300 text-xs p-3.5 rounded-2xl">
+              <i className="fas fa-circle-exclamation text-red-400 mt-0.5 shrink-0 text-sm"></i>
+              <span className="leading-relaxed font-medium">{accessError}</span>
             </div>
           )}
 
-          {/* MODE 1 : CONNEXION NOMINATIVE INDIVIDUELLE (RECOMMANDÉ) */}
+          {/* MODE 1 : CONNEXION NOMINATIVE (EMAIL & MOT DE PASSE) */}
           {authMode === "account" ? (
             <form onSubmit={handleAdminLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Email Administrateur
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Email administrateur
                 </label>
                 <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <i className="fas fa-envelope text-xs"></i>
+                  </span>
                   <input
                     type="email"
                     required
@@ -1417,93 +1447,108 @@ export default function AdminDashboard() {
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     placeholder="direction@sama-academie.sn"
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-sama-orange transition font-medium"
+                    className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition font-medium"
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                    <i className="fas fa-envelope text-xs"></i>
-                  </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Mot de passe personnel
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    Mot de passe
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotModal(true);
+                      setForgotEmail(loginEmail || "");
+                      setForgotMessage(null);
+                    }}
+                    className="text-amber-400 hover:text-amber-300 text-xs font-medium transition cursor-pointer"
+                  >
+                    Mot de passe oublié ?
+                  </button>
+                </div>
                 <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <i className="fas fa-lock text-xs"></i>
+                  </span>
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-sama-orange transition font-medium"
+                    className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl pl-10 pr-11 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition font-medium"
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                    <i className="fas fa-lock text-xs"></i>
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition cursor-pointer"
+                    title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  >
+                    <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"} text-xs`}></i>
+                  </button>
                 </div>
-              </div>
-
-              <div className="flex justify-end pt-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForgotModal(true);
-                    setForgotEmail(loginEmail || "");
-                    setForgotMessage(null);
-                  }}
-                  className="text-amber-400 hover:text-amber-300 text-xs font-bold underline transition cursor-pointer"
-                >
-                  Mot de passe administrateur oublié ?
-                </button>
               </div>
 
               <button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full bg-sama-orange hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition text-sm shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-3.5 rounded-xl transition-all text-sm shadow-lg shadow-amber-500/15 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 active:scale-[0.99] mt-2"
               >
                 {loginLoading ? (
                   <>
                     <i className="fas fa-spinner fa-spin"></i>
-                    <span>Vérification & Traçage...</span>
+                    <span>Vérification des accès...</span>
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-shield-check"></i>
-                    <span>Connexion & Accès Tracé</span>
+                    <i className="fas fa-arrow-right-to-bracket"></i>
+                    <span>Se connecter à la console</span>
                   </>
                 )}
               </button>
             </form>
           ) : (
-            /* MODE 2 : CODE SECRET D'URGENCE (MASTER KEY) */
+            /* MODE 2 : CODE SECRET DIRECTION (PASSCODE) */
             <form onSubmit={handleUnlock} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Code Secret d&apos;Urgence (Master Passcode)
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Code Secret Direction
                 </label>
+                <p className="text-[11px] text-slate-400 mb-2">
+                  Accès d&apos;urgence réservé à la direction générale de SAMA ACADÉMIE.
+                </p>
                 <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <i className="fas fa-key text-xs"></i>
+                  </span>
                   <input
-                    type="password"
+                    type={showPasscode ? "text" : "password"}
                     required
                     autoFocus
                     value={accessCodeInput}
                     onChange={(e) => setAccessCodeInput(e.target.value)}
-                    placeholder="Tapez le code..."
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-sama-orange transition font-medium"
+                    placeholder="Entrez le code secret..."
+                    className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl pl-10 pr-11 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition font-medium tracking-wider"
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                    <i className="fas fa-key text-xs"></i>
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPasscode(!showPasscode)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition cursor-pointer"
+                    title={showPasscode ? "Masquer le code" : "Afficher le code"}
+                  >
+                    <i className={`fas ${showPasscode ? "fa-eye-slash" : "fa-eye"} text-xs`}></i>
+                  </button>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-slate-700 hover:bg-slate-600 text-white font-black py-3 rounded-xl transition text-sm shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-white font-bold py-3.5 rounded-xl transition-all text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] mt-2"
               >
-                <i className="fas fa-unlock-alt"></i>
+                <i className="fas fa-unlock-keyhole"></i>
                 <span>Déverrouiller avec le Code</span>
               </button>
             </form>
@@ -1511,43 +1556,43 @@ export default function AdminDashboard() {
 
           {/* MODAL RÉCUPÉRATION MOT DE PASSE ADMIN */}
           {showForgotModal && (
-            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 text-white space-y-4 shadow-2xl relative">
+            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 text-white space-y-4 shadow-2xl relative">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-2 text-amber-400 font-extrabold text-sm">
+                  <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
                     <i className="fas fa-key"></i>
-                    <span>Récupération d&apos;Accès Admin</span>
+                    <span>Réinitialisation du Mot de Passe</span>
                   </div>
                   <button
                     onClick={() => setShowForgotModal(false)}
-                    className="text-slate-400 hover:text-white text-sm"
+                    className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-xs transition cursor-pointer"
                   >
                     ✕
                   </button>
                 </div>
 
-                <p className="text-xs text-slate-300">
-                  Choisissez la méthode de récupération pour définir un nouveau mot de passe administrateur :
+                <p className="text-xs text-slate-400">
+                  Définissez un nouveau mot de passe administrateur en confirmant votre identité avec le code maître Direction :
                 </p>
 
-                <div className="flex rounded-xl bg-slate-800/80 p-1 border border-slate-700/80 text-xs">
+                <div className="grid grid-cols-2 p-1 bg-slate-950/60 rounded-xl border border-slate-800 text-xs font-semibold">
                   <button
                     type="button"
                     onClick={() => { setForgotMethod("passcode"); setForgotMessage(null); }}
-                    className={`flex-1 py-1.5 rounded-lg font-bold transition text-center cursor-pointer ${
+                    className={`py-2 px-3 rounded-lg font-bold transition text-center cursor-pointer ${
                       forgotMethod === "passcode"
-                        ? "bg-sama-orange text-slate-950 shadow-sm"
+                        ? "bg-amber-500 text-slate-950 shadow-sm"
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    Code Maître Direction
+                    Code Maître
                   </button>
                   <button
                     type="button"
                     onClick={() => { setForgotMethod("email"); setForgotMessage(null); }}
-                    className={`flex-1 py-1.5 rounded-lg font-bold transition text-center cursor-pointer ${
+                    className={`py-2 px-3 rounded-lg font-bold transition text-center cursor-pointer ${
                       forgotMethod === "email"
-                        ? "bg-slate-700 text-white shadow-sm"
+                        ? "bg-slate-800 text-white shadow-sm"
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
@@ -1557,10 +1602,10 @@ export default function AdminDashboard() {
 
                 {forgotMessage && (
                   <div
-                    className={`text-xs p-3 rounded-xl font-bold text-center ${
+                    className={`text-xs p-3 rounded-xl font-medium text-center ${
                       forgotMessage.type === "success"
-                        ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-300"
-                        : "bg-red-500/20 border border-red-500/40 text-red-300"
+                        ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-300"
+                        : "bg-red-500/15 border border-red-500/30 text-red-300"
                     }`}
                   >
                     {forgotMessage.text}
@@ -1569,39 +1614,39 @@ export default function AdminDashboard() {
 
                 <form onSubmit={handleAdminResetPasswordSubmit} className="space-y-3 text-xs">
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1">Email du compte Administrateur</label>
+                    <label className="block text-slate-300 font-semibold mb-1">Email administrateur</label>
                     <input
                       type="email"
                       required
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       placeholder="admin@sama-academie.sn"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-sama-orange"
+                      className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 outline-none focus:border-amber-400 transition"
                     />
                   </div>
 
                   {forgotMethod === "passcode" && (
                     <>
                       <div>
-                        <label className="block text-slate-300 font-bold mb-1">Code Maître Direction (Master Passcode)</label>
+                        <label className="block text-slate-300 font-semibold mb-1">Code Maître Direction</label>
                         <input
                           type="password"
                           required
                           value={forgotPasscode}
                           onChange={(e) => setForgotPasscode(e.target.value)}
-                          placeholder="Code secret Direction..."
-                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-sama-orange"
+                          placeholder="Code secret Direction (ex: sama2026)"
+                          className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 outline-none focus:border-amber-400 transition"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-300 font-bold mb-1">Nouveau mot de passe administrateur</label>
+                        <label className="block text-slate-300 font-semibold mb-1">Nouveau mot de passe</label>
                         <input
                           type="password"
                           required
                           value={forgotNewPassword}
                           onChange={(e) => setForgotNewPassword(e.target.value)}
-                          placeholder="Min. 6 caractères..."
-                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-sama-orange"
+                          placeholder="Minimum 6 caractères"
+                          className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 outline-none focus:border-amber-400 transition"
                         />
                       </div>
                     </>
@@ -1611,14 +1656,14 @@ export default function AdminDashboard() {
                     <button
                       type="button"
                       onClick={() => setShowForgotModal(false)}
-                      className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl transition"
+                      className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl transition cursor-pointer"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
                       disabled={forgotLoading}
-                      className="flex-1 bg-sama-orange hover:bg-amber-400 text-slate-950 font-black py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 disabled:opacity-60 cursor-pointer"
+                      className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 disabled:opacity-60 cursor-pointer shadow-lg shadow-amber-500/10"
                     >
                       {forgotLoading ? (
                         <>
@@ -1637,13 +1682,15 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-slate-400">
-            <Link href="/" className="hover:text-white transition">
-              ← Retour au site public
+          {/* PIED DE CARTE ÉLÉGANT */}
+          <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 font-medium">
+            <Link href="/" className="hover:text-white transition flex items-center gap-1.5">
+              <i className="fas fa-arrow-left text-[10px]"></i>
+              <span>Retour au site</span>
             </Link>
-            <span className="text-[11px] text-slate-500">
-              <i className="fas fa-map-marker-alt text-emerald-400 mr-1"></i>
-              Localisation active
+            <span className="text-[11px] text-slate-500 flex items-center gap-1.5">
+              <i className="fas fa-lock text-[10px] text-amber-400/80"></i>
+              <span>Chiffrement TLS 256-bit</span>
             </span>
           </div>
         </div>
