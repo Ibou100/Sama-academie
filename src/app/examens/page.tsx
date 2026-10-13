@@ -284,9 +284,14 @@ export default function Examens() {
     const fetchAnnales = async () => {
       setLoading(true);
       const { data: dbAnnales } = await supabase.from("annales").select("*").order("created_at", { ascending: false });
-      if (dbAnnales && dbAnnales.length > 0) {
+      const validDbAnnales = (dbAnnales || []).filter((doc: any) => {
+        const t = (doc.title || "").toLowerCase();
+        return !t.includes("probe") && !t.includes("test");
+      });
+
+      if (validDbAnnales.length > 0) {
         // Classifier chaque annale de façon précise
-        const mapped = dbAnnales.map((doc, idx) => {
+        const mapped = validDbAnnales.map((doc, idx) => {
           const isDocConcours = doc.level && (doc.level.toLowerCase().includes("concours") || doc.level.toLowerCase().includes("ept") || doc.level.toLowerCase().includes("esp") || doc.level.toLowerCase().includes("cpge"));
           const cycle = isDocConcours ? "Concours" : (detectCycle(doc.level) || "Lycee");
 

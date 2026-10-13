@@ -44,7 +44,11 @@ export default function Videos() {
 
       // Charger STRICTEMENT les vidéos depuis Supabase (la base de données est l'unique source de vérité)
       const { data: dbVideos } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
-      setVideosList(dbVideos || []);
+      const validVideos = (dbVideos || []).filter((v: any) => {
+        const t = (v.title || "").toLowerCase();
+        return !t.includes("probe") && !t.includes("test");
+      });
+      setVideosList(validVideos);
       setLoading(false);
     };
 
