@@ -31,7 +31,9 @@ export default function Tarifs() {
             <li>3 fiches de révision par mois</li>
             <li>Messagerie après réservation</li>
           </ul>
-          <button className="w-full btn-outline py-3 border-gray-300">Créer un compte</button>
+          <Link href="/register" className="w-full btn-outline py-3 border-gray-300 block text-center">
+            Créer un compte gratuit
+          </Link>
         </div>
 
         {/* Premium Élève */}
@@ -87,6 +89,39 @@ export default function Tarifs() {
           <Link href="/checkout?plan=concours" className="w-full btn-outline py-3 border-gray-300 block text-center">
             Acheter ce pack (9 000 F)
           </Link>
+        </div>
+      </div>
+
+      {/* Guide de Règlement Direct Wave / Orange Money */}
+      <div className="bg-gradient-to-r from-blue-900 via-sama-primary to-slate-900 text-white rounded-3xl p-6 sm:p-8 mb-10 shadow-lg">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 bg-sama-orange text-white text-xs font-black uppercase px-3 py-1 rounded-full">
+              <i className="fas fa-lock"></i> Règlement Direct &amp; Accompagné
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black">Comment s&apos;effectue le paiement de votre abonnement ?</h3>
+            <p className="text-blue-100 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              Pour une sécurité totale et un service de proximité sans frais cachés, les abonnements sont réglés directement par transfert <strong>Wave</strong> ou <strong>Orange Money</strong> sur la ligne officielle de SAMA ACADÉMIE (<strong>+221 77 467 31 09</strong>). L&apos;équipe active votre statut Premium immédiatement après confirmation.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0 w-full sm:w-auto">
+            <a
+              href="https://wa.me/221774673109?text=Bonjour%20SAMA%20ACADÉMIE,%20je%20souhaite%20m'abonner%20au%20service%20Premium."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold px-6 py-3.5 rounded-2xl transition shadow flex items-center justify-center gap-2 text-sm"
+            >
+              <i className="fab fa-whatsapp text-lg"></i>
+              <span>Souscrire via WhatsApp</span>
+            </a>
+            <a
+              href="tel:221774673109"
+              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold px-5 py-3.5 rounded-2xl transition flex items-center justify-center gap-2 text-sm"
+            >
+              <i className="fas fa-phone-alt"></i>
+              <span>+221 77 467 31 09</span>
+            </a>
+          </div>
         </div>
       </div>
 

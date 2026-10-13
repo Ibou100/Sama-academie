@@ -4,18 +4,67 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { DEFAULT_SUPPORT_CONFIG } from "@/lib/siteConfig";
 
-type PaymentMethod = "wave" | "orange" | "free" | "card";
+type PaymentMethod = "wave" | "orange";
 
-const PLANS: Record<string, { name: string; price: string; period: string }> = {
-  eleve: { name: "Premium Élève", price: "3 500 F", period: "par mois" },
-  famille: { name: "Premium Famille", price: "6 000 F", period: "par mois" },
-  concours: { name: "Pack Concours", price: "9 000 F", period: "paiement unique" },
+interface PlanDetails {
+  name: string;
+  price: string;
+  period: string;
+  desc: string;
+  features: string[];
+  badgeColor: string;
+}
+
+const PLANS: Record<string, PlanDetails> = {
+  eleve: {
+    name: "Premium Élève",
+    price: "3 500 FCFA",
+    period: "par mois",
+    desc: "Idéal pour réviser et réussir ses examens avec tous les corrigés officiels.",
+    features: [
+      "Tous les corrigés détaillés des épreuves (BAC, BFEM, CFEE)",
+      "Accès aux vidéos pédagogiques complètes",
+      "Bibliothèque officielle et fiches de synthèse",
+      "Conseils méthodologiques des inspecteurs",
+      "Classes virtuelles et suivi de progression"
+    ],
+    badgeColor: "bg-sama-primary text-white"
+  },
+  famille: {
+    name: "Premium Famille",
+    price: "6 000 FCFA",
+    period: "par mois (jusqu'à 3 enfants)",
+    desc: "L'offre complète pour suivre et accompagner la scolarité de toute la fratrie.",
+    features: [
+      "Tout le contenu Premium pour 3 enfants",
+      "Tableau de bord parent avec suivi des progrès",
+      "Notification des devoirs et révisions",
+      "Enseignants certifiés vérifiés en priorité",
+      "Assistance pédagogique prioritaire"
+    ],
+    badgeColor: "bg-emerald-700 text-white"
+  },
+  concours: {
+    name: "Pack Concours",
+    price: "9 000 FCFA",
+    period: "paiement unique (accès 12 mois)",
+    desc: "Préparation intensive aux grands concours de l'État et Grandes Écoles.",
+    features: [
+      "Annales intégrales (CREM, FASTEF, ENA, CFJ, EPT, EMS)",
+      "Corrigés méthodologiques rédigés pas à pas",
+      "Tests psychotechniques et raisonnement logique",
+      "Critères officiels des jurys d'admission",
+      "Accès illimité garanti pendant 1 an"
+    ],
+    badgeColor: "bg-purple-900 text-white"
+  }
 };
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-gray-500">Chargement de votre commande...</div>}>
       <Checkout />
     </Suspense>
   );
@@ -28,259 +77,302 @@ function Checkout() {
   const plan = PLANS[planKey] || PLANS.eleve;
 
   const [method, setMethod] = useState<PaymentMethod>("wave");
-  const [phone, setPhone] = useState("");
-  const [step, setStep] = useState<"form" | "confirming" | "success">("form");
-  const [countdown, setCountdown] = useState(5);
-  const [user, setUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [clientPhone, setClientPhone] = useState("");
+  const [requestSent, setRequestSent] = useState(false);
+
+  const officialNumber = DEFAULT_SUPPORT_CONFIG.phone; // +221 77 467 31 09
+  const officialNumberRaw = DEFAULT_SUPPORT_CONFIG.whatsappRaw; // 221774673109
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push("/login?redirect=/checkout&message=Connectez-vous pour souscrire un abonnement.");
-      } else {
-        setUser(user);
+        router.push(`/login?redirect=/checkout?plan=${planKey}&message=Connectez-vous pour souscrire.`);
+        return;
       }
-    });
-  }, [router]);
 
-  // Gestion du décompte lors de la validation du téléphone
-  useEffect(() => {
-    let timer: any;
-    if (step === "confirming" && countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    } else if (step === "confirming" && countdown === 0) {
-      // Validation finale du paiement et passage en Premium
-      const completePayment = async () => {
-        if (user) {
-          await supabase
-            .from("profiles")
-            .update({ is_premium: true })
-            .eq("id", user.id);
-        }
-        setStep("success");
-      };
-      completePayment();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        setUserProfile(profile);
+        setClientPhone(profile.phone || "");
+      }
+      setLoading(false);
+    };
+
+    fetchUser();
+  }, [router, planKey]);
+
+  // Message WhatsApp pré-rempli pour souscription directe
+  const userName = userProfile ? `${userProfile.first_name || ""} ${userProfile.last_name || ""}`.trim() : "Client SAMA ACADÉMIE";
+  const userEmail = userProfile?.email || "Non renseigné";
+  const userLevel = userProfile?.level || "Cycle général";
+  const methodName = method === "wave" ? "Wave" : "Orange Money";
+
+  const whatsappMessage = encodeURIComponent(
+    `Bonjour SAMA ACADÉMIE 🎓,\n\n` +
+    `Je souhaite activer l'abonnement : *${plan.name} (${plan.price})*.\n\n` +
+    `👤 Mon Compte : ${userName}\n` +
+    `📧 Email : ${userEmail}\n` +
+    `🎓 Niveau : ${userLevel}\n` +
+    `📱 Mon Téléphone : ${clientPhone || "Non renseigné"}\n` +
+    `💳 Mode de paiement choisi : ${methodName}\n\n` +
+    `Merci de me confirmer la réception de mon règlement au ${officialNumber} pour activer mon statut Premium ⭐.`
+  );
+
+  const whatsappUrl = `https://wa.me/${officialNumberRaw}?text=${whatsappMessage}`;
+
+  const handleNotifyRequest = () => {
+    setRequestSent(true);
+    // Redirige directement vers WhatsApp
+    if (typeof window !== "undefined") {
+      window.open(whatsappUrl, "_blank");
     }
-    return () => clearTimeout(timer);
-  }, [step, countdown, user]);
-
-  const handleStartPayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    setCountdown(5);
-    setStep("confirming");
   };
 
-  if (step === "success") {
+  if (loading) {
     return (
-      <main className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-lg border border-gray-100 p-8 text-center space-y-5">
-          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
-            <i className="fas fa-check-circle"></i>
-          </div>
-          <h2 className="text-2xl font-extrabold text-gray-900">Paiement Réussi !</h2>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            Félicitations ! Votre compte est désormais <strong className="text-yellow-600">⭐ Premium</strong>.
-          </p>
-          <div className="bg-gray-50 rounded-2xl p-4 text-xs text-gray-500 space-y-1 text-left">
-            <p className="flex justify-between"><span>Offre :</span> <strong>{plan.name}</strong></p>
-            <p className="flex justify-between"><span>Montant :</span> <strong>{plan.price}</strong></p>
-            <p className="flex justify-between"><span>Moyen :</span> <strong>{method.toUpperCase()} Mobile Money</strong></p>
-            <p className="flex justify-between"><span>Téléphone :</span> <strong>+221 {phone}</strong></p>
-            <p className="text-gray-400 mt-2 text-center pt-2 border-t border-gray-200">
-              Réf. Transaction : #SN-WAVE-{Math.floor(100000 + Math.random() * 900000)}
-            </p>
-          </div>
-          <div className="pt-2 space-y-3">
-            <Link
-              href="/videos"
-              className="block w-full bg-sama-primary text-white font-bold py-3.5 rounded-xl hover:bg-blue-800 transition shadow-md"
-            >
-              <i className="fas fa-play mr-2"></i>Accéder aux Vidéos Premium
-            </Link>
-          </div>
+      <main className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <i className="fas fa-spinner fa-spin text-3xl text-sama-primary"></i>
+          <p className="text-sm font-bold text-gray-500">Préparation de votre dossier de souscription...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="flex-grow max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+    <main className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
 
-      {/* Modal de confirmation en cours (Simulation USSD / Notification Téléphone) */}
-      {step === "confirming" && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center space-y-6 animate-pulse-subtle">
-            
-            <div className="relative w-20 h-20 mx-auto">
-              <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-3xl">
-                {method === "wave" && "🌊"}
-                {method === "orange" && "🟠"}
-                {method === "free" && "🔴"}
-                {method === "card" && "💳"}
-              </div>
-              <div className="absolute inset-0 rounded-full border-4 border-sama-primary border-t-transparent animate-spin"></div>
-            </div>
-
-            <div>
-              <h3 className="text-xl font-extrabold text-gray-900 mb-2">
-                Validation sur votre téléphone
-              </h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {method === "wave" && `Une notification Wave a été envoyée au +221 ${phone}. Veuillez ouvrir votre application Wave pour valider les ${plan.price}.`}
-                {method === "orange" && `Veuillez composer le #144# ou ouvrir l'application Orange Money sur le +221 ${phone} pour autoriser le débit de ${plan.price}.`}
-                {method === "free" && `Veuillez composer le #150# sur le +221 ${phone} pour confirmer la transaction de ${plan.price}.`}
-                {method === "card" && `Validation 3D-Secure en cours auprès de votre banque...`}
-              </p>
-            </div>
-
-            <div className="bg-blue-50 text-sama-primary font-bold text-sm py-3 px-4 rounded-2xl inline-block">
-              ⏳ Attente de confirmation ({countdown}s)...
-            </div>
-          </div>
+      {/* En-tête */}
+      <div className="mb-8 text-center max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-sama-primary text-xs font-bold mb-3">
+          <i className="fas fa-shield-alt text-sama-orange"></i> Souscription Sécurisée &amp; Accompagnée
         </div>
-      )}
-
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Paiement Sécurisé</h1>
-        <p className="text-gray-500">Choisissez votre moyen de paiement Mobile Money au Sénégal</p>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+          Activation de votre Abonnement
+        </h1>
+        <p className="text-gray-500 text-sm mt-2">
+          Règlement par transfert direct <strong>Wave</strong> ou <strong>Orange Money</strong> sur la ligne officielle de SAMA ACADÉMIE.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        
-        {/* Récapitulatif */}
-        <div className="md:col-span-1 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between h-fit">
-          <div>
-            <span className="text-xs font-bold text-sama-primary uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-full">
-              Récapitulatif
-            </span>
-            <h3 className="text-xl font-bold text-gray-900 mt-4 mb-1">{plan.name}</h3>
-            <p className="text-xs text-gray-400 mb-6">{plan.period}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
-            <div className="border-t border-b border-gray-100 py-4 space-y-3 text-sm">
-              <div className="flex justify-between text-gray-600">
-                <span>Abonnement</span>
-                <span className="font-semibold">{plan.price}</span>
+        {/* Colonne 1 : Récapitulatif du Forfait */}
+        <div className="lg:col-span-1 bg-white rounded-3xl p-6 shadow-sm border border-gray-200 space-y-6">
+          <div>
+            <span className={`text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${plan.badgeColor}`}>
+              {plan.name}
+            </span>
+            <div className="mt-4 flex items-baseline gap-1">
+              <span className="text-3xl font-extrabold text-gray-950">{plan.price}</span>
+              <span className="text-gray-400 text-xs font-semibold">{plan.period}</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+              {plan.desc}
+            </p>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4 space-y-2.5">
+            <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Avantages inclus :</h4>
+            <ul className="space-y-2 text-xs text-gray-700">
+              {plan.features.map((feat, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <i className="fas fa-check-circle text-green-500 mt-0.5 text-xs"></i>
+                  <span>{feat}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Profil connecté */}
+          {userProfile && (
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs space-y-1">
+              <p className="text-[10px] uppercase font-bold text-gray-400">Compte bénéficiaire :</p>
+              <p className="font-extrabold text-gray-900">{userName}</p>
+              <p className="text-gray-500">{userEmail}</p>
+              <p className="text-sama-primary font-bold">{userLevel}</p>
+            </div>
+          )}
+
+          <div className="pt-2 text-center">
+            <Link href="/tarifs" className="text-xs text-gray-400 hover:text-sama-primary font-bold transition">
+              ← Changer de forfait
+            </Link>
+          </div>
+        </div>
+
+        {/* Colonne 2 : Modalités de Paiement & Contact Direct */}
+        <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-200 space-y-6">
+
+          {/* Bannière explicative rassurante */}
+          <div className="bg-amber-50/80 border-l-4 border-amber-500 p-4 rounded-r-2xl space-y-1 text-xs text-amber-950">
+            <p className="font-black flex items-center gap-1.5 text-amber-900 text-sm">
+              <i className="fas fa-info-circle text-amber-600"></i> Mode de Règlement Officiel &amp; Transparent
+            </p>
+            <p className="leading-relaxed text-gray-700">
+              Pour garantir la sécurité de vos fonds et un accompagnement personnalisé sans intermédiaire, les règlements s&apos;effectuent par <strong>transfert direct Mobile Money</strong> auprès de la Direction de SAMA ACADÉMIE. Votre statut <strong>⭐ Premium</strong> est activé immédiatement dès réception.
+            </p>
+          </div>
+
+          {/* Choix du moyen : Wave ou Orange Money */}
+          <div>
+            <h3 className="font-bold text-gray-900 text-sm mb-3">
+              1. Choisissez votre moyen de paiement Mobile Money :
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setMethod("wave")}
+                className={`p-4 rounded-2xl border-2 flex items-center gap-3 transition text-left ${
+                  method === "wave"
+                    ? "border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs"
+                    : "border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                <div className="w-12 h-12 bg-blue-500 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-xs flex-shrink-0">
+                  🌊
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-gray-900">Wave</h4>
+                  <p className="text-xs text-gray-500">Transfert direct sans frais</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMethod("orange")}
+                className={`p-4 rounded-2xl border-2 flex items-center gap-3 transition text-left ${
+                  method === "orange"
+                    ? "border-orange-500 bg-orange-50/60 ring-2 ring-orange-500/20 shadow-xs"
+                    : "border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                <div className="w-12 h-12 bg-orange-500 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-xs flex-shrink-0">
+                  🟠
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-gray-900">Orange Money</h4>
+                  <p className="text-xs text-gray-500">Transfert national SN</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Les 3 Étapes claires */}
+          <div className="border border-gray-200 rounded-2xl p-5 sm:p-6 bg-slate-50/60 space-y-4">
+            <h3 className="font-black text-gray-900 text-sm flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-sama-primary text-white flex items-center justify-center text-xs font-bold">2</span>
+              Marche à suivre pour activer votre compte :
+            </h3>
+
+            <div className="space-y-3.5 text-xs sm:text-sm text-gray-700">
+              <div className="flex items-start gap-3 bg-white p-3.5 rounded-xl border border-gray-200">
+                <span className="w-7 h-7 rounded-lg bg-blue-100 text-sama-primary flex items-center justify-center font-black text-xs flex-shrink-0 mt-0.5">
+                  1
+                </span>
+                <div className="space-y-1">
+                  <p className="font-bold text-gray-900">Effectuez le transfert {methodName} :</p>
+                  <p className="text-xs text-gray-600">
+                    Envoyez exactement <strong>{plan.price}</strong> au numéro officiel SAMA ACADÉMIE :
+                  </p>
+                  <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-sama-primary font-black px-3 py-1.5 rounded-lg text-sm tracking-wider">
+                    <i className="fas fa-phone-alt text-xs"></i> {officialNumber}
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Frais de transaction</span>
-                <span className="font-semibold text-green-600">0 F (Gratuit)</span>
+
+              <div className="flex items-start gap-3 bg-white p-3.5 rounded-xl border border-gray-200">
+                <span className="w-7 h-7 rounded-lg bg-green-100 text-green-700 flex items-center justify-center font-black text-xs flex-shrink-0 mt-0.5">
+                  2
+                </span>
+                <div className="space-y-1">
+                  <p className="font-bold text-gray-900">Confirmez votre règlement sur WhatsApp :</p>
+                  <p className="text-xs text-gray-600">
+                    Cliquez sur le bouton ci-dessous pour transmettre automatiquement votre preuve de paiement et le nom de votre compte.
+                  </p>
+                </div>
               </div>
-              <div className="flex justify-between font-extrabold text-gray-900 text-lg pt-2 border-t border-gray-100">
-                <span>Total</span>
-                <span className="text-sama-primary">{plan.price}</span>
+
+              <div className="flex items-start gap-3 bg-white p-3.5 rounded-xl border border-gray-200">
+                <span className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-black text-xs flex-shrink-0 mt-0.5">
+                  3
+                </span>
+                <div className="space-y-1">
+                  <p className="font-bold text-gray-900">Activation Immédiate en ⭐ Premium :</p>
+                  <p className="text-xs text-gray-600">
+                    L&apos;équipe SAMA ACADÉMIE active manuellement votre accès complet en moins de 15 minutes. Vous pourrez immédiatement consulter tous les corrigés et vidéos !
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 bg-blue-50 rounded-2xl p-4 text-xs text-sama-primary flex items-start gap-2">
-            <i className="fas fa-shield-alt text-base mt-0.5"></i>
-            <p>Paiement sécurisé crypté SSL. Compatible Wave, Orange Money et Free Money.</p>
-          </div>
-        </div>
-
-        {/* Choix méthode et Formulaire */}
-        <div className="md:col-span-2 bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-          <h3 className="font-bold text-gray-900 mb-4 text-lg">Choix du moyen de paiement</h3>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <button
-              type="button"
-              onClick={() => setMethod("wave")}
-              className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition ${
-                method === "wave" ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500" : "border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              <div className="w-10 h-10 bg-blue-400 text-white rounded-full flex items-center justify-center font-black text-xs shadow-sm">
-                🌊
-              </div>
-              <span className="text-xs font-bold text-gray-800">Wave</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMethod("orange")}
-              className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition ${
-                method === "orange" ? "border-orange-500 bg-orange-50 ring-2 ring-orange-500" : "border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              <div className="w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center font-black text-xs shadow-sm">
-                🟠
-              </div>
-              <span className="text-xs font-bold text-gray-800">Orange Money</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMethod("free")}
-              className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition ${
-                method === "free" ? "border-red-500 bg-red-50 ring-2 ring-red-500" : "border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              <div className="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center font-black text-xs shadow-sm">
-                🔴
-              </div>
-              <span className="text-xs font-bold text-gray-800">Free Money</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMethod("card")}
-              className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition ${
-                method === "card" ? "border-purple-500 bg-purple-50 ring-2 ring-purple-500" : "border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              <div className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-black text-xs shadow-sm">
-                💳
-              </div>
-              <span className="text-xs font-bold text-gray-800">Carte CB</span>
-            </button>
+          {/* Numéro de téléphone de contact */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              Votre numéro de téléphone (pour vérification de l&apos;activation) :
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">
+                🇸🇳 +221
+              </span>
+              <input
+                type="tel"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+                placeholder="77 000 00 00"
+                className="w-full border border-gray-300 rounded-xl p-3 pl-16 text-sm bg-gray-50 outline-none focus:border-sama-primary focus:bg-white transition"
+              />
+            </div>
           </div>
 
-          <form onSubmit={handleStartPayment} className="space-y-5">
-            {method !== "card" ? (
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">
-                  Numéro de téléphone {method.toUpperCase()}
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">
-                    🇸🇳 +221
-                  </span>
-                  <input
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="77 000 00 00"
-                    className="w-full border border-gray-300 rounded-xl p-3 pl-20 bg-gray-50 outline-none focus:border-sama-primary focus:bg-white transition"
-                  />
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Ex: 77 123 45 67 — Un message de confirmation sera envoyé à ce numéro.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Numéro de carte</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="4000 0000 0000 0000"
-                    className="w-full border border-gray-300 rounded-xl p-3 bg-gray-50 outline-none focus:border-sama-primary focus:bg-white transition"
-                  />
-                </div>
-              </div>
-            )}
-
+          {/* Boutons d'action : WhatsApp & Téléphone */}
+          <div className="space-y-3 pt-2">
             <button
-              type="submit"
-              className="w-full bg-sama-primary hover:bg-blue-800 text-white font-bold py-4 rounded-xl transition shadow-md flex justify-center items-center gap-2 text-base mt-6"
+              onClick={handleNotifyRequest}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-4 px-6 rounded-2xl transition shadow-md flex items-center justify-center gap-2.5 text-sm sm:text-base group"
             >
-              <i className="fas fa-mobile-alt text-sm"></i> Payer {plan.price} avec {method.toUpperCase()}
+              <i className="fab fa-whatsapp text-2xl group-hover:scale-110 transition"></i>
+              <span>Finaliser ma souscription sur WhatsApp ({officialNumber})</span>
             </button>
-          </form>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href={`tel:${officialNumberRaw}`}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-xl transition text-xs text-center flex items-center justify-center gap-2"
+              >
+                <i className="fas fa-phone-alt text-sama-primary"></i>
+                <span>Appeler la Permanence ({officialNumber})</span>
+              </a>
+
+              <Link
+                href="/examens"
+                className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-600 font-bold py-3 px-4 rounded-xl transition text-xs text-center"
+              >
+                Revenir aux examens
+              </Link>
+            </div>
+          </div>
+
+          {requestSent && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-900 text-center space-y-1 animate-in fade-in">
+              <p className="font-black flex items-center justify-center gap-1.5">
+                <i className="fas fa-check-circle text-emerald-600"></i> Demande transmise avec succès !
+              </p>
+              <p>
+                Si WhatsApp ne s&apos;est pas ouvert automatiquement, vous pouvez nous écrire directement au <strong>{officialNumber}</strong>.
+              </p>
+            </div>
+          )}
+
         </div>
 
       </div>
