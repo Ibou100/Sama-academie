@@ -25,6 +25,8 @@ export default function Videos() {
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [selectedCycle, setSelectedCycle] = useState("TOUS");
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [targetVideo, setTargetVideo] = useState<any>(null);
 
   useEffect(() => {
     const checkAccessAndFetch = async () => {
@@ -49,8 +51,14 @@ export default function Videos() {
     checkAccessAndFetch();
   }, []);
 
-  const handleVideoClick = (videoId: string) => {
-    setActiveVideoId(activeVideoId === videoId ? null : videoId);
+  const handleVideoClick = (video: any) => {
+    // RÈGLE SAMA ACADÉMIE : Seuls les utilisateurs inscrits/connectés peuvent regarder
+    if (!userProfile) {
+      setTargetVideo(video);
+      setShowAuthModal(true);
+      return;
+    }
+    setActiveVideoId(activeVideoId === video.id ? null : video.id);
   };
 
   // Détection profil, élève et enseignant
@@ -174,6 +182,42 @@ export default function Videos() {
             ))}
           </div>
         )}
+
+        {/* Bannière d'accès pour les visiteurs non connectés */}
+        {!loading && !userProfile && (
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <span className="w-11 h-11 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xl shadow-md shrink-0">
+                  <i className="fas fa-lock"></i>
+                </span>
+                <div>
+                  <p className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
+                    <span>Accès réservé aux membres SAMA ACADÉMIE</span>
+                    <span className="bg-amber-100 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">Connexion Requise</span>
+                  </p>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Le visionnage des leçons vidéos est réservé aux élèves et enseignants inscrits. Créez votre compte gratuitement pour tout débloquer.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  href="/login"
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition shadow-xs"
+                >
+                  Se connecter
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-4 py-2 rounded-xl text-xs font-black text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 transition shadow-md shadow-amber-500/20"
+                >
+                  S&apos;inscrire gratuitement
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Grille des vidéos */}
@@ -196,12 +240,12 @@ export default function Videos() {
             return (
               <div
                 key={video.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition hover:shadow-md cursor-pointer"
-                onClick={() => handleVideoClick(video.id)}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition hover:shadow-md cursor-pointer group"
+                onClick={() => handleVideoClick(video)}
               >
-                {/* Thumbnail ou Lecteur */}
+                {/* Thumbnail ou Lecteur — STRICTEMENT BLOQUÉ SI NON CONNECTÉ */}
                 <div className="bg-sama-blue h-48 flex items-center justify-center relative overflow-hidden">
-                  {activeVideoId === video.id && embedUrl ? (
+                  {activeVideoId === video.id && userProfile && embedUrl ? (
                     <iframe
                       src={embedUrl}
                       title={video.title}
@@ -212,16 +256,24 @@ export default function Videos() {
                   ) : (
                     <div className="text-center text-white p-4 w-full h-full flex flex-col items-center justify-center relative bg-gradient-to-br from-sama-blue to-sama-primary">
                       <i className="fas fa-graduation-cap text-4xl mb-3 opacity-60"></i>
-                      <div className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2 transition shadow-lg">
-                        <i className="fas fa-play text-white text-sm"></i>
-                        <span className="text-xs font-bold">Lancer la leçon</span>
-                      </div>
+                      {userProfile ? (
+                        <div className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2 transition shadow-lg">
+                          <i className="fas fa-play text-white text-sm"></i>
+                          <span className="text-xs font-bold">Lancer la leçon</span>
+                        </div>
+                      ) : (
+                        <div className="bg-amber-500/95 hover:bg-amber-400 text-slate-950 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2 transition shadow-lg font-black text-xs">
+                          <i className="fas fa-lock"></i>
+                          <span>Inscription requise</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* Durée */}
-                  <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-md font-bold">
-                    {video.duration || "15 min"}
+                  {/* Durée ou Badge Cadenas */}
+                  <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-md font-bold flex items-center gap-1.5">
+                    {!userProfile && <i className="fas fa-lock text-amber-400 text-[10px]"></i>}
+                    <span>{video.duration || "15 min"}</span>
                   </span>
                 </div>
 
@@ -231,9 +283,16 @@ export default function Videos() {
                     <span className="text-xs font-bold text-sama-orange uppercase tracking-wider">
                       {video.subject || "Général"}
                     </span>
-                    <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2.5 py-0.5 rounded-full">
-                      {video.level || "Tous niveaux"}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {!userProfile && (
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <i className="fas fa-lock text-[9px]"></i> Membre
+                        </span>
+                      )}
+                      <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2.5 py-0.5 rounded-full">
+                        {video.level || "Tous niveaux"}
+                      </span>
+                    </div>
                   </div>
                   <h3 className="font-bold text-gray-900 text-base leading-snug line-clamp-2 hover:text-sama-primary transition">
                     {video.title}
@@ -242,6 +301,55 @@ export default function Videos() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* MODAL INVITATION CONNEXION / INSCRIPTION POUR LES VISITEURS */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 text-center space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition cursor-pointer"
+              title="Fermer"
+            >
+              ✕
+            </button>
+
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 flex items-center justify-center text-2xl mx-auto shadow-lg shadow-amber-500/20">
+              <i className="fas fa-lock"></i>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-gray-900">
+                Inscription Requise
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                Pour visionner la leçon vidéo {targetVideo?.title ? <strong>« {targetVideo.title} »</strong> : "complète"}, vous devez avoir un compte sur <strong>SAMA ACADÉMIE</strong>.
+              </p>
+              <p className="text-[11px] text-gray-500">
+                L&apos;inscription est <strong>100% gratuite</strong> et vous donne un accès complet aux leçons et cours du programme national.
+              </p>
+            </div>
+
+            <div className="space-y-2.5 pt-2">
+              <Link
+                href="/register"
+                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-3 px-4 rounded-xl transition text-sm shadow-md shadow-amber-500/20 flex items-center justify-center gap-2"
+              >
+                <i className="fas fa-user-plus"></i>
+                <span>Créer mon compte gratuit</span>
+              </Link>
+
+              <Link
+                href="/login"
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-xl transition text-sm flex items-center justify-center gap-2"
+              >
+                <i className="fas fa-sign-in-alt"></i>
+                <span>Déjà inscrit ? Se connecter</span>
+              </Link>
+            </div>
+          </div>
         </div>
       )}
     </main>
