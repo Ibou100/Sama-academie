@@ -17,9 +17,13 @@ export async function checkAdminAuthorization(
   req: Request,
   adminClient: SupabaseClient
 ): Promise<AdminAuthResult> {
-  // 1. Vérification par Passcode Master Direction
+  // 1. Vérification par Passcode Master Direction (stricte et sans faille)
   const passcode = req.headers.get("x-admin-passcode");
-  if (passcode && (passcode === "sama2026" || passcode === "SamaAdmin2024!" || passcode.trim().length >= 4)) {
+  const envMasterCode = process.env.ADMIN_MASTER_PASSCODE;
+  const validPasscodes = ["sama2026", "SamaAdmin2024!"];
+  if (envMasterCode) validPasscodes.push(envMasterCode);
+
+  if (passcode && validPasscodes.includes(passcode.trim())) {
     return {
       authorized: true,
       adminId: "master-direction",

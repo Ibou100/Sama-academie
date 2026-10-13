@@ -27,7 +27,7 @@ export async function POST(req: Request) {
           <p>Excellente nouvelle ! <strong>${senderName}</strong> vient de vous faire une demande de cours de soutien.</p>
           ${messagePreview ? `<div style="background-color: #f9fafb; padding: 15px; border-left: 4px solid #2563eb; margin: 20px 0; font-style: italic;">"${messagePreview}"</div>` : ""}
           <p>Connectez-vous rapidement à votre espace pour accepter ou refuser cette demande.</p>
-          <a href="https://votre-site.com/demandes" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">Voir la demande</a>
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://sama-academie-next.vercel.app'}/demandes" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">Voir la demande</a>
           <p style="margin-top: 30px; font-size: 12px; color: #6b7280;">L'équipe SAMA ACADÉMIE</p>
         </div>
       `;
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
             "${messagePreview}"
           </div>
           <p>Cliquez ci-dessous pour lui répondre directement sur la plateforme.</p>
-          <a href="https://votre-site.com/demandes" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">Répondre au message</a>
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://sama-academie-next.vercel.app'}/demandes" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">Répondre au message</a>
           <p style="margin-top: 30px; font-size: 12px; color: #6b7280;">L'équipe SAMA ACADÉMIE</p>
         </div>
       `;

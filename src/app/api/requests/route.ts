@@ -25,6 +25,20 @@ export async function POST(req: Request) {
 
     const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
+    // Contrôle d'autorisation : si un token est fourni, s'assurer que l'expéditeur est bien studentId (ou admin)
+    const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+    if (token) {
+      try {
+        const { data: userCaller } = await admin.auth.getUser(token);
+        if (userCaller?.user && userCaller.user.id !== studentId) {
+          const { data: p } = await admin.from("profiles").select("role").eq("id", userCaller.user.id).maybeSingle();
+          if (p?.role !== "admin") {
+            return NextResponse.json({ error: "Action non autorisée au nom d'un autre profil." }, { status: 403 });
+          }
+        }
+      } catch (_) {}
+    }
+
     // Insertion directe et garantie dans tutoring_requests
     const { data, error } = await admin
       .from("tutoring_requests")

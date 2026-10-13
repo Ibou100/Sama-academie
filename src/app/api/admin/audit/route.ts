@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkAdminAuthorization } from "@/lib/adminAuthCheck";
 
 // Cache mémoire résilient au cas où la table SQL n'est pas encore créée dans Supabase
 let inMemoryLogs: any[] = [
@@ -74,12 +75,17 @@ function getSupabaseAdmin() {
   });
 }
 
-// GET : Récupérer le journal d'audit complet
+// GET : Récupérer le journal d'audit complet (Réservé aux administrateurs)
 export async function GET(req: Request) {
   try {
     const admin = getSupabaseAdmin();
     if (!admin) {
-      return NextResponse.json({ ok: true, logs: inMemoryLogs, tableMissing: true });
+      return NextResponse.json({ error: "Configuration serveur incomplète." }, { status: 500 });
+    }
+
+    const authResult = await checkAdminAuthorization(req, admin);
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: authResult.reason || "Accès réservé aux administrateurs." }, { status: 403 });
     }
 
     // Requête vers Supabase

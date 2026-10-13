@@ -30,8 +30,17 @@ export async function POST(req: Request) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    const ALLOWED_EXTENSIONS = ["pdf", "png", "jpg", "jpeg", "webp", "doc", "docx"];
     const originalName = file.name || "document";
-    const fileExt = originalName.split(".").pop()?.toLowerCase() || "pdf";
+    const fileExt = originalName.split(".").pop()?.toLowerCase() || "";
+
+    if (!fileExt || !ALLOWED_EXTENSIONS.includes(fileExt)) {
+      return NextResponse.json(
+        { error: "Format de fichier non autorisé. Formats acceptés : PDF, PNG, JPG, JPEG, WEBP, DOC, DOCX." },
+        { status: 400 }
+      );
+    }
+
     const cleanBaseName = originalName
       .replace(/\.[^/.]+$/, "")
       .normalize("NFD")

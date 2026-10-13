@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       password,
       first_name,
       last_name,
-      role = "eleve",
+      role: requestedRole = "eleve",
       phone = "",
       region = "Dakar",
       level = "",
@@ -30,8 +30,12 @@ export async function POST(req: Request) {
       experience = null,
       price = null,
       bio = null,
-      verified = false,
     } = body;
+
+    // SÉCURITÉ CRITIQUE : Seuls les rôles publics sont autorisés à l'inscription.
+    // L'attribution du rôle "admin" via l'inscription publique est STRICTEMENT BLOQUÉE.
+    const allowedRoles = ["eleve", "parent", "enseignant"];
+    const role = allowedRoles.includes(requestedRole) ? requestedRole : "eleve";
 
     if (!email || !password || !first_name || !last_name) {
       return NextResponse.json(

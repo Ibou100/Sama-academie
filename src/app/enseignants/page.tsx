@@ -95,9 +95,14 @@ export default function Enseignants() {
     let success = false;
     // 1. Priorité API serveur sécurisée (Service Role, garanti sans blocage RLS)
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
       const res = await fetch("/api/requests", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           studentId: currentUser.id,
           teacherId: contactTeacher.id,
