@@ -20,7 +20,7 @@ export async function checkAdminAuthorization(
   // 1. Vérification par Passcode Master Direction (stricte et sans faille)
   const passcode = req.headers.get("x-admin-passcode");
   const envMasterCode = process.env.ADMIN_MASTER_PASSCODE;
-  const validPasscodes = ["sama2026", "SamaAdmin2024!"];
+  const validPasscodes = ["sama2026"];
   if (envMasterCode) validPasscodes.push(envMasterCode);
 
   if (passcode && validPasscodes.includes(passcode.trim())) {

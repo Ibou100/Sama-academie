@@ -571,7 +571,7 @@ export default function AdminDashboard() {
     const currentCode = typeof window !== "undefined" ? localStorage.getItem("sama_custom_admin_passcode") || "sama2026" : "sama2026";
     const entered = accessCodeInput.trim();
 
-    if (entered === currentCode || entered === "sama2026" || entered === "SamaAdmin2024!") {
+    if (entered === currentCode || entered === "sama2026") {
       setCurrentAdminProfile({
         id: "direction-master",
         first_name: "Direction",
